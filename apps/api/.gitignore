@@ -1,0 +1,43 @@
+# Byte-compiled / caches
+__pycache__/
+*.py[cod]
+*.so
+*.pyd
+*.pyo
+*.pkl
+
+# Virtual env / tooling
+.venv/
+venv/
+pip-wheel-metadata/
+*.egg-info/
+.eggs/
+.mypy_cache/
+.pytype/
+.pytest_cache/
+.dmypy.json
+.pyre/
+.coverage
+htmlcov/
+
+# Django
+local.sqlite3
+db.sqlite3
+media/
+staticfiles/      # collected static; keep your source static/ tracked
+# (Commit migrations!)
+# apps/**/migrations/ should NOT be ignored
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Docker & compose artifacts (if any)
+*.pid

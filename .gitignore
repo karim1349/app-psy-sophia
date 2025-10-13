@@ -1,0 +1,77 @@
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Node/TS monorepo
+node_modules/
+.pnpm-store/
+.turbo/
+dist/
+build/
+coverage/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Env & secrets (keep examples)
+.env
+.env.*
+!.env.example
+apps/**/.env
+apps/**/.env.*
+!apps/**/.env.example
+packages/**/.env
+packages/**/.env.*
+!packages/**/.env.example
+
+# Testing outputs
+playwright-report/
+test-results/
+.jest-cache/
+.jest/
+coverage/
+reports/
+
+# Next.js (also duplicated in apps/web)
+.next/
+out/
+.vercel/
+
+# Expo/Metro (also duplicated in apps/mobile)
+.expo/
+.expo-shared/
+.metro-cache/
+haste-map-*/
+packager-info.json
+
+# Turborepo
+turbo-run-*
+
+# Python/Django (apps/api)
+__pycache__/
+*.py[cod]
+*.so
+*.pyd
+*.pyo
+*.pkl
+.venv/
+venv/
+*.egg-info/
+.eggs/
+.mypy_cache/
+.pytype/
+.pytest_cache/
+.dmypy.json
+.pyre/
+.coverage
+htmlcov/
+db.sqlite3
+*.sqlite3
+media/
+staticfiles/

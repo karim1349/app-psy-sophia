@@ -1,0 +1,24 @@
+{
+  "name": "qiima-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Django REST API for Qiima",
+  "scripts": {
+    "dev": "source .venv/bin/activate && python manage.py runserver 0.0.0.0:8000",
+    "migrate": "source .venv/bin/activate && python manage.py migrate",
+    "makemigrations": "source .venv/bin/activate && python manage.py makemigrations",
+    "test": "source .venv/bin/activate && pytest",
+    "test:watch": "source .venv/bin/activate && pytest --watch",
+    "test:coverage": "source .venv/bin/activate && pytest --cov --cov-report=html --cov-report=term",
+    "test:unit": "source .venv/bin/activate && pytest -m unit",
+    "test:integration": "source .venv/bin/activate && pytest -m integration",
+    "lint": "source .venv/bin/activate && ruff check . && mypy .",
+    "lint:fix": "source .venv/bin/activate && ruff check --fix .",
+    "format": "source .venv/bin/activate && ruff format .",
+    "type-check": "source .venv/bin/activate && mypy .",
+    "security": "source .venv/bin/activate && bandit -r . -x .venv,tests",
+    "shell": "source .venv/bin/activate && python manage.py shell"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

@@ -1,0 +1,16 @@
+# Include base requirements
+-r base.txt
+
+# Production server
+gunicorn==21.2.0
+gevent==23.9.1
+
+# Error tracking & monitoring
+sentry-sdk==1.39.1
+
+# Performance & security
+django-redis==5.4.0
+whitenoise==6.6.0
+
+# Health checks
+django-health-check==3.18.1

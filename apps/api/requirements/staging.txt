@@ -1,0 +1,11 @@
+# Include base requirements
+-r base.txt
+
+# Staging-specific monitoring & debugging
+django-debug-toolbar==4.2.0
+
+# Error tracking (lighter than prod)
+sentry-sdk==1.39.1
+
+# Performance monitoring
+django-silk==5.0.4

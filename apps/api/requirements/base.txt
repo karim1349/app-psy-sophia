@@ -1,0 +1,31 @@
+# Core Django
+Django==4.2.7
+djangorestframework==3.14.0
+
+# Database (psycopg 3.x for Python 3.13 compatibility)
+psycopg[binary]>=3.2.10
+
+# Security & Auth
+djangorestframework-simplejwt==5.3.0
+argon2-cffi==23.1.0
+django-cors-headers==4.3.1
+django-axes==6.1.1
+
+# Celery & Background Tasks
+celery==5.3.4
+redis==5.0.1
+
+# Image handling (11.x for Python 3.13 compatibility)
+Pillow==11.0.0
+
+# Environment variables
+python-decouple==3.8
+
+# OpenAPI/Swagger
+drf-spectacular==0.27.0
+
+# Storage (MinIO)
+minio==7.2.0
+
+# Utilities
+python-dateutil==2.8.2
