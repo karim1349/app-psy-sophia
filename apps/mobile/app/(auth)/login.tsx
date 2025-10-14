@@ -1,0 +1,225 @@
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+} from 'react-native';
+import { Button, FormField, TextField } from '@qiima/ui';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { LoginSchema, type LoginInput } from '@qiima/schemas';
+import { useLogin } from '@qiima/queries';
+import { useRouter } from 'expo-router';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { LinearGradient } from 'expo-linear-gradient';
+
+export default function LoginScreen() {
+  const router = useRouter();
+  const scheme = useColorScheme() ?? 'light';
+  const login = useLogin({
+    env: 'native',
+    baseURL: process.env.EXPO_PUBLIC_API_BASE || 'http://localhost:8000',
+  });
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginInput>({
+    resolver: zodResolver(LoginSchema),
+  });
+
+  const onSubmit = (data: LoginInput) => {
+    login.mutate(data, {
+      onSuccess: () => {
+        router.replace('/(tabs)');
+      },
+    });
+  };
+
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={[styles.container, { backgroundColor: 'transparent' }]}
+    >
+      <LinearGradient
+        pointerEvents="none"
+        colors={
+          scheme === 'dark'
+            ? ['#21110D', '#28180F', '#17120A']
+            : ['#FFECE5', '#FFE3CC', '#FFF6D6']
+        }
+        locations={[0, 0.6, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.header}>
+          <Text style={styles.title}>Welcome back</Text>
+          <Text style={styles.subtitle}>Login to your account to continue</Text>
+        </View>
+
+        <View style={styles.form}>
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <FormField label="Email" error={errors.email?.message}>
+                <TextField
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  keyboardType="email-address"
+                  placeholder="you@example.com"
+                  hasError={!!errors.email}
+                />
+              </FormField>
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <FormField label="Password" error={errors.password?.message}>
+                <TextField
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  secureTextEntry
+                  placeholder="••••••••"
+                  hasError={!!errors.password}
+                />
+              </FormField>
+            )}
+          />
+
+          <TouchableOpacity
+            onPress={() => router.push('/(auth)/forgot-password')}
+            style={styles.forgotPassword}
+          >
+            <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+          </TouchableOpacity>
+
+          {login.error && (
+            <View style={styles.apiErrorContainer}>
+              <Text style={styles.apiError}>
+                {login.error.message || 'Login failed. Please check your credentials.'}
+              </Text>
+            </View>
+          )}
+
+          <Button
+            title="Login"
+            onPress={handleSubmit(onSubmit)}
+            loading={login.isPending}
+            disabled={login.isPending}
+            variant="solid"
+            tone="brand"
+            size="md"
+          />
+
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Don&apos;t have an account? </Text>
+            <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
+              <Text style={styles.footerLink}>Sign up</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    padding: 20,
+    justifyContent: 'center',
+  },
+  header: {
+    marginBottom: 32,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+  },
+  form: {
+    gap: 16,
+  },
+  error: {
+    color: '#ef4444',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  forgotPassword: {
+    alignSelf: 'flex-end',
+    marginTop: -8,
+    marginBottom: 8,
+  },
+  forgotPasswordText: {
+    color: '#007AFF',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  apiErrorContainer: {
+    backgroundColor: '#fee',
+    borderWidth: 1,
+    borderColor: '#fcc',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+  },
+  apiError: {
+    color: '#c33',
+    fontSize: 14,
+  },
+  button: {
+    backgroundColor: '#007AFF',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 50,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  footerText: {
+    color: '#666',
+    fontSize: 14,
+  },
+  footerLink: {
+    color: '#007AFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+});

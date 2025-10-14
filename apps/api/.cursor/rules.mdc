@@ -1,0 +1,1144 @@
+# Backend Rules — Django REST API
+
+> **Purpose**: Backend-specific rules for Django REST API development in the Qiima project. This covers models, serializers, views, permissions, and API design patterns.
+
+---
+
+## 1) Django App Structure
+
+### 1.1 Apps Organization
+```
+apps/api/
+├─ users/                    # Authentication & user management
+├─ deals/                    # Deal creation, listing, management
+├─ votes/                    # Voting system (+1/-1)
+├─ comments/                 # Deal comments & replies
+├─ merchants/                # Merchant information
+├─ moderation/               # Content moderation & flags
+├─ subscriptions/            # User subscriptions & alerts
+├─ notifications/            # Push notifications & email
+└─ qiima/                    # Project settings & main config
+```
+
+### 1.2 Each App Should Have
+- `models.py` - Django models with proper Meta classes and type annotations
+- `serializers.py` - DRF serializers with validation and proper error handling
+- `views.py` - API views using GenericViewSet with custom actions
+- `urls.py` - URL routing using DefaultRouter
+- `admin.py` - Django admin configuration
+- `permissions.py` - Custom permission classes (IsOwnerOrStaff, IsOwner)
+- `throttles.py` - Rate limiting classes for different actions
+- `managers.py` - Custom model managers (if needed)
+- `utils.py` - App-specific utilities
+- `proxy/` - Business logic layer (proxy pattern)
+  - `{model}_proxy.py` - Contains all business logic for each model
+- `tests/` - Comprehensive test suite with proper structure
+  - `test_models.py` - Model tests with factories
+  - `test_serializers.py` - Serializer validation tests
+  - `test_views.py` - API endpoint tests
+  - `test_{model}_proxy.py` - Proxy method tests
+  - `test_throttles.py` - Rate limiting tests
+  - `factories.py` - Factory Boy factories for test data
+
+---
+
+## 2) Models Design Patterns
+
+### 2.1 Base Model Fields
+All models should include:
+```python
+class BaseModel(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        abstract = True
+```
+
+### 2.2 Deal Model Structure
+```python
+class Deal(BaseModel):
+    # Core fields
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    current_price = models.DecimalField(max_digits=10, decimal_places=2)
+    original_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    currency = models.CharField(max_length=3, default='MAD')
+    
+    # Relationships
+    merchant = models.ForeignKey('merchants.Merchant', on_delete=models.CASCADE)
+    category = models.ForeignKey('deals.DealCategory', on_delete=models.CASCADE)
+    author = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    
+    # Location & channel
+    channel = models.CharField(max_length=10, choices=[('online', 'Online'), ('in_store', 'In Store')])
+    city = models.CharField(max_length=100, blank=True)  # Required for in_store
+    url = models.URLField(blank=True)  # Required for online
+    
+    # Media & proof
+    image = models.ImageField(upload_to='deals/', null=True, blank=True)
+    proof_url = models.URLField(blank=True)
+    
+    # Status & moderation
+    status = models.CharField(max_length=20, choices=[
+        ('active', 'Active'),
+        ('expired', 'Expired'),
+        ('merged_into', 'Merged Into Another'),
+        ('flagged', 'Flagged'),
+    ], default='active')
+    
+    is_verified = models.BooleanField(default=False)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    
+    # Computed fields (use @property or database functions)
+    @property
+    def discount_percentage(self):
+        if self.original_price and self.original_price > self.current_price:
+            return round(((self.original_price - self.current_price) / self.original_price) * 100, 1)
+        return 0
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status', '-created_at']),
+            models.Index(fields=['merchant', '-created_at']),
+            models.Index(fields=['category', '-created_at']),
+            models.Index(fields=['city', '-created_at']),
+            models.Index(fields=['expires_at']),
+        ]
+```
+
+### 2.3 Vote Model with Constraints
+```python
+class Vote(BaseModel):
+    VOTE_CHOICES = [
+        ('up', 'Upvote'),
+        ('down', 'Downvote'),
+    ]
+    
+    deal = models.ForeignKey('deals.Deal', on_delete=models.CASCADE, related_name='votes')
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    vote_type = models.CharField(max_length=4, choices=VOTE_CHOICES)
+    reason = models.CharField(max_length=100, blank=True)  # For downvotes
+    
+    class Meta:
+        unique_together = ['deal', 'user']
+        indexes = [
+            models.Index(fields=['deal', 'vote_type']),
+            models.Index(fields=['user', '-created_at']),
+        ]
+```
+
+### 2.4 Comment Model with Threading
+```python
+class Comment(BaseModel):
+    deal = models.ForeignKey('deals.Deal', on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    content = models.TextField(max_length=500)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
+    is_edited = models.BooleanField(default=False)
+    
+    class Meta:
+        ordering = ['created_at']
+        indexes = [
+            models.Index(fields=['deal', 'created_at']),
+            models.Index(fields=['parent', 'created_at']),
+        ]
+```
+
+---
+
+## 3) Proxy Pattern (Business Logic Layer)
+
+### 3.1 Proxy Structure
+Each model should have a corresponding proxy class in the `proxy/` folder that contains all business logic:
+
+```python
+# users/proxy/user_proxy.py
+class UserProxy:
+    """Business logic layer for User model operations."""
+    
+    def __init__(self):
+        self.model = User
+    
+    def get_by_id(self, user_id: int) -> Optional[User]:
+        """Get user by ID."""
+        try:
+            return self.model.objects.get(id=user_id)
+        except self.model.DoesNotExist:
+            return None
+    
+    def get_user_by_email(self, email: str) -> Optional[User]:
+        """Get user by email (case insensitive)."""
+        try:
+            return self.model.objects.get(email__iexact=email)
+        except self.model.DoesNotExist:
+            return None
+    
+    def create_user(self, email: str, username: str, password: str, **extra_fields) -> User:
+        """Create a new user with validation."""
+        # Business logic validation
+        if self.get_user_by_email(email):
+            raise ValidationError("A user with this email already exists.")
+        
+        if self.get_user_by_username(username):
+            raise ValidationError("A user with this username already exists.")
+        
+        return self.model.objects.create_user(
+            email=email,
+            username=username,
+            password=password,
+            **extra_fields
+        )
+    
+    def authenticate_user(self, email: str, password: str) -> Optional[User]:
+        """Authenticate user credentials."""
+        user = self.get_user_by_email(email)
+        if user and user.check_password(password):
+            return user
+        return None
+    
+    def generate_tokens(self, user: User) -> Dict[str, str]:
+        """Generate JWT tokens for user."""
+        from rest_framework_simplejwt.tokens import RefreshToken
+        refresh = RefreshToken.for_user(user)
+        return {
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+        }
+```
+
+### 3.2 Proxy Benefits
+- **Separation of Concerns**: Business logic separated from models, views, and serializers
+- **Testability**: Easy to unit test business logic independently
+- **Reusability**: Business logic can be reused across different views
+- **Maintainability**: Centralized business rules and validation
+- **Clean Views**: Views become thin controllers that delegate to proxies
+
+### 3.3 Proxy Rules
+- **No Serialization**: Proxies should return model instances, not serialized data
+- **Error Handling**: Use Django's ValidationError for business rule violations
+- **Type Hints**: All methods should have proper type annotations
+- **Documentation**: Each method should have clear docstrings
+- **Testing**: Every proxy method must have comprehensive tests
+
+---
+
+## 4) Serializers Best Practices
+
+### 3.1 Base Serializer Pattern
+```python
+class BaseSerializer(serializers.ModelSerializer):
+    """Base serializer with common functionality."""
+    
+    def validate(self, attrs):
+        """Common validation logic."""
+        return super().validate(attrs)
+    
+    def create(self, validated_data):
+        """Set user from request context."""
+        validated_data['author'] = self.context['request'].user
+        return super().create(validated_data)
+```
+
+### 3.2 Deal Serializer with Computed Fields
+```python
+class DealSerializer(BaseSerializer):
+    author = UserSerializer(read_only=True)
+    merchant = MerchantSerializer(read_only=True)
+    category = DealCategorySerializer(read_only=True)
+    
+    # Computed fields
+    vote_count = serializers.SerializerMethodField()
+    comment_count = serializers.SerializerMethodField()
+    user_vote = serializers.SerializerMethodField()
+    discount_percentage = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = Deal
+        fields = [
+            'id', 'title', 'description', 'current_price', 'original_price',
+            'currency', 'merchant', 'category', 'author', 'channel', 'city', 'url',
+            'image', 'proof_url', 'status', 'is_verified', 'expires_at',
+            'created_at', 'updated_at', 'vote_count', 'comment_count',
+            'user_vote', 'discount_percentage'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at', 'author']
+    
+    def get_vote_count(self, obj):
+        return obj.votes.aggregate(
+            count=Count('id', filter=Q(vote_type='up')) - 
+                  Count('id', filter=Q(vote_type='down'))
+        )['count'] or 0
+    
+    def get_comment_count(self, obj):
+        return obj.comments.count()
+    
+    def get_user_vote(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            vote = obj.votes.filter(user=request.user).first()
+            return vote.vote_type if vote else None
+        return None
+```
+
+### 3.3 Validation Patterns
+```python
+class DealCreateSerializer(BaseSerializer):
+    """Serializer for deal creation with strict validation."""
+    
+    class Meta:
+        model = Deal
+        fields = [
+            'title', 'description', 'current_price', 'original_price',
+            'currency', 'merchant', 'category', 'channel', 'city', 'url',
+            'image', 'proof_url', 'expires_at'
+        ]
+    
+    def validate(self, attrs):
+        """Cross-field validation."""
+        channel = attrs.get('channel')
+        
+        if channel == 'online' and not attrs.get('url'):
+            raise serializers.ValidationError({
+                'url': 'URL is required for online deals.'
+            })
+        
+        if channel == 'in_store' and not attrs.get('city'):
+            raise serializers.ValidationError({
+                'city': 'City is required for in-store deals.'
+            })
+        
+        # Require at least one proof
+        if not attrs.get('image') and not attrs.get('proof_url'):
+            raise serializers.ValidationError(
+                'At least one proof (image or URL) is required.'
+            )
+        
+        return attrs
+    
+    def validate_original_price(self, value):
+        """Validate original price is higher than current price."""
+        current_price = self.initial_data.get('current_price')
+        if value and current_price and value <= current_price:
+            raise serializers.ValidationError(
+                'Original price must be higher than current price.'
+            )
+        return value
+```
+
+---
+
+## 5) Views & API Design
+
+### 5.1 GenericViewSet Pattern
+Use `GenericViewSet` with custom actions instead of `ModelViewSet` for better control:
+
+```python
+class DealViewSet(GenericViewSet):
+    """Deal operations with custom actions and proxy delegation."""
+    
+    permission_classes = [IsAuthenticated]  # Default to authenticated only
+    queryset = Deal.objects.filter(status='active')
+    serializer_class = DealSerializer
+    
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.deal_proxy = DealProxy()
+    
+    def get_permissions(self) -> List[BasePermission]:
+        """Override permissions per action."""
+        if self.action in ["list", "retrieve"]:
+            return [AllowAny()]
+        elif self.action in ["update", "partial_update", "destroy"]:
+            return [IsOwnerOrStaff()]
+        return [IsAuthenticated()]
+    
+    def get_serializer_class(self):
+        """Use different serializers for different actions."""
+        if self.action == 'create':
+            return DealCreateSerializer
+        elif self.action in ['update', 'partial_update']:
+            return DealUpdateSerializer
+        return DealSerializer
+    
+    def get_queryset(self):
+        """Apply filtering based on query parameters."""
+        queryset = super().get_queryset()
+        
+        # Apply filters
+        category = self.request.query_params.get('category')
+        if category:
+            queryset = queryset.filter(category_id=category)
+        
+        city = self.request.query_params.get('city')
+        if city:
+            queryset = queryset.filter(city__icontains=city)
+        
+        merchant = self.request.query_params.get('merchant')
+        if merchant:
+            queryset = queryset.filter(merchant_id=merchant)
+        
+        # Apply sorting
+        sort = self.request.query_params.get('sort', 'new')
+        if sort == 'hot':
+            queryset = queryset.annotate(
+                hot_score=Count('votes', filter=Q(
+                    votes__vote_type='up',
+                    votes__created_at__gte=timezone.now() - timedelta(hours=24)
+                )) - Count('votes', filter=Q(
+                    votes__vote_type='down',
+                    votes__created_at__gte=timezone.now() - timedelta(hours=24)
+                ))
+            ).filter(hot_score__gte=5).order_by('-hot_score', '-created_at')
+        elif sort == 'top':
+            queryset = queryset.annotate(
+                top_score=Count('votes', filter=Q(votes__vote_type='up')) - 
+                         Count('votes', filter=Q(votes__vote_type='down'))
+            ).order_by('-top_score', '-created_at')
+        else:  # 'new'
+            queryset = queryset.order_by('-created_at')
+        
+        return queryset
+    
+    def perform_create(self, serializer):
+        """Set author and validate permissions."""
+        serializer.save(author=self.request.user)
+    
+    def perform_update(self, serializer):
+        """Only allow author or moderators to update."""
+        deal = self.get_object()
+        if deal.author != self.request.user and not self.request.user.is_staff:
+            raise PermissionDenied("Only the author can edit this deal.")
+        serializer.save()
+```
+
+### 5.2 Custom Actions with Proxy Delegation
+```python
+@action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+def vote(self, request: Request, pk: Any = None) -> Response:
+    """Vote on a deal."""
+    deal = self.get_object()
+    
+    # Validate input
+    serializer = VoteSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    
+    # Delegate to proxy
+    try:
+        result = self.deal_proxy.vote_on_deal(
+            deal=deal,
+            user=request.user,
+            vote_type=serializer.validated_data['vote_type'],
+            reason=serializer.validated_data.get('reason', '')
+        )
+        return Response(result, status=status.HTTP_200_OK)
+    except ValidationError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+@action(detail=True, methods=['post'], permission_classes=[IsOwnerOrStaff])
+def deactivate(self, _request: Request) -> Response:
+    """Deactivate deal (set status=inactive)."""
+    deal = self.get_object()
+    deal.status = 'inactive'
+    deal.save(update_fields=['status'])
+    return Response(
+        {"detail": "Deal deactivated successfully."},
+        status=status.HTTP_200_OK
+    )
+```
+
+### 5.3 View Rules
+- **Use GenericViewSet**: Better control over exposed actions
+- **Delegate to Proxies**: Views should be thin controllers
+- **Proper Type Hints**: All methods should have type annotations
+- **Error Handling**: Catch ValidationError and return proper HTTP responses
+- **Permission Classes**: Use custom permission classes (IsOwnerOrStaff, IsOwner)
+- **No Business Logic**: Keep business logic in proxies, not views
+
+---
+
+## 6) Permissions & Security
+
+### 6.1 Custom Permission Classes
+```python
+class IsOwnerOrStaff(BasePermission):
+    """Allows access only to the owner of the object or staff members."""
+    
+    def has_object_permission(self, request: Request, view: APIView, obj: Any) -> bool:
+        # Authenticated users only
+        if not request.user.is_authenticated:
+            return False
+        # Staff can access any object
+        if request.user.is_staff:
+            return True
+        # Owner can access their own object
+        return bool(obj == request.user)
+
+class IsOwner(BasePermission):
+    """Allows access only to the owner of the object."""
+    
+    def has_object_permission(self, request: Request, view: APIView, obj: Any) -> bool:
+        # Authenticated users only
+        if not request.user.is_authenticated:
+            return False
+        # Owner can access their own object
+        return bool(obj == request.user)
+```
+
+### 6.2 Permission Usage in Views
+```python
+def get_permissions(self) -> List[BasePermission]:
+    """Override permissions per action."""
+    if self.action in [
+        "create", "login", "verify_email", "resend_verification",
+        "request_password_reset", "confirm_password_reset", "list"
+    ]:
+        return [AllowAny()]
+    elif self.action in ["retrieve", "update", "partial_update", "deactivate"]:
+        return [IsOwnerOrStaff()]
+    return [IsAuthenticated()]
+```
+
+### 5.2 Throttling Classes
+```python
+class DealThrottle(UserRateThrottle):
+    """Throttle deal creation."""
+    scope = 'deal_create'
+    rate = '5/hour'
+
+class VoteThrottle(UserRateThrottle):
+    """Throttle voting."""
+    scope = 'vote'
+    rate = '60/hour'
+
+class CommentThrottle(UserRateThrottle):
+    """Throttle commenting."""
+    scope = 'comment'
+    rate = '10/hour'
+```
+
+### 5.3 Security Settings
+```python
+# In settings.py
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',
+        'user': '1000/hour',
+        'deal_create': '5/hour',
+        'vote': '60/hour',
+        'comment': '10/hour',
+    },
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+}
+```
+
+---
+
+## 6) Background Tasks (Celery)
+
+### 6.1 Score Calculation Tasks
+```python
+@shared_task
+def calculate_deal_scores():
+    """Calculate time-windowed scores for all deals."""
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    now = timezone.now()
+    
+    for deal in Deal.objects.filter(status='active'):
+        # Calculate scores for different time windows
+        scores = {
+            'score_6h': deal.votes.filter(
+                created_at__gte=now - timedelta(hours=6)
+            ).aggregate(
+                score=Count('id', filter=Q(vote_type='up')) - 
+                      Count('id', filter=Q(vote_type='down'))
+            )['score'] or 0,
+            
+            'score_24h': deal.votes.filter(
+                created_at__gte=now - timedelta(hours=24)
+            ).aggregate(
+                score=Count('id', filter=Q(vote_type='up')) - 
+                      Count('id', filter=Q(vote_type='down'))
+            )['score'] or 0,
+            
+            'score_30d': deal.votes.filter(
+                created_at__gte=now - timedelta(days=30)
+            ).aggregate(
+                score=Count('id', filter=Q(vote_type='up')) - 
+                      Count('id', filter=Q(vote_type='down'))
+            )['score'] or 0,
+        }
+        
+        # Update deal with calculated scores
+        DealScore.objects.update_or_create(
+            deal=deal,
+            defaults=scores
+        )
+
+@shared_task
+def send_big_deal_notifications():
+    """Send notifications for trending deals."""
+    trending_deals = DealScore.objects.filter(
+        score_6h__gte=30,
+        deal__status='active'
+    ).select_related('deal')
+    
+    for deal_score in trending_deals:
+        # Send push notifications to subscribed users
+        send_push_notification.delay(
+            title="🔥 Hot Deal Alert!",
+            body=f"{deal_score.deal.title} is trending!",
+            deal_id=deal_score.deal.id
+        )
+```
+
+---
+
+## 7) Testing Patterns
+
+### 7.1 Test Structure
+Each app should have comprehensive tests organized as follows:
+- `test_models.py` - Model tests with factories
+- `test_serializers.py` - Serializer validation tests  
+- `test_views.py` - API endpoint tests
+- `test_{model}_proxy.py` - Proxy method tests
+- `test_throttles.py` - Rate limiting tests
+- `factories.py` - Factory Boy factories for test data
+
+### 7.2 Factory Pattern
+```python
+# users/factories.py
+import factory
+from django.contrib.auth import get_user_model
+
+UserModel = get_user_model()
+
+class UserFactory(factory.django.DjangoModelFactory):
+    """Factory for creating User instances."""
+    
+    class Meta:
+        model = UserModel
+    
+    email = factory.Sequence(lambda n: f"user{n}@example.com")
+    username = factory.Sequence(lambda n: f"user{n}")
+    password = factory.PostGenerationMethodCall('set_password', 'testpass123')
+    is_active = False  # Default for new users
+```
+
+### 7.3 Model Tests
+```python
+@pytest.mark.django_db
+class TestDealModel:
+    """Test Deal model functionality."""
+    
+    def test_deal_creation_with_valid_data(self) -> None:
+        """Test deal creation with valid data."""
+        deal = DealFactory()
+        
+        assert deal.title is not None
+        assert deal.author is not None
+        assert deal.status == 'active'
+    
+    def test_discount_calculation(self) -> None:
+        """Test discount percentage calculation."""
+        deal = DealFactory(
+            current_price=80.00,
+            original_price=100.00
+        )
+        
+        assert deal.discount_percentage == 20.0
+```
+
+### 7.4 Proxy Tests
+```python
+@pytest.mark.django_db
+class TestDealProxy:
+    """Test DealProxy business logic."""
+    
+    def test_create_deal_valid_data(self) -> None:
+        """Test creating a deal with valid data."""
+        user = UserFactory()
+        merchant = MerchantFactory()
+        
+        deal = self.proxy.create_deal(
+            title="Test Deal",
+            description="Test description",
+            current_price=100.00,
+            merchant=merchant,
+            author=user,
+            channel="online",
+            url="https://example.com"
+        )
+        
+        assert deal.title == "Test Deal"
+        assert deal.author == user
+        assert deal.status == "active"
+    
+    def test_create_deal_duplicate_title(self) -> None:
+        """Test creating a deal with duplicate title fails."""
+        user = UserFactory()
+        merchant = MerchantFactory()
+        
+        # Create first deal
+        DealFactory(title="Test Deal", author=user, merchant=merchant)
+        
+        # Try to create duplicate
+        with pytest.raises(ValidationError):
+            self.proxy.create_deal(
+                title="Test Deal",
+                description="Test description",
+                current_price=100.00,
+                merchant=merchant,
+                author=user,
+                channel="online",
+                url="https://example.com"
+            )
+```
+
+### 7.5 View Tests
+```python
+@pytest.mark.django_db
+class TestDealViewSet:
+    """Test Deal API endpoints."""
+    
+    def test_deal_list_authenticated(self) -> None:
+        """Test deal listing when authenticated."""
+        user = UserFactory()
+        deal = DealFactory()
+        
+        refresh = RefreshToken.for_user(user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+        
+        response = self.client.get(reverse("deals:deal-list"))
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data["results"]) == 1
+    
+    def test_deal_create_valid_data(self) -> None:
+        """Test deal creation with valid data."""
+        user = UserFactory()
+        merchant = MerchantFactory()
+        
+        refresh = RefreshToken.for_user(user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+        
+        data = {
+            "title": "New Deal",
+            "description": "New description",
+            "current_price": "50.00",
+            "merchant": merchant.id,
+            "channel": "online",
+            "url": "https://example.com"
+        }
+        
+        response = self.client.post(reverse("deals:deal-list"), data)
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data["title"] == "New Deal"
+```
+
+### 7.6 Testing Rules
+- **Use Factories**: Always use Factory Boy for test data creation
+- **Comprehensive Coverage**: Test all proxy methods, view endpoints, and edge cases
+- **Type Hints**: All test methods should have proper type annotations
+- **Clear Names**: Test method names should clearly describe what is being tested
+- **Isolation**: Each test should be independent and not rely on other tests
+- **Mock External Dependencies**: Mock external services and APIs
+
+---
+
+## 8) API Documentation
+
+### 8.1 OpenAPI Schema
+Use `drf-spectacular` for automatic API documentation:
+
+```python
+# In settings.py
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Qiima API',
+    'DESCRIPTION': 'Community-driven deals platform for Morocco',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': '/api/',
+}
+
+# In urls.py
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+
+urlpatterns = [
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+]
+```
+
+### 8.2 Endpoint Documentation
+```python
+class DealViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing deals.
+    
+    list:
+    List all active deals with optional filtering.
+    
+    create:
+    Create a new deal. Requires authentication.
+    
+    retrieve:
+    Get a specific deal by ID.
+    
+    update:
+    Update a deal. Only the author can update their deals.
+    
+    destroy:
+    Delete a deal. Only the author can delete their deals.
+    """
+    
+    @swagger_auto_schema(
+        operation_description="Vote on a deal",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'vote_type': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    enum=['up', 'down'],
+                    description='Type of vote'
+                ),
+                'reason': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    description='Reason for downvote (optional)'
+                ),
+            },
+            required=['vote_type']
+        )
+    )
+    @action(detail=True, methods=['post'])
+    def vote(self, request, pk=None):
+        # ... implementation
+```
+
+---
+
+## 9) Error Handling
+
+### 9.1 Custom Exception Handler
+```python
+def custom_exception_handler(exc, context):
+    """Custom exception handler for consistent error responses."""
+    response = exception_handler(exc, context)
+    
+    if response is not None:
+        custom_response_data = {
+            'error': True,
+            'message': 'An error occurred',
+            'details': response.data
+        }
+        
+        # Add specific error codes
+        if isinstance(exc, ValidationError):
+            custom_response_data['code'] = 'VALIDATION_ERROR'
+        elif isinstance(exc, PermissionDenied):
+            custom_response_data['code'] = 'PERMISSION_DENIED'
+        elif isinstance(exc, NotFound):
+            custom_response_data['code'] = 'NOT_FOUND'
+        
+        response.data = custom_response_data
+    
+    return response
+```
+
+### 9.2 Validation Error Formatting
+```python
+class CustomValidationError(ValidationError):
+    """Custom validation error with consistent formatting."""
+    
+    def __init__(self, message, field=None, code=None):
+        if field:
+            super().__init__({field: [message]})
+        else:
+            super().__init__([message])
+        self.code = code
+```
+
+---
+
+## 10) Performance Optimization
+
+### 10.1 Database Optimization
+```python
+# Use select_related and prefetch_related
+queryset = Deal.objects.select_related(
+    'author', 'merchant', 'category'
+).prefetch_related(
+    'votes', 'comments'
+)
+
+# Use database functions for computed fields
+from django.db.models import Count, Q, F
+
+queryset = Deal.objects.annotate(
+    vote_count=Count('votes', filter=Q(vote_type='up')) - 
+              Count('votes', filter=Q(vote_type='down'))
+)
+```
+
+### 10.2 Caching Strategy
+```python
+from django.core.cache import cache
+
+def get_hot_deals():
+    """Get hot deals with caching."""
+    cache_key = 'hot_deals_24h'
+    deals = cache.get(cache_key)
+    
+    if deals is None:
+        deals = Deal.objects.filter(
+            status='active',
+            votes__created_at__gte=timezone.now() - timedelta(hours=24)
+        ).annotate(
+            hot_score=Count('votes', filter=Q(vote_type='up')) - 
+                     Count('votes', filter=Q(vote_type='down'))
+        ).filter(hot_score__gte=5).order_by('-hot_score')[:20]
+        
+        cache.set(cache_key, deals, 300)  # Cache for 5 minutes
+    
+    return deals
+```
+
+---
+
+## 10) Code Quality & Linting
+
+### 10.1 Required Tools
+All Python code must be formatted and validated using these tools:
+
+- **Black**: Code formatter to ensure consistent code style
+- **Flake8**: Linter to enforce PEP 8 compliance and identify errors  
+- **Mypy**: Static type checker to ensure type safety
+- **Isort**: Utility to sort and organize import statements
+
+### 10.2 Configuration
+```python
+# pyproject.toml
+[tool.black]
+line-length = 88
+target-version = ['py313']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_django = "django"
+known_first_party = ["users", "deals", "votes", "comments", "merchants", "moderation", "subscriptions", "notifications"]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "DJANGO", "FIRSTPARTY", "LOCALFOLDER"]
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "factory.*",
+    "rest_framework.*",
+    "django.*",
+    "axes.*",
+    "corsheaders.*",
+    "drf_spectacular.*",
+]
+ignore_missing_imports = true
+```
+
+### 10.3 Pre-commit Hooks
+```yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        language_version: python3.13
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        additional_dependencies: [flake8-docstrings]
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-all]
+```
+
+### 10.4 Code Quality Rules
+- **Type Hints**: All functions and methods must have proper type annotations
+- **Docstrings**: All classes and public methods must have docstrings
+- **Error Handling**: Use Django's ValidationError for business rule violations
+- **No Business Logic in Views**: Keep views thin, delegate to proxies
+- **Comprehensive Tests**: All code must have corresponding tests
+- **Clean Imports**: Use isort to organize imports consistently
+
+---
+
+## 11) Environment Configuration
+
+### 11.1 Settings Structure
+```python
+# settings/base.py
+import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+# Security
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+DEBUG = False
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
+
+# Database
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME'),
+        'USER': os.environ.get('DB_USER'),
+        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
+    }
+}
+
+# Redis
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': os.environ.get('REDIS_URL'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
+
+# Celery
+CELERY_BROKER_URL = os.environ.get('REDIS_URL')
+CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL')
+```
+
+### 11.2 Environment Variables
+```bash
+# Required
+DJANGO_SECRET_KEY=your-secret-key
+DB_NAME=qiima
+DB_USER=qiima_user
+DB_PASSWORD=your-password
+DB_HOST=localhost
+DB_PORT=5432
+REDIS_URL=redis://localhost:6379/0
+
+# Optional
+DEBUG=False
+ALLOWED_HOSTS=localhost,127.0.0.1,api.qiima.ma
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:19006
+```
+
+---
+
+## 12) Summary & Key Principles
+
+### 12.1 Architecture Principles
+1. **Proxy Pattern**: All business logic goes in proxy classes, not in models, views, or serializers
+2. **GenericViewSet**: Use GenericViewSet with custom actions instead of ModelViewSet
+3. **Type Safety**: All code must have proper type annotations and pass mypy checks
+4. **Comprehensive Testing**: Every component must have corresponding tests
+5. **Clean Separation**: Models handle data, serializers handle validation, views handle HTTP, proxies handle business logic
+
+### 12.2 File Structure Template
+```
+{app_name}/
+├─ models.py              # Django models with type hints
+├─ serializers.py         # DRF serializers with validation
+├─ views.py              # GenericViewSet with custom actions
+├─ urls.py               # URL routing with DefaultRouter
+├─ admin.py              # Django admin configuration
+├─ permissions.py        # Custom permission classes
+├─ throttles.py          # Rate limiting classes
+├─ managers.py           # Custom model managers (if needed)
+├─ utils.py              # App-specific utilities
+├─ proxy/                # Business logic layer
+│  └─ {model}_proxy.py   # Proxy classes for each model
+├─ tests/                # Comprehensive test suite
+│  ├─ test_models.py     # Model tests with factories
+│  ├─ test_serializers.py # Serializer validation tests
+│  ├─ test_views.py      # API endpoint tests
+│  ├─ test_{model}_proxy.py # Proxy method tests
+│  ├─ test_throttles.py  # Rate limiting tests
+│  └─ factories.py       # Factory Boy factories
+└─ migrations/           # Django migrations
+```
+
+### 12.3 Development Workflow
+1. **Create Models**: Define models with proper Meta classes and type hints
+2. **Create Proxies**: Implement business logic in proxy classes
+3. **Create Serializers**: Handle validation and serialization
+4. **Create Views**: Thin controllers that delegate to proxies
+5. **Create Tests**: Comprehensive test coverage for all components
+6. **Run Quality Checks**: Ensure code passes black, flake8, mypy, and isort
+7. **Run Tests**: Verify all tests pass before committing
+
+### 12.4 Code Quality Checklist
+- [ ] All functions have type annotations
+- [ ] All classes and methods have docstrings
+- [ ] Business logic is in proxy classes, not views
+- [ ] Views use GenericViewSet with custom actions
+- [ ] Proper error handling with ValidationError
+- [ ] Comprehensive test coverage
+- [ ] Code passes black, flake8, mypy, and isort
+- [ ] No circular imports
+- [ ] Proper permission classes used
+- [ ] Rate limiting implemented where needed
+
+---
+
+This backend rules file provides comprehensive guidance for Django REST API development in the Qiima project, following the established patterns from the users app and ensuring consistency across all future apps.

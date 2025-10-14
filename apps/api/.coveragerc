@@ -16,9 +16,8 @@ omit =
 precision = 2
 show_missing = True
 skip_covered = False
+# Coverage thresholds (70% overall, 90% for critical paths)
+fail_under = 70
 
 [html]
 directory = htmlcov
-
-# Coverage thresholds (70% overall, 90% for critical paths)
-fail_under = 70

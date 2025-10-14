@@ -5,8 +5,11 @@
     "paths": {
       "@/*": [
         "./*"
-      ]
-    }
+      ],
+      "@qiima/ui": ["../../packages/ui/src/index.ts"],
+      "@qiima/ui/*": ["../../packages/ui/src/*"]
+    },
+    "baseUrl": "."
   },
   "include": [
     "**/*.ts",

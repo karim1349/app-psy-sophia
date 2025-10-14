@@ -28,3 +28,8 @@ django-extensions==3.2.3
 # Documentation
 mkdocs==1.5.3
 mkdocs-material==9.5.3
+
+black==25.9.0
+flake8==7.3.0
+mypy==1.7.1
+isort==7.0.0
