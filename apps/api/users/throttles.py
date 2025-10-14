@@ -14,22 +14,27 @@ class RegisterThrottle(AnonRateThrottle):
     """
     Throttle for registration endpoint.
 
-    Rate: 5 requests per hour per IP address.
+    Rate: 20 requests per hour per IP address.
     Prevents automated account creation and spam.
+    More reasonable for development and testing.
     """
 
-    rate = "5/hour"
+    rate = "20/hour"
 
 
 class LoginThrottle(AnonRateThrottle):
     """
     Throttle for login endpoint.
 
-    Rate: 10 requests per hour per IP address.
+    Rate: 100 requests per hour per IP address.
     Provides basic brute-force protection (works alongside Django Axes).
+    More reasonable for development and testing.
+
+    Note: Refresh tokens are valid for 12 months, so users stay logged in
+    for extended periods without needing to re-authenticate.
     """
 
-    rate = "10/hour"
+    rate = "100/hour"
 
 
 class PasswordResetThrottle(AnonRateThrottle):

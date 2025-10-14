@@ -58,44 +58,20 @@ class TestUserViewSet:
         refresh = RefreshToken.for_user(user)
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
 
-        response = self.client.get(reverse("users:user-detail", kwargs={"pk": user.id}))
+        response = self.client.get(reverse("users:user-me"))
         assert response.status_code == status.HTTP_200_OK
         assert response.data["username"] == "testuser"
 
-    def test_user_retrieve_other_profile(self) -> None:
-        """Test retrieving other user's profile (should fail)."""
-        user1 = UserModel.objects.create_user(
-            email="user1@example.com",
-            username="user1",
-            password="testpass123",
-            is_active=True,
-        )
-
-        user2 = UserModel.objects.create_user(
-            email="user2@example.com",
-            username="user2",
-            password="testpass123",
-            is_active=True,
-        )
-
-        refresh = RefreshToken.for_user(user1)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
-
-        response = self.client.get(
-            reverse("users:user-detail", kwargs={"pk": user2.id})
-        )
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-
     def test_user_retrieve_not_authenticated(self) -> None:
         """Test retrieving user when not authenticated."""
-        user = UserModel.objects.create_user(
+        UserModel.objects.create_user(
             email="test@example.com",
             username="testuser",
             password="testpass123",
             is_active=True,
         )
 
-        response = self.client.get(reverse("users:user-detail", kwargs={"pk": user.id}))
+        response = self.client.get(reverse("users:user-me"))
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_user_adjust_profile(self) -> None:
@@ -115,31 +91,6 @@ class TestUserViewSet:
         assert response.status_code == status.HTTP_200_OK
         assert response.data["username"] == "updateduser"
 
-    def test_user_update_other_profile(self) -> None:
-        """Test updating other user's profile (should fail)."""
-        user1 = UserModel.objects.create_user(
-            email="user1@example.com",
-            username="user1",
-            password="testpass123",
-            is_active=True,
-        )
-
-        user2 = UserModel.objects.create_user(
-            email="user2@example.com",
-            username="user2",
-            password="testpass123",
-            is_active=True,
-        )
-
-        refresh = RefreshToken.for_user(user1)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
-
-        data = {"username": "hackeduser"}
-        response = self.client.patch(
-            reverse("users:user-detail", kwargs={"pk": user2.id}), data
-        )
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-
     def test_user_deactivate_own_account(self) -> None:
         """Test deactivating own account."""
         user = UserModel.objects.create_user(
@@ -152,9 +103,7 @@ class TestUserViewSet:
         refresh = RefreshToken.for_user(user)
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
 
-        response = self.client.post(
-            reverse("users:user-deactivate", kwargs={"pk": user.id})
-        )
+        response = self.client.post(reverse("users:user-deactivate"))
         assert response.status_code == status.HTTP_200_OK
         assert response.data["detail"] == "Account deactivated successfully."
 
@@ -162,30 +111,6 @@ class TestUserViewSet:
         user.refresh_from_db()
         assert not user.is_active
         assert UserModel.objects.filter(id=user.id).exists()
-
-    def test_user_deactivate_other_account(self) -> None:
-        """Test deactivating other user's account (should fail)."""
-        user1 = UserModel.objects.create_user(
-            email="user1@example.com",
-            username="user1",
-            password="testpass123",
-            is_active=True,
-        )
-
-        user2 = UserModel.objects.create_user(
-            email="user2@example.com",
-            username="user2",
-            password="testpass123",
-            is_active=True,
-        )
-
-        refresh = RefreshToken.for_user(user1)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
-
-        response = self.client.post(
-            reverse("users:user-deactivate", kwargs={"pk": user2.id})
-        )
-        assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 @pytest.mark.django_db

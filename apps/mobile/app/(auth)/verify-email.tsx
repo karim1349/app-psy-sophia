@@ -14,6 +14,7 @@ import { useVerifyEmail, useResendVerification } from '@qiima/queries';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Button, FormField, TextField } from '@qiima/ui';
+import { config } from '@/constants/config';
 
 export default function VerifyEmailScreen() {
   const router = useRouter();
@@ -22,12 +23,12 @@ export default function VerifyEmailScreen() {
 
   const verifyEmail = useVerifyEmail({
     env: 'native',
-    baseURL: process.env.EXPO_PUBLIC_API_BASE || 'http://192.168.11.102:8000/api',
+    baseURL: config.baseURL,
   });
 
   const resendVerification = useResendVerification({
     env: 'native',
-    baseURL: process.env.EXPO_PUBLIC_API_BASE || 'http://192.168.11.102:8000/api',
+    baseURL: config.baseURL,
   });
 
   const {

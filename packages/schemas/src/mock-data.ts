@@ -10,14 +10,11 @@
  */
 
 import type { 
-  Deal, 
-  DealCategory, 
   User, 
   MockDeal, 
   MockDealCategory,
   DealComment,
-  DealVote,
-  VoteType 
+  DealVote
 } from './deals';
 
 // Mock users
@@ -101,7 +98,7 @@ export const mockDeals: MockDeal[] = [
     discount_percentage: 50,
     merchant: 'Electro Planet',
     location: 'Casablanca',
-    category: mockCategories[0], // Electronics
+    category: mockCategories[0]!, // Electronics
     image_url: 'https://via.placeholder.com/300x200/3B82F6/FFFFFF?text=iPhone+15+Pro',
     proof_url: 'https://via.placeholder.com/300x200/10B981/FFFFFF?text=Receipt+Proof',
     created_at: '2024-02-15T10:30:00Z',
@@ -127,7 +124,7 @@ export const mockDeals: MockDeal[] = [
     discount_percentage: 30,
     merchant: 'Nike Store',
     location: 'Rabat',
-    category: mockCategories[4], // Sports & Fitness
+    category: mockCategories[4]!, // Sports & Fitness
     image_url: 'https://via.placeholder.com/300x200/8B5CF6/FFFFFF?text=Nike+Air+Max',
     created_at: '2024-02-14T16:45:00Z',
     updated_at: '2024-02-14T16:45:00Z',
@@ -151,7 +148,7 @@ export const mockDeals: MockDeal[] = [
     discount_percentage: 29,
     merchant: 'McDonald\'s',
     location: 'Marrakech',
-    category: mockCategories[2], // Food & Dining
+    category: mockCategories[2]!, // Food & Dining
     image_url: 'https://via.placeholder.com/300x200/F59E0B/FFFFFF?text=McDonald+Meal',
     created_at: '2024-02-13T12:20:00Z',
     updated_at: '2024-02-13T12:20:00Z',
@@ -176,7 +173,7 @@ export const mockDeals: MockDeal[] = [
     discount_percentage: 40,
     merchant: 'Samsung Store',
     location: 'Casablanca',
-    category: mockCategories[0], // Electronics
+    category: mockCategories[0]!, // Electronics
     image_url: 'https://via.placeholder.com/300x200/3B82F6/FFFFFF?text=Samsung+Galaxy+S24',
     created_at: '2024-02-12T09:15:00Z',
     updated_at: '2024-02-12T09:15:00Z',
@@ -200,7 +197,7 @@ export const mockDeals: MockDeal[] = [
     discount_percentage: 50,
     merchant: 'Zara',
     location: 'Rabat',
-    category: mockCategories[1], // Fashion
+    category: mockCategories[1]!, // Fashion
     image_url: 'https://via.placeholder.com/300x200/EC4899/FFFFFF?text=Zara+Winter',
     created_at: '2024-02-11T14:30:00Z',
     updated_at: '2024-02-11T14:30:00Z',
@@ -221,7 +218,7 @@ export const mockComments: DealComment[] = [
   {
     id: 1,
     deal: 1,
-    user: mockUsers[1],
+    user: mockUsers[1]!,
     content: 'Great deal! I bought it yesterday and it\'s working perfectly. The camera quality is amazing.',
     created_at: '2024-02-15T11:30:00Z',
     updated_at: '2024-02-15T11:30:00Z',
@@ -230,7 +227,7 @@ export const mockComments: DealComment[] = [
   {
     id: 2,
     deal: 1,
-    user: mockUsers[2],
+    user: mockUsers[2]!,
     content: 'Is this still available? I\'m interested!',
     created_at: '2024-02-15T13:45:00Z',
     updated_at: '2024-02-15T13:45:00Z',
@@ -239,7 +236,7 @@ export const mockComments: DealComment[] = [
   {
     id: 3,
     deal: 2,
-    user: mockUsers[0],
+    user: mockUsers[0]!,
     content: 'Comfortable shoes, but the sizing runs a bit small. I recommend going up half a size.',
     created_at: '2024-02-14T17:20:00Z',
     updated_at: '2024-02-14T17:20:00Z',

@@ -138,16 +138,16 @@ describe('useRegister', () => {
         email: 'new@example.com',
         username: 'newuser',
         password: 'Test1234!',
-        password_confirm: 'Test1234!',
+        passwordConfirm: 'Test1234!',
       });
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-      expect(mockPost).toHaveBeenCalledWith('/auth/register', {
+      expect(mockPost).toHaveBeenCalledWith('/users/', {
         email: 'new@example.com',
         username: 'newuser',
         password: 'Test1234!',
-        password_confirm: 'Test1234!',
+        passwordConfirm: 'Test1234!',
       });
       // Registration should NOT store tokens - email verification required
       expect(setTokens).not.toHaveBeenCalled();
@@ -170,7 +170,7 @@ describe('useRegister', () => {
         email: 'existing@example.com',
         username: 'newuser',
         password: 'Test1234!',
-        password_confirm: 'Test1234!',
+        passwordConfirm: 'Test1234!',
       });
 
       await waitFor(() => expect(result.current.isError).toBe(true));
@@ -190,7 +190,7 @@ describe('useRegister', () => {
         email: 'new@example.com',
         username: 'newuser',
         password: 'Test1234!',
-        password_confirm: 'Test1234!',
+        passwordConfirm: 'Test1234!',
       });
 
       await waitFor(() => expect(result.current.isError).toBe(true));
@@ -210,7 +210,7 @@ describe('useRegister', () => {
         email: 'new@example.com',
         username: 'newuser',
         password: 'Test1234!',
-        password_confirm: 'Test1234!',
+        passwordConfirm: 'Test1234!',
       });
 
       await waitFor(() => expect(result.current.isError).toBe(true));
@@ -247,16 +247,16 @@ describe('useRegister', () => {
         email: 'new@example.com',
         username: 'newuser',
         password: 'Test1234!',
-        password_confirm: 'Test1234!',
+        passwordConfirm: 'Test1234!',
       });
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-      expect(mockPost).toHaveBeenCalledWith('/auth/register', {
+      expect(mockPost).toHaveBeenCalledWith('/users/', {
         email: 'new@example.com',
         username: 'newuser',
         password: 'Test1234!',
-        password_confirm: 'Test1234!',
+        passwordConfirm: 'Test1234!',
       });
       // Registration should NOT store session - email verification required
       expect(setUser).not.toHaveBeenCalled();
@@ -314,7 +314,7 @@ describe('useLogin', () => {
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-      expect(mockPost).toHaveBeenCalledWith('/auth/login', {
+      expect(mockPost).toHaveBeenCalledWith('/users/login/', {
         email: 'test@example.com',
         password: 'Test1234!',
       });
@@ -387,7 +387,7 @@ describe('useLogin', () => {
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-      expect(mockPost).toHaveBeenCalledWith('/auth/login', {
+      expect(mockPost).toHaveBeenCalledWith('/users/login/', {
         email: 'test@example.com',
         password: 'Test1234!',
       });
@@ -430,7 +430,7 @@ describe('useLogout', () => {
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-      expect(mockPost).toHaveBeenCalledWith('/auth/logout');
+      expect(mockPost).toHaveBeenCalledWith('/users/logout/');
       expect(logout).toHaveBeenCalled();
     });
 
@@ -474,7 +474,7 @@ describe('useLogout', () => {
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-      expect(mockPost).toHaveBeenCalledWith('/auth/logout');
+      expect(mockPost).toHaveBeenCalledWith('/users/logout/');
       expect(logout).toHaveBeenCalled();
     });
   });
@@ -509,7 +509,7 @@ describe('usePasswordForgot', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockPost).toHaveBeenCalledWith('/auth/password/forgot', {
+    expect(mockPost).toHaveBeenCalledWith('/users/request_password_reset/', {
       email: 'test@example.com',
     });
     expect(result.current.data).toEqual(response);
@@ -561,15 +561,15 @@ describe('usePasswordReset', () => {
     result.current.mutate({
       token: 'reset-token-123',
       password: 'NewPassword1!',
-      password_confirm: 'NewPassword1!',
+      passwordConfirm: 'NewPassword1!',
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockPost).toHaveBeenCalledWith('/auth/password/reset', {
+    expect(mockPost).toHaveBeenCalledWith('/users/confirm_password_reset/', {
       token: 'reset-token-123',
       password: 'NewPassword1!',
-      password_confirm: 'NewPassword1!',
+      passwordConfirm: 'NewPassword1!',
     });
     expect(result.current.data).toEqual(response);
   });
@@ -586,7 +586,7 @@ describe('usePasswordReset', () => {
     result.current.mutate({
       token: 'invalid-token',
       password: 'NewPassword1!',
-      password_confirm: 'NewPassword1!',
+      passwordConfirm: 'NewPassword1!',
     });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
@@ -607,7 +607,7 @@ describe('usePasswordReset', () => {
     result.current.mutate({
       token: 'reset-token-123',
       password: 'weak',
-      password_confirm: 'weak',
+      passwordConfirm: 'weak',
     });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
@@ -645,7 +645,7 @@ describe('useMeQuery', () => {
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-      expect(mockGet).toHaveBeenCalledWith('/me');
+      expect(mockGet).toHaveBeenCalledWith('/users/me/');
       expect(result.current.data).toEqual(mockUser);
     });
 
@@ -699,7 +699,7 @@ describe('useMeQuery', () => {
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-      expect(mockGet).toHaveBeenCalledWith('/me');
+      expect(mockGet).toHaveBeenCalledWith('/users/me/');
       expect(result.current.data).toEqual(mockUser);
     });
   });
@@ -743,7 +743,7 @@ describe('useRefresh', () => {
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-      expect(mockPost).toHaveBeenCalledWith('/auth/refresh', {
+      expect(mockPost).toHaveBeenCalledWith('/users/refresh/', {
         refresh: 'refresh-token',
       });
       expect(setTokens).toHaveBeenCalledWith('new-access-token', 'refresh-token');
@@ -811,7 +811,7 @@ describe('useRefresh', () => {
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-      expect(mockPost).toHaveBeenCalledWith('/auth/refresh');
+      expect(mockPost).toHaveBeenCalledWith('/users/refresh/');
     });
   });
 });
@@ -865,7 +865,7 @@ describe('useVerifyEmail', () => {
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-      expect(mockPost).toHaveBeenCalledWith('/auth/verify-email', {
+      expect(mockPost).toHaveBeenCalledWith('/users/verify_email/', {
         email: 'test@example.com',
         code: '123456',
       });
@@ -940,7 +940,7 @@ describe('useVerifyEmail', () => {
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-      expect(mockPost).toHaveBeenCalledWith('/auth/verify-email', {
+      expect(mockPost).toHaveBeenCalledWith('/users/verify_email/', {
         email: 'test@example.com',
         code: '123456',
       });
@@ -978,7 +978,7 @@ describe('useResendVerification', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockPost).toHaveBeenCalledWith('/auth/resend-verification', {
+    expect(mockPost).toHaveBeenCalledWith('/users/resend_verification/', {
       email: 'test@example.com',
     });
     expect(result.current.data).toEqual(response);

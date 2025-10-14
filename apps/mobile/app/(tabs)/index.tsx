@@ -1,13 +1,27 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { LinearGradient } from 'expo-linear-gradient';
-import { getHotDeals } from '@qiima/schemas';
+import { useHotDeals } from '@qiima/queries';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { config } from '@/constants/config';
 
 export default function HomeScreen() {
   const scheme = useColorScheme() ?? 'light';
   const router = useRouter();
-  const hotDeals = getHotDeals(5);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Fetch hot deals from API
+  const { data: hotDeals, isLoading, error, refetch } = useHotDeals({
+    env: 'native',
+    baseURL: config.baseURL,
+  }, 10);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: 'transparent' }]}>
@@ -23,7 +37,12 @@ export default function HomeScreen() {
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-      <ScrollView style={styles.content}>
+      <ScrollView 
+        style={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Qiima Deals</Text>
           <Text style={styles.subtitle}>Find the best deals in Morocco</Text>
@@ -32,7 +51,22 @@ export default function HomeScreen() {
         <View style={styles.dealsSection}>
           <Text style={styles.sectionTitle}>Hot Deals</Text>
           
-          {hotDeals.map((deal) => (
+          {isLoading && !hotDeals && (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>Loading deals...</Text>
+            </View>
+          )}
+          
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>Failed to load deals</Text>
+              <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          
+          {hotDeals?.map((deal) => (
             <TouchableOpacity 
               key={deal.id}
               style={styles.dealCard}
@@ -44,7 +78,7 @@ export default function HomeScreen() {
                 {deal.original_price && ` (was ${deal.original_price.toLocaleString()} ${deal.currency})`}
               </Text>
               <Text style={styles.dealMerchant}>
-                {deal.category.icon} {deal.merchant} • {deal.location}
+                {deal.category.icon || '🏷️'} {deal.merchant} • {deal.location}
               </Text>
               <View style={styles.dealVotes}>
                 <Text style={styles.voteCount}>🔥 {deal.vote_count} votes</Text>
@@ -58,7 +92,7 @@ export default function HomeScreen() {
       <View style={styles.fabContainer}>
         <TouchableOpacity 
           style={styles.fab}
-          onPress={() => {/* TODO: Navigate to create deal */}}
+          onPress={() => router.push('/create-deal')}
         >
           <Text style={styles.fabText}>+</Text>
         </TouchableOpacity>
@@ -162,5 +196,32 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: 'white',
     fontWeight: 'bold',
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  errorContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#ff4444',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#FF6A00',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontWeight: '600',
   },
 });

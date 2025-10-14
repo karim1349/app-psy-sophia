@@ -14,8 +14,8 @@ export {
   ResendVerificationSchema,
   type RegisterInput,
   type LoginInput,
-  type ForgotPasswordInput,
-  type ResetPasswordInput,
+  type PasswordResetRequestInput,
+  type PasswordResetConfirmInput,
   type VerifyEmailInput,
   type ResendVerificationInput,
 } from './auth';

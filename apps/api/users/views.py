@@ -25,22 +25,21 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
+from rest_framework.permissions import (AllowAny, BasePermission,
+                                        IsAuthenticated)
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
-from rest_framework_simplejwt.views import TokenRefreshView as SimpleJWTRefreshView
+from rest_framework_simplejwt.views import \
+    TokenRefreshView as SimpleJWTRefreshView
 
 from .models import User
 from .permissions import IsOwnerOrStaff
 from .proxy.user_proxy import UserProxy
-from .serializers import (
-    LoginSerializer,
-    RegisterSerializer,
-    UserSerializer,
-    UserUpdateSerializer,
-)
-from .throttles import LoginThrottle, PasswordResetThrottle, ResendVerificationThrottle
+from .serializers import (LoginSerializer, RegisterSerializer, UserSerializer,
+                          UserUpdateSerializer)
+from .throttles import (LoginThrottle, PasswordResetThrottle,
+                        ResendVerificationThrottle)
 
 
 class UserViewSet(GenericViewSet):
@@ -57,6 +56,7 @@ class UserViewSet(GenericViewSet):
         if self.action in [
             "create",
             "login",
+            "refresh",
             "verify_email",
             "resend_verification",
             "request_password_reset",
@@ -189,6 +189,8 @@ class UserViewSet(GenericViewSet):
 
         # Use SimpleJWT's refresh view logic
         refresh_view = SimpleJWTRefreshView()
+        refresh_view.request = request
+        refresh_view.format_kwarg = None
         return cast(Response, refresh_view.post(request))
 
     @action(detail=False, methods=["post"], permission_classes=[AllowAny])
@@ -339,14 +341,11 @@ class UserViewSet(GenericViewSet):
         """Partially update user profile."""
         return self.update(request, pk, partial=True)
 
-    @action(detail=True, methods=["post"], permission_classes=[IsOwnerOrStaff])
-    def deactivate(
-        self, _request: Request
-    ) -> Response:  # pylint: disable=unused-argument
+    @action(detail=False, methods=["post"], permission_classes=[IsAuthenticated])
+    def deactivate(self, request: Request) -> Response:
         """Deactivate user account (set is_active=False)."""
-        user = self.get_object()
-        user.is_active = False
-        user.save(update_fields=["is_active"])
+        user = cast(User, request.user)
+        self.user_proxy.deactivate_user(user)
         return Response(
             {"detail": "Account deactivated successfully."}, status=status.HTTP_200_OK
         )

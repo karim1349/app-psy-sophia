@@ -2,7 +2,7 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ResetPasswordSchema, type ResetPasswordInput } from '@qiima/schemas';
+import { ResetPasswordSchema, type PasswordResetConfirmInput } from '@qiima/schemas';
 import { usePasswordReset } from '@qiima/queries';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -20,14 +20,14 @@ export function ResetPasswordForm() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<ResetPasswordInput>({
+  } = useForm<PasswordResetConfirmInput>({
     resolver: zodResolver(ResetPasswordSchema),
     defaultValues: {
       token: token || '',
     },
   });
 
-  const onSubmit = (data: ResetPasswordInput) => {
+  const onSubmit = (data: PasswordResetConfirmInput) => {
     passwordReset.mutate(data, {
       onSuccess: () => {
         setResetSuccess(true);
@@ -104,15 +104,15 @@ export function ResetPasswordForm() {
           Confirm Password
         </label>
         <input
-          {...register('password_confirm')}
+          {...register('passwordConfirm')}
           type="password"
           id="password_confirm"
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           placeholder="••••••••"
         />
-        {errors.password_confirm && (
+        {errors.passwordConfirm && (
           <p className="text-red-500 text-sm mt-1">
-            {errors.password_confirm.message}
+            {errors.passwordConfirm.message}
           </p>
         )}
       </div>

@@ -17,12 +17,12 @@ UserModel = get_user_model()
 def django_db_setup() -> None:
     """
     Custom database setup for tests.
-    Uses the default Django test database.
+    Uses an isolated test database to prevent interference with development data.
     """
     settings.DATABASES["default"] = {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": ":memory:",
-        "ATOMIC_REQUESTS": False,
+        "ATOMIC_REQUESTS": True,  # Enable atomic requests for better isolation
     }
 
 
@@ -34,6 +34,21 @@ def clear_cache() -> Generator[None, None, None]:
     cache.clear()
     yield
     cache.clear()
+
+
+@pytest.fixture(autouse=True)
+def db_cleanup(
+    django_db_setup: Any, django_db_blocker: Any
+) -> Generator[None, None, None]:
+    """
+    Ensure database is clean between tests.
+    """
+    with django_db_blocker.unblock():
+        # Clear all data from the database before each test
+        from django.core.management import call_command
+
+        call_command("flush", verbosity=0, interactive=False)
+    yield
 
 
 @pytest.fixture

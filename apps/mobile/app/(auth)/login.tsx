@@ -15,13 +15,14 @@ import { useLogin } from '@qiima/queries';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { LinearGradient } from 'expo-linear-gradient';
+import { config } from '@/constants/config';
 
 export default function LoginScreen() {
   const router = useRouter();
   const scheme = useColorScheme() ?? 'light';
   const login = useLogin({
     env: 'native',
-    baseURL: process.env.EXPO_PUBLIC_API_BASE || 'http://localhost:8000',
+    baseURL: config.baseURL,
   });
 
   const {

@@ -1,20 +1,19 @@
-import { describe, expect, test, beforeEach, afterEach } from '@jest/globals';
 import { createHttp } from './http';
 import { HttpError } from './types';
 
 // Mock fetch globally
-const originalFetch = global.fetch;
+const originalFetch = globalThis.fetch;
 
 describe('createHttp', () => {
   let mockFetch: jest.Mock;
 
   beforeEach(() => {
     mockFetch = jest.fn() as jest.Mock;
-    global.fetch = mockFetch;
+    globalThis.fetch = mockFetch;
   });
 
   afterEach(() => {
-    global.fetch = originalFetch;
+    globalThis.fetch = originalFetch;
   });
 
   describe('native environment', () => {
@@ -185,10 +184,10 @@ describe('createHttp', () => {
         json: async () => responseData,
       });
 
-      const result = await http.post('/auth/login', postData);
+      const result = await http.post('/users/login/', postData);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.qiima.ma/auth/login',
+        'https://api.qiima.ma/users/login/',
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify(postData),
@@ -317,7 +316,7 @@ describe('createHttp', () => {
       });
 
       try {
-        await http.get('/me');
+        await http.get('/users/me/');
         fail('Should have thrown HttpError');
       } catch (error) {
         expect(error).toBeInstanceOf(HttpError);
@@ -518,10 +517,10 @@ describe('createHttp', () => {
         json: async () => responseData,
       });
 
-      const result = await http.post('/auth/verify-email', verifyData);
+      const result = await http.post('/users/verify_email/', verifyData);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.qiima.ma/auth/verify-email',
+        'https://api.qiima.ma/users/verify_email/',
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify(verifyData),
@@ -549,10 +548,10 @@ describe('createHttp', () => {
         json: async () => responseData,
       });
 
-      const result = await http.post('/auth/resend-verification', resendData);
+      const result = await http.post('/users/resend_verification/', resendData);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.qiima.ma/auth/resend-verification',
+        'https://api.qiima.ma/users/resend_verification/',
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify(resendData),
@@ -579,7 +578,7 @@ describe('createHttp', () => {
       });
 
       try {
-        await http.post('/auth/verify-email', {
+        await http.post('/users/verify_email/', {
           email: 'karim@example.com',
           code: '000000',
         });
@@ -606,7 +605,7 @@ describe('createHttp', () => {
       });
 
       try {
-        await http.post('/auth/resend-verification', {
+        await http.post('/users/resend_verification/', {
           email: 'karim@example.com',
         });
         fail('Should have thrown HttpError');

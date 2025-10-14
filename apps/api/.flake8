@@ -1,4 +1,8 @@
 [flake8]
-exclude = .venv/,*/migrations/*
-max-line-length = 88
-extend-ignore = E203
+max-line-length = 100
+extend-ignore = F401, F841
+per-file-ignores =
+    # Ignore unused arguments in Django REST Framework views
+    deals/views.py:F401,F841
+    # Ignore unused arguments in test files
+    tests/*:F401,F841

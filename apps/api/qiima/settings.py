@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     # Local apps
     "users",
+    "deals",
 ]
 
 MIDDLEWARE = [
@@ -166,8 +167,17 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "100/hour",
         "user": "1000/hour",
-        "auth_login": "10/hour",
-        "auth_register": "5/hour",
+        "auth_login": "100/hour",
+        "auth_register": "20/hour",
+        "deal_create": "5/hour",
+        "deal_update": "20/hour",
+        "vote": "60/hour",
+        "comment": "10/hour",
+        "comment_update": "30/hour",
+        "category_create": "2/hour",
+        "search": "100/hour",
+        "anon_search": "20/hour",
+        "anon_deal_list": "50/hour",
     },
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
@@ -178,7 +188,7 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=365),  # 12 months
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": True,

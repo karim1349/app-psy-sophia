@@ -1,0 +1,161 @@
+# Qiima Frontend Development Rules
+
+## Overview
+This is a TypeScript monorepo with React Native (mobile), Next.js (web), and shared packages. All frontend code must maintain strict type safety and pass comprehensive testing.
+
+## Project Structure
+- `apps/mobile/` - React Native mobile app (Expo)
+- `apps/web/` - Next.js web application
+- `packages/` - Shared TypeScript packages
+  - `@qiima/api-client` - HTTP client for API communication
+  - `@qiima/schemas` - Zod validation schemas and TypeScript types
+  - `@qiima/queries` - React Query hooks and data fetching
+  - `@qiima/state` - Zustand state management
+  - `@qiima/ui` - Shared UI components
+  - `@qiima/utils` - Utility functions
+
+## MANDATORY VERIFICATIONS
+
+### Before Making ANY Changes
+1. **Run TypeScript Type-Check**: `pnpm run type-check`
+2. **Run Tests**: `pnpm test`
+3. **Check Linting**: `pnpm run lint`
+
+### After Making Changes
+1. **ALWAYS run type-check**: `pnpm run type-check`
+2. **ALWAYS run tests**: `pnpm test`
+3. **ALWAYS verify no new linting errors**: `pnpm run lint`
+4. **If modifying schemas**: Run `pnpm test --filter="@qiima/schemas"`
+5. **If modifying API client**: Run `pnpm test --filter="@qiima/api-client"`
+6. **If modifying queries**: Run `pnpm test --filter="@qiima/queries"`
+
+## Type Safety Rules
+
+### Schema Consistency
+- **CRITICAL**: Field names must be consistent across all packages
+- Use `passwordConfirm` (not `password_confirm`)
+- Use `PasswordResetRequestInput` (not `ForgotPasswordInput`)
+- Use `PasswordResetConfirmInput` (not `ResetPasswordInput`)
+- Use `deal_type`, `deal_url`, `proof_image` (not `channel`, `url`, `proof_url`)
+
+### Type Exports
+- Always export types from `packages/schemas/src/index.ts`
+- Ensure type names match between schemas and usage
+- Use proper TypeScript interfaces, not `any`
+
+### Dependencies
+- Add missing dependencies to `package.json` files
+- Use `workspace:*` for internal package dependencies
+- Include `@types/node` when using Node.js APIs
+
+## Testing Requirements
+
+### Test Coverage
+- All new features must have tests
+- All bug fixes must include regression tests
+- Schema validation must be thoroughly tested
+- API client functionality must be tested
+
+### Test Commands
+```bash
+# Run all tests
+pnpm test
+
+# Run specific package tests
+pnpm test --filter="@qiima/schemas"
+pnpm test --filter="@qiima/api-client"
+pnpm test --filter="@qiima/queries"
+
+# Run tests with coverage
+pnpm test --coverage
+```
+
+## Code Quality Standards
+
+### TypeScript
+- **NO `any` types** - use proper typing
+- **NO `as any` assertions** - fix the underlying type issue
+- Use proper type guards and null checks
+- Import types explicitly with `type` keyword
+
+### React/React Native
+- Use proper prop types and interfaces
+- Handle loading and error states
+- Use proper accessibility attributes
+- Follow React hooks rules
+
+### Styling
+- Use StyleSheet for React Native
+- Use proper style type compatibility
+- Filter out TextStyle from ViewStyle when needed
+- Use theme system consistently
+
+## Common Issues to Avoid
+
+### Field Name Mismatches
+- ❌ `password_confirm` → ✅ `passwordConfirm`
+- ❌ `ForgotPasswordInput` → ✅ `PasswordResetRequestInput`
+- ❌ `ResetPasswordInput` → ✅ `PasswordResetConfirmInput`
+- ❌ `channel` → ✅ `deal_type`
+- ❌ `url` → ✅ `deal_url`
+- ❌ `proof_url` → ✅ `proof_image`
+
+### Type Safety Issues
+- ❌ `global` → ✅ `globalThis`
+- ❌ `@jest/globals` → ✅ Remove import (Jest globals)
+- ❌ Missing null checks → ✅ Add proper validation
+- ❌ `as any` → ✅ Fix underlying type issue
+
+### Dependency Issues
+- ❌ Missing workspace dependencies → ✅ Add to package.json
+- ❌ Missing @types packages → ✅ Add to devDependencies
+- ❌ Unused imports → ✅ Remove or use
+
+## Verification Checklist
+
+Before submitting any changes, verify:
+
+- [ ] `pnpm run type-check` passes (0 errors)
+- [ ] `pnpm test` passes (all tests green)
+- [ ] `pnpm run lint` passes (no linting errors)
+- [ ] All field names are consistent across packages
+- [ ] All type exports are properly defined
+- [ ] All dependencies are correctly specified
+- [ ] No `any` types or `as any` assertions
+- [ ] Proper error handling and loading states
+- [ ] Accessibility attributes where needed
+
+## Emergency Fixes
+
+If you encounter TypeScript errors:
+
+1. **Type export issues**: Check `packages/schemas/src/index.ts`
+2. **Field name mismatches**: Search and replace consistently
+3. **Missing dependencies**: Add to appropriate `package.json`
+4. **Style type issues**: Use proper type filtering
+5. **Jest issues**: Remove unnecessary imports
+
+## Commands Reference
+
+```bash
+# Full verification
+pnpm run type-check && pnpm test && pnpm run lint
+
+# Individual checks
+pnpm run type-check
+pnpm test
+pnpm run lint
+
+# Package-specific
+pnpm test --filter="@qiima/schemas"
+pnpm run type-check --filter="@qiima/ui"
+
+# Build verification
+pnpm run build
+```
+
+## Remember
+- **Type safety is non-negotiable**
+- **All changes must pass verification**
+- **Consistency across packages is critical**
+- **When in doubt, run the checks**

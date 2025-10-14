@@ -9,11 +9,12 @@ import {
 } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ResetPasswordSchema, type ResetPasswordInput } from '@qiima/schemas';
+import { ResetPasswordSchema, type PasswordResetConfirmInput } from '@qiima/schemas';
 import { usePasswordReset } from '@qiima/queries';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Button, FormField, TextField } from '@qiima/ui';
+import { config } from '@/constants/config';
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
@@ -21,21 +22,21 @@ export default function ResetPasswordScreen() {
   const [resetSuccess, setResetSuccess] = useState(false);
   const passwordReset = usePasswordReset({
     env: 'native',
-    baseURL: process.env.EXPO_PUBLIC_API_BASE || 'http://localhost:8000',
+    baseURL: config.baseURL,
   });
 
   const {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<ResetPasswordInput>({
+  } = useForm<PasswordResetConfirmInput>({
     resolver: zodResolver(ResetPasswordSchema),
     defaultValues: {
       token: params.token || '',
     },
   });
 
-  const onSubmit = (data: ResetPasswordInput) => {
+  const onSubmit = (data: PasswordResetConfirmInput) => {
     passwordReset.mutate(data, {
       onSuccess: () => {
         setResetSuccess(true);
@@ -121,16 +122,16 @@ export default function ResetPasswordScreen() {
 
           <Controller
             control={control}
-            name="password_confirm"
+            name="passwordConfirm"
             render={({ field: { onChange, onBlur, value } }) => (
-              <FormField label="Confirm Password" error={errors.password_confirm?.message}>
+              <FormField label="Confirm Password" error={errors.passwordConfirm?.message}>
                 <TextField
                   value={value}
                   onChangeText={onChange}
                   onBlur={onBlur}
                   secureTextEntry
                   placeholder="••••••••"
-                  hasError={!!errors.password_confirm}
+                  hasError={!!errors.passwordConfirm}
                 />
               </FormField>
             )}

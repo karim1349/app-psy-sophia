@@ -16,6 +16,9 @@
     "lint": "eslint src",
     "type-check": "tsc --noEmit"
   },
+  "dependencies": {
+    "@qiima/api-client": "workspace:*"
+  },
   "peerDependencies": {
     "react": "19.1.0",
     "zustand": "^5.0.0"

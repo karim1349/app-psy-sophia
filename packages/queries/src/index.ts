@@ -28,3 +28,17 @@ export {
   useResendVerification,
 } from './auth';
 export type { UseAuthConfig } from './auth';
+
+// Deal hooks
+export {
+  useHotDeals,
+  useTopDeals,
+  useSearchDeals,
+  useDeal,
+  useDealComments,
+  useCategories,
+  useCreateDeal,
+  useVoteDeal,
+  useAddComment,
+} from './deals';
+export type { UseDealsConfig } from './deals';

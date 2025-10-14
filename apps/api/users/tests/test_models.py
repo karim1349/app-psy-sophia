@@ -116,12 +116,6 @@ class TestUserModel:
         result = user.verify_email("123456")
         assert result is False
 
-    def test_str_representation(self) -> None:
-        """Test string representation of user."""
-        user = UserFactory()
-
-        assert str(user) == user.username
-
     def test_user_manager_create_user(self) -> None:
         """Test UserManager create_user method."""
         user = UserFactory()

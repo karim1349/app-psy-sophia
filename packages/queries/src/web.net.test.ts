@@ -6,11 +6,10 @@ import { setupNetworkListeners } from './web.net';
 
 describe('setupNetworkListeners (web)', () => {
   let addEventListenerSpy: jest.SpyInstance;
-  let removeEventListenerSpy: jest.SpyInstance;
 
   beforeEach(() => {
     addEventListenerSpy = jest.spyOn(window, 'addEventListener');
-    removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
+    jest.spyOn(window, 'removeEventListener');
     jest.spyOn(document, 'addEventListener');
     jest.spyOn(document, 'removeEventListener');
     jest.spyOn(onlineManager, 'setOnline');

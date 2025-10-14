@@ -1,22 +1,65 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  RefreshControl,
+} from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useState } from 'react';
+import { useDeal, useDealComments, useVoteDeal, useAddComment } from '@qiima/queries';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Button } from '@qiima/ui';
-import { getDealById, mockComments, type MockDeal } from '@qiima/schemas';
+import { config } from '@/constants/config';
 
 export default function DealDetailScreen() {
   const scheme = useColorScheme() ?? 'light';
-  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Get deal data from mock data
-  const deal = getDealById(parseInt(id || '1'));
-  const dealComments = mockComments.filter(comment => comment.deal === parseInt(id || '1'));
+  // Fetch deal data
+  const { data: deal, isLoading, error, refetch } = useDeal({
+    env: 'native',
+    baseURL: config.baseURL,
+  }, id);
 
-  if (!deal) {
+  // Fetch comments
+  const { data: comments, refetch: refetchComments } = useDealComments({
+    env: 'native',
+    baseURL: config.baseURL,
+  }, id);
+
+  // Vote mutation
+  const voteMutation = useVoteDeal({
+    env: 'native',
+    baseURL: config.baseURL,
+  });
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([refetch(), refetchComments()]);
+    setRefreshing(false);
+  };
+
+  const handleVote = async (voteType: 'up' | 'down') => {
+    if (!deal) return;
+
+    try {
+      await voteMutation.mutateAsync({
+        dealId: deal.id.toString(),
+        voteType,
+      });
+    } catch (error: any) {
+      Alert.alert('Error', error?.message || 'Failed to vote');
+    }
+  };
+
+  if (isLoading) {
     return (
-      <View style={[styles.container, { backgroundColor: 'transparent' }]}>
+      <View style={[styles.container, styles.centerContent]}>
         <LinearGradient
           pointerEvents="none"
           colors={
@@ -29,22 +72,40 @@ export default function DealDetailScreen() {
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Deal not found</Text>
-          <Button
-            title="Go Back"
-            onPress={() => router.back()}
-            variant="solid"
-            tone="brand"
-            size="md"
-          />
-        </View>
+        <Text style={styles.loadingText}>Loading deal...</Text>
       </View>
     );
   }
 
+  if (error || !deal) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <LinearGradient
+          pointerEvents="none"
+          colors={
+            scheme === 'dark'
+              ? ['#21110D', '#28180F', '#17120A']
+              : ['#FFECE5', '#FFE3CC', '#FFF6D6']
+          }
+          locations={[0, 0.6, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <Text style={styles.errorText}>Deal not found</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Text style={styles.backButtonText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const discountPercentage = deal.original_price 
+    ? Math.round(((deal.original_price - deal.current_price) / deal.original_price) * 100)
+    : 0;
+
   return (
-    <View style={[styles.container, { backgroundColor: 'transparent' }]}>
+    <View style={styles.container}>
       <LinearGradient
         pointerEvents="none"
         colors={
@@ -58,100 +119,104 @@ export default function DealDetailScreen() {
         style={StyleSheet.absoluteFill}
       />
       
-      <ScrollView style={styles.content}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Text style={styles.backButtonText}>← Back</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.headerBackButton} onPress={() => router.back()}>
+          <Text style={styles.headerBackButtonText}>← Back</Text>
+        </TouchableOpacity>
+      </View>
 
+      <ScrollView 
+        style={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         <View style={styles.dealCard}>
-          {deal.image_url && (
-            <Image source={{ uri: deal.image_url }} style={styles.dealImage} />
-          )}
-          
-          <View style={styles.dealInfo}>
+          <View style={styles.dealHeader}>
             <Text style={styles.dealTitle}>{deal.title}</Text>
-            
-            <View style={styles.priceContainer}>
-              <Text style={styles.currentPrice}>
-                {deal.current_price.toLocaleString()} {deal.currency}
-              </Text>
-              {deal.original_price && (
+            {deal.is_verified && (
+              <View style={styles.verifiedBadge}>
+                <Text style={styles.verifiedText}>✓ Verified</Text>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.priceSection}>
+            <Text style={styles.currentPrice}>
+              {deal.current_price.toLocaleString()} {deal.currency}
+            </Text>
+            {deal.original_price && (
+              <View style={styles.originalPriceSection}>
                 <Text style={styles.originalPrice}>
                   {deal.original_price.toLocaleString()} {deal.currency}
                 </Text>
-              )}
-              <View style={styles.discountBadge}>
-                <Text style={styles.discountText}>-{deal.discount_percentage}%</Text>
+                <Text style={styles.discount}>-{discountPercentage}%</Text>
               </View>
-            </View>
-
-            <View style={styles.merchantInfo}>
-              <Text style={styles.merchantName}>
-                {deal.category.icon} {deal.merchant}
-              </Text>
-              <Text style={styles.merchantLocation}>📍 {deal.location}</Text>
-            </View>
-
-            <Text style={styles.description}>{deal.description}</Text>
-
-            <View style={styles.metaInfo}>
-              <Text style={styles.metaText}>Posted by {deal.author.username}</Text>
-              <Text style={styles.metaText}>• {new Date(deal.created_at).toLocaleDateString()}</Text>
-              {deal.is_verified && (
-                <Text style={styles.verifiedText}>✓ Verified Deal</Text>
-              )}
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.actionsSection}>
-          <View style={styles.votingSection}>
-            <Text style={styles.sectionTitle}>Vote on this deal</Text>
-            <View style={styles.voteButtons}>
-              <TouchableOpacity style={styles.voteButton}>
-                <Text style={styles.voteButtonText}>👍 Good Deal</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.voteButton}>
-                <Text style={styles.voteButtonText}>👎 Not Good</Text>
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.voteCount}>🔥 {deal.vote_count} votes</Text>
+            )}
           </View>
 
-          <View style={styles.shareSection}>
-            <Text style={styles.sectionTitle}>Share this deal</Text>
-            <View style={styles.shareButtons}>
-              <TouchableOpacity style={styles.shareButton}>
-                <Text style={styles.shareButtonText}>📱 Share</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.shareButton}>
-                <Text style={styles.shareButtonText}>📋 Copy Link</Text>
-              </TouchableOpacity>
-            </View>
+          <View style={styles.dealMeta}>
+            <Text style={styles.merchant}>
+              {deal.category.icon || '🏷️'} {deal.merchant}
+            </Text>
+            <Text style={styles.location}>📍 {deal.location}</Text>
+            <Text style={styles.author}>
+              By {deal.author.username} • {new Date(deal.created_at).toLocaleDateString()}
+            </Text>
+          </View>
+
+          <Text style={styles.description}>{deal.description}</Text>
+
+          <View style={styles.voteSection}>
+            <TouchableOpacity
+              style={[
+                styles.voteButton,
+                deal.user_vote === 'up' && styles.voteButtonActive,
+              ]}
+              onPress={() => handleVote('up')}
+              disabled={voteMutation.isPending}
+            >
+              <Text style={styles.voteButtonText}>👍 Upvote</Text>
+            </TouchableOpacity>
+            
+            <Text style={styles.voteCount}>{deal.vote_count} votes</Text>
+            
+            <TouchableOpacity
+              style={[
+                styles.voteButton,
+                deal.user_vote === 'down' && styles.voteButtonActive,
+              ]}
+              onPress={() => handleVote('down')}
+              disabled={voteMutation.isPending}
+            >
+              <Text style={styles.voteButtonText}>👎 Downvote</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.commentsSection}>
-          <Text style={styles.sectionTitle}>Comments ({deal.comment_count})</Text>
+          <Text style={styles.commentsTitle}>
+            Comments ({deal.comment_count})
+          </Text>
           
-          {dealComments.map((comment) => (
-            <View key={comment.id} style={styles.comment}>
-              <Text style={styles.commentAuthor}>{comment.user.username}</Text>
-              <Text style={styles.commentText}>{comment.content}</Text>
-              <Text style={styles.commentTime}>
-                {new Date(comment.created_at).toLocaleDateString()}
-              </Text>
-            </View>
-          ))}
-
-          <Button
-            title="Add Comment"
-            variant="outline"
-            tone="brand"
-            size="md"
-          />
+          {comments && comments.length > 0 ? (
+            comments.map((comment) => (
+              <View key={comment.id} style={styles.commentCard}>
+                <View style={styles.commentHeader}>
+                  <Text style={styles.commentAuthor}>{comment.user.username}</Text>
+                  <Text style={styles.commentDate}>
+                    {new Date(comment.created_at).toLocaleDateString()}
+                  </Text>
+                </View>
+                <Text style={styles.commentContent}>{comment.content}</Text>
+                {comment.is_edited && (
+                  <Text style={styles.editedLabel}>Edited</Text>
+                )}
+              </View>
+            ))
+          ) : (
+            <Text style={styles.noCommentsText}>No comments yet</Text>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -162,204 +227,204 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
-    flex: 1,
-    padding: 20,
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
-    marginTop: 60,
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+  },
+  headerBackButton: {
+    alignSelf: 'flex-start',
+  },
+  headerBackButtonText: {
+    fontSize: 16,
+    color: '#FF6A00',
+    fontWeight: '600',
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#ff4444',
     marginBottom: 20,
   },
   backButton: {
-    alignSelf: 'flex-start',
+    backgroundColor: '#FF6A00',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
   },
   backButtonText: {
-    fontSize: 16,
-    color: '#FF6A00',
+    color: 'white',
     fontWeight: '600',
   },
   dealCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 16,
-    marginBottom: 24,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  dealImage: {
-    width: '100%',
-    height: 200,
-    backgroundColor: '#f0f0f0',
-  },
-  dealInfo: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 12,
     padding: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  dealHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
   dealTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#1a1a1a',
-    marginBottom: 16,
-    lineHeight: 32,
+    flex: 1,
+    marginRight: 12,
   },
-  priceContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  verifiedBadge: {
+    backgroundColor: '#10B981',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  verifiedText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  priceSection: {
     marginBottom: 16,
-    gap: 12,
   },
   currentPrice: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#FF6A00',
-  },
-  originalPrice: {
-    fontSize: 18,
-    color: '#666',
-    textDecorationLine: 'line-through',
-  },
-  discountBadge: {
-    backgroundColor: '#FF6A00',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  discountText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  merchantInfo: {
-    marginBottom: 16,
-  },
-  merchantName: {
-    fontSize: 16,
-    color: '#1a1a1a',
-    fontWeight: '600',
     marginBottom: 4,
   },
-  merchantLocation: {
+  originalPriceSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  originalPrice: {
+    fontSize: 16,
+    color: '#999',
+    textDecorationLine: 'line-through',
+  },
+  discount: {
+    backgroundColor: '#ff4444',
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  dealMeta: {
+    marginBottom: 16,
+    gap: 4,
+  },
+  merchant: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
+  },
+  location: {
     fontSize: 14,
     color: '#666',
+  },
+  author: {
+    fontSize: 12,
+    color: '#999',
   },
   description: {
     fontSize: 16,
     color: '#1a1a1a',
     lineHeight: 24,
-    marginBottom: 16,
+    marginBottom: 20,
   },
-  metaInfo: {
+  voteSection: {
     flexDirection: 'row',
-    gap: 8,
-  },
-  metaText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  actionsSection: {
-    gap: 24,
-    marginBottom: 32,
-  },
-  votingSection: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 12,
-    padding: 20,
-  },
-  shareSection: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 12,
-    padding: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 16,
-  },
-  voteButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 12,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
   },
   voteButton: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
+  },
+  voteButtonActive: {
+    backgroundColor: '#FF6A00',
   },
   voteButtonText: {
-    fontSize: 16,
+    fontSize: 14,
+    fontWeight: '600',
     color: '#1a1a1a',
-    fontWeight: '500',
   },
   voteCount: {
     fontSize: 16,
-    color: '#FF6A00',
     fontWeight: '600',
-    textAlign: 'center',
-  },
-  shareButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  shareButton: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
-  },
-  shareButtonText: {
-    fontSize: 16,
-    color: '#1a1a1a',
-    fontWeight: '500',
+    color: '#FF6A00',
   },
   commentsSection: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 32,
+    marginBottom: 40,
   },
-  comment: {
+  commentsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
     marginBottom: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+  },
+  commentCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+  },
+  commentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   commentAuthor: {
     fontSize: 14,
     fontWeight: '600',
     color: '#1a1a1a',
-    marginBottom: 4,
   },
-  commentText: {
-    fontSize: 16,
-    color: '#1a1a1a',
-    lineHeight: 22,
-    marginBottom: 8,
-  },
-  commentTime: {
+  commentDate: {
     fontSize: 12,
+    color: '#999',
+  },
+  commentContent: {
+    fontSize: 14,
+    color: '#1a1a1a',
+    lineHeight: 20,
+  },
+  editedLabel: {
+    fontSize: 10,
+    color: '#999',
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
+  noCommentsText: {
+    fontSize: 14,
     color: '#666',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 18,
-    color: '#1a1a1a',
-    marginBottom: 20,
     textAlign: 'center',
-  },
-  verifiedText: {
-    fontSize: 12,
-    color: '#10B981',
-    fontWeight: '600',
+    padding: 20,
   },
 });

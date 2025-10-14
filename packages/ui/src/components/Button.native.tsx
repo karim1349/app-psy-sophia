@@ -1,4 +1,4 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { useTheme } from '../native/theme';
 import { createVariants } from '../native/variants';
 
@@ -68,9 +68,11 @@ export function Button({ title, onPress, disabled, loading, size = 'md', variant
       onPress={onPress}
       disabled={disabled || loading}
       style={({ pressed }) => [
-        ...resolve({ size, variant }),
+        ...resolve({ size, variant }).filter((style): style is ViewStyle => 
+          style && typeof style === 'object' && !('color' in style || 'fontSize' in style || 'fontWeight' in style)
+        ),
         { opacity: disabled || loading ? theme.state.disabledOpacity : pressed ? theme.state.pressedOpacity : 1 },
-      ] as any}
+      ]}
       accessibilityRole="button"
     >
       {loading ? (

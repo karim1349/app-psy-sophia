@@ -16,7 +16,7 @@ from ..throttles import LoginThrottle, PasswordResetThrottle, RegisterThrottle
 
 @pytest.mark.django_db
 class TestRegisterThrottle:
-    """Tests for RegisterThrottle - 5 requests per hour."""
+    """Tests for RegisterThrottle - 20 requests per hour."""
 
     def test_throttle_allows_first_request(self) -> None:
         """Test that first request is allowed."""
@@ -28,11 +28,11 @@ class TestRegisterThrottle:
         # First request should be allowed
         assert throttle.allow_request(request, cast(APIView, None)) is True
 
-    def test_throttle_rate_is_5_per_hour(self) -> None:
-        """Test throttle rate is configured to 5/hour."""
+    def test_throttle_rate_is_20_per_hour(self) -> None:
+        """Test throttle rate is configured to 20/hour."""
         throttle = RegisterThrottle()
-        # The rate should be 5/hour
-        assert "5" in throttle.rate
+        # The rate should be 20/hour
+        assert "20" in throttle.rate
 
     def test_throttle_blocks_after_limit(self) -> None:
         """Test that requests are blocked after rate limit."""
@@ -43,9 +43,9 @@ class TestRegisterThrottle:
         request.META["REMOTE_ADDR"] = "192.168.1.1"
 
         # Make requests up to the limit
-        for i in range(5):
+        for i in range(20):
             allowed = throttle.allow_request(request, cast(APIView, None))
-            if i < 5:
+            if i < 20:
                 assert allowed is True, f"Request {i+1} should be allowed"
 
         # Next request should be throttled
@@ -60,7 +60,7 @@ class TestRegisterThrottle:
         request.META["REMOTE_ADDR"] = "192.168.1.2"
 
         # Exceed the limit
-        for _ in range(6):
+        for _ in range(21):
             throttle.allow_request(request, cast(APIView, None))
 
         # Should provide wait time
@@ -71,7 +71,7 @@ class TestRegisterThrottle:
 
 @pytest.mark.django_db
 class TestLoginThrottle:
-    """Tests for LoginThrottle - 10 requests per hour."""
+    """Tests for LoginThrottle - 100 requests per hour."""
 
     def test_throttle_allows_first_request(self) -> None:
         """Test that first request is allowed."""
@@ -83,11 +83,11 @@ class TestLoginThrottle:
         # First request should be allowed
         assert throttle.allow_request(request, cast(APIView, None)) is True
 
-    def test_throttle_rate_is_10_per_hour(self) -> None:
-        """Test throttle rate is configured to 10/hour."""
+    def test_throttle_rate_is_100_per_hour(self) -> None:
+        """Test throttle rate is configured to 100/hour."""
         throttle = LoginThrottle()
-        # The rate should be 10/hour
-        assert "10" in throttle.rate
+        # The rate should be 100/hour
+        assert "100" in throttle.rate
 
     def test_throttle_blocks_after_limit(self) -> None:
         """Test that requests are blocked after rate limit."""
@@ -98,7 +98,7 @@ class TestLoginThrottle:
         request.META["REMOTE_ADDR"] = "192.168.1.3"
 
         # Make requests up to the limit
-        for i in range(10):
+        for i in range(100):
             allowed = throttle.allow_request(request, cast(APIView, None))
             assert allowed is True, f"Request {i+1} should be allowed"
 

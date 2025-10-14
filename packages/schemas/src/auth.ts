@@ -30,7 +30,7 @@ export interface RegisterInput {
   email: string;
   username: string;
   password: string;
-  password_confirm: string;
+  passwordConfirm: string;
 }
 
 export interface RegisterResponse {
@@ -51,7 +51,7 @@ export interface PasswordResetRequestResponse {
 export interface PasswordResetConfirmInput {
   token: string;
   password: string;
-  password_confirm: string;
+  passwordConfirm: string;
 }
 
 export interface PasswordResetConfirmResponse {
@@ -99,43 +99,67 @@ export interface AuthErrorResponse {
   email?: string[];
   username?: string[];
   password?: string[];
-  password_confirm?: string[];
+  passwordConfirm?: string[];
   token?: string[];
   code?: string[];
   non_field_errors?: string[];
 }
 
+import { z } from 'zod';
+
+// Password complexity validation
+const passwordComplexity = z.string()
+  .min(8, 'Password must be at least 8 characters')
+  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+  .regex(/[0-9]/, 'Password must contain at least one digit')
+  .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character');
+
+// Email transformation (trim and lowercase)
+const emailTransform = z.string()
+  .trim()
+  .toLowerCase()
+  .email('Please enter a valid email address');
+
 // Form validation schemas (for Zod)
-export const LoginSchema = {
-  email: 'string (email format)',
-  password: 'string (min: 1)',
-} as const;
+export const LoginSchema = z.object({
+  email: emailTransform,
+  password: z.string().min(1, 'Password is required'),
+});
 
-export const RegisterSchema = {
-  email: 'string (email format)',
-  username: 'string (min: 3, max: 30)',
-  password: 'string (Django password validators)',
-  password_confirm: 'string (must match password)',
-} as const;
+export const RegisterSchema = z.object({
+  email: emailTransform,
+  username: z.string().trim().min(3, 'Username must be at least 3 characters').max(30, 'Username must be less than 30 characters'),
+  password: passwordComplexity,
+  passwordConfirm: z.string(),
+}).refine((data) => data.password === data.passwordConfirm, {
+  message: "Passwords don't match",
+  path: ["passwordConfirm"],
+});
 
-export const PasswordResetRequestSchema = {
-  email: 'string (email format)',
-} as const;
+export const ForgotPasswordSchema = z.object({
+  email: emailTransform,
+});
 
-export const PasswordResetConfirmSchema = {
-  token: 'string (required)',
-  password: 'string (Django password validators)',
-  password_confirm: 'string (must match password)',
-} as const;
+export const ResetPasswordSchema = z.object({
+  token: z.string().min(1, 'Token is required'),
+  password: passwordComplexity,
+  passwordConfirm: z.string(),
+}).refine((data) => data.password === data.passwordConfirm, {
+  message: "Passwords don't match",
+  path: ["passwordConfirm"],
+});
 
-export const VerifyEmailSchema = {
-  email: 'string (email format)',
-  code: 'string (exactly 6 digits)',
-} as const;
+export const VerifyEmailSchema = z.object({
+  email: emailTransform,
+  code: z.string()
+    .length(6, 'Verification code must be exactly 6 digits')
+    .regex(/^[0-9]+$/, 'Verification code must be numeric'),
+});
 
-export const ResendVerificationSchema = {
-  email: 'string (email format)',
-} as const;
+export const ResendVerificationSchema = z.object({
+  email: emailTransform,
+});
 
 // Session/State interfaces
 export interface AuthState {

@@ -1,4 +1,3 @@
-import { describe, expect, test } from '@jest/globals';
 import {
   RegisterSchema,
   LoginSchema,
@@ -8,8 +7,8 @@ import {
   ResendVerificationSchema,
   type RegisterInput,
   type LoginInput,
-  type ForgotPasswordInput,
-  type ResetPasswordInput,
+  type PasswordResetRequestInput,
+  type PasswordResetConfirmInput,
   type VerifyEmailInput,
   type ResendVerificationInput,
 } from './auth';
@@ -577,16 +576,16 @@ describe('Type exports', () => {
     expect(input.password).toBeDefined();
   });
 
-  test('ForgotPasswordInput type is inferred correctly', () => {
-    const input: ForgotPasswordInput = {
+  test('PasswordResetRequestInput type is inferred correctly', () => {
+    const input: PasswordResetRequestInput = {
       email: 'test@example.com',
     };
 
     expect(input.email).toBeDefined();
   });
 
-  test('ResetPasswordInput type is inferred correctly', () => {
-    const input: ResetPasswordInput = {
+  test('PasswordResetConfirmInput type is inferred correctly', () => {
+    const input: PasswordResetConfirmInput = {
       token: 'token-123',
       password: 'NewSecurePass123!',
       passwordConfirm: 'NewSecurePass123!',

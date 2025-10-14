@@ -9,29 +9,30 @@ import {
 } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ForgotPasswordSchema, type ForgotPasswordInput } from '@qiima/schemas';
+import { ForgotPasswordSchema, type PasswordResetRequestInput } from '@qiima/schemas';
 import { usePasswordForgot } from '@qiima/queries';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Button, FormField, TextField } from '@qiima/ui';
+import { config } from '@/constants/config';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
   const [emailSent, setEmailSent] = useState(false);
   const passwordForgot = usePasswordForgot({
     env: 'native',
-    baseURL: process.env.EXPO_PUBLIC_API_BASE || 'http://localhost:8000',
+    baseURL: config.baseURL,
   });
 
   const {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<ForgotPasswordInput>({
+  } = useForm<PasswordResetRequestInput>({
     resolver: zodResolver(ForgotPasswordSchema),
   });
 
-  const onSubmit = (data: ForgotPasswordInput) => {
+  const onSubmit = (data: PasswordResetRequestInput) => {
     passwordForgot.mutate(data, {
       onSuccess: () => {
         setEmailSent(true);
@@ -46,7 +47,7 @@ export default function ForgotPasswordScreen() {
           <View style={styles.successContainer}>
             <Text style={styles.successTitle}>Check your email</Text>
             <Text style={styles.successMessage}>
-              We've sent password reset instructions to your email address.
+              We{"'"}ve sent password reset instructions to your email address.
             </Text>
             <TouchableOpacity
               style={styles.button}
@@ -73,7 +74,7 @@ export default function ForgotPasswordScreen() {
         <View style={styles.header}>
           <Text style={styles.title}>Forgot password?</Text>
           <Text style={styles.subtitle}>
-            No worries, we'll send you reset instructions
+            No worries, we{"'"}ll send you reset instructions
           </Text>
         </View>
 

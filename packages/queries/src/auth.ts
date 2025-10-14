@@ -9,8 +9,8 @@ import type {
 import type {
   RegisterInput,
   LoginInput,
-  ForgotPasswordInput,
-  ResetPasswordInput,
+  PasswordResetRequestInput,
+  PasswordResetConfirmInput,
   VerifyEmailInput,
   ResendVerificationInput,
 } from '@qiima/schemas';
@@ -65,7 +65,7 @@ export function useRegister(config: UseAuthConfig) {
   return useMutation({
     mutationFn: async (input: RegisterInput) => {
       const http = createHttp({ env, baseURL });
-      return http.post('/auth/register', input);
+      return http.post('/users/', input);
     },
     // No onSuccess - caller handles redirect to verify-email screen
   });
@@ -95,7 +95,7 @@ export function useLogin(config: UseAuthConfig) {
   return useMutation({
     mutationFn: async (input: LoginInput): Promise<AuthResponse> => {
       const http = createHttp({ env, baseURL });
-      return http.post<AuthResponse>('/auth/login', input);
+      return http.post<AuthResponse>('/users/login/', input);
     },
     onSuccess: async (data: AuthResponse) => {
       const state = sessionStore.getState();
@@ -144,7 +144,7 @@ export function useLogout(config: UseAuthConfig) {
         }
 
         const http = createHttp({ env, baseURL, getAccessToken });
-        return await http.post<MessageResponse>('/auth/logout');
+        return await http.post<MessageResponse>('/users/logout/');
       } catch (error) {
         // Ignore errors - we want to clear session anyway
         console.warn('Logout API call failed, clearing local session anyway', error);
@@ -178,9 +178,9 @@ export function usePasswordForgot(config: UseAuthConfig) {
   const { env, baseURL } = config;
 
   return useMutation({
-    mutationFn: async (input: ForgotPasswordInput): Promise<MessageResponse> => {
+    mutationFn: async (input: PasswordResetRequestInput): Promise<MessageResponse> => {
       const http = createHttp({ env, baseURL });
-      return http.post<MessageResponse>('/auth/password/forgot', input);
+      return http.post<MessageResponse>('/users/request_password_reset/', input);
     },
   });
 }
@@ -203,9 +203,9 @@ export function usePasswordReset(config: UseAuthConfig) {
   const { env, baseURL } = config;
 
   return useMutation({
-    mutationFn: async (input: ResetPasswordInput): Promise<MessageResponse> => {
+    mutationFn: async (input: PasswordResetConfirmInput): Promise<MessageResponse> => {
       const http = createHttp({ env, baseURL });
-      return http.post<MessageResponse>('/auth/password/reset', input);
+      return http.post<MessageResponse>('/users/confirm_password_reset/', input);
     },
   });
 }
@@ -239,7 +239,7 @@ export function useMeQuery(config: UseAuthConfig) {
       }
 
       const http = createHttp({ env, baseURL, getAccessToken });
-      return http.get<User>('/me');
+      return http.get<User>('/users/me/');
     },
     enabled: env === 'web' || !!sessionStore.getState().accessToken,
     retry: (failureCount, error: any) => {
@@ -286,13 +286,13 @@ export function useRefresh(config: UseAuthConfig) {
         }
 
         const http = createHttp({ env, baseURL });
-        return http.post<RefreshResponse>('/auth/refresh', {
+        return http.post<RefreshResponse>('/users/refresh/', {
           refresh: refreshToken,
         });
       } else {
         // Web: refresh cookie sent automatically
         const http = createHttp({ env, baseURL });
-        return http.post<RefreshResponse>('/auth/refresh');
+        return http.post<RefreshResponse>('/users/refresh/');
       }
     },
     onSuccess: async (data: RefreshResponse) => {
@@ -342,7 +342,7 @@ export function useVerifyEmail(config: UseAuthConfig) {
   return useMutation({
     mutationFn: async (input: VerifyEmailInput): Promise<AuthResponse> => {
       const http = createHttp({ env, baseURL });
-      return http.post<AuthResponse>('/auth/verify-email', input);
+      return http.post<AuthResponse>('/users/verify_email/', input);
     },
     onSuccess: async (data: AuthResponse) => {
       const state = sessionStore.getState();
@@ -382,7 +382,7 @@ export function useResendVerification(config: UseAuthConfig) {
   return useMutation({
     mutationFn: async (input: ResendVerificationInput): Promise<MessageResponse> => {
       const http = createHttp({ env, baseURL });
-      return http.post<MessageResponse>('/auth/resend-verification', input);
+      return http.post<MessageResponse>('/users/resend_verification/', input);
     },
   });
 }

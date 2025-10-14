@@ -2,7 +2,7 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ForgotPasswordSchema, type ForgotPasswordInput } from '@qiima/schemas';
+import { ForgotPasswordSchema, type PasswordResetRequestInput } from '@qiima/schemas';
 import { usePasswordForgot } from '@qiima/queries';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -15,11 +15,11 @@ export function ForgotPasswordForm() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<ForgotPasswordInput>({
+  } = useForm<PasswordResetRequestInput>({
     resolver: zodResolver(ForgotPasswordSchema),
   });
 
-  const onSubmit = (data: ForgotPasswordInput) => {
+  const onSubmit = (data: PasswordResetRequestInput) => {
     passwordForgot.mutate(data, {
       onSuccess: () => {
         setEmailSent(true);

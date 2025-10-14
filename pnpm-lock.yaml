@@ -61,6 +61,9 @@ importers:
       '@react-native-community/netinfo':
         specifier: ^11.4.1
         version: 11.4.1(react-native@0.81.4)
+      '@react-native-picker/picker':
+        specifier: ^2.11.3
+        version: 2.11.3(react-native@0.81.4)(react@19.1.0)
       '@react-navigation/bottom-tabs':
         specifier: ^7.4.0
         version: 7.4.8(@react-navigation/native@7.1.18)(react-native-safe-area-context@5.6.1)(react-native-screens@4.16.0)(react-native@0.81.4)(react@19.1.0)
@@ -308,6 +311,9 @@ importers:
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
+      '@types/node':
+        specifier: ^20
+        version: 20.19.21
       '@types/react':
         specifier: ~19.1.0
         version: 19.1.17
@@ -339,6 +345,9 @@ importers:
 
   packages/state:
     dependencies:
+      '@qiima/api-client':
+        specifier: workspace:*
+        version: link:../api-client
       react:
         specifier: 19.1.0
         version: 19.1.0
@@ -3148,6 +3157,16 @@ packages:
     peerDependencies:
       react-native: '>=0.59'
     dependencies:
+      react-native: 0.81.4(@babel/core@7.28.4)(@types/react@19.1.17)(react@19.1.0)
+    dev: false
+
+  /@react-native-picker/picker@2.11.3(react-native@0.81.4)(react@19.1.0):
+    resolution: {integrity: sha512-aknxi+6dmNrSk0Bev+cnhsUAwi3Iz7KTj8lSHnGNcU+P9VkCGN6QQDcU0e2gnWLY3zhS3HzV+DBTmzR9ia6kTg==}
+    peerDependencies:
+      react: '*'
+      react-native: '*'
+    dependencies:
+      react: 19.1.0
       react-native: 0.81.4(@babel/core@7.28.4)(@types/react@19.1.17)(react@19.1.0)
     dev: false
 

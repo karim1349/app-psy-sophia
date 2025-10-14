@@ -1,30 +1,50 @@
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useState } from 'react';
-import { searchDeals, mockCategories, type MockDeal } from '@qiima/schemas';
+import { useState, useEffect } from 'react';
+import { useSearchDeals, useCategories } from '@qiima/queries';
 import { useRouter } from 'expo-router';
+import { config } from '@/constants/config';
 
 export default function SearchScreen() {
   const scheme = useColorScheme() ?? 'light';
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<MockDeal[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [selectedFilters, setSelectedFilters] = useState<{
+    category?: string;
+    city?: string;
+  }>({});
 
-  const handleSearch = () => {
-    if (!searchQuery.trim()) return;
-    
-    setIsSearching(true);
-    const results = searchDeals(searchQuery);
-    setSearchResults(results);
-    setIsSearching(false);
-  };
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Fetch categories
+  const { data: categories } = useCategories({
+    env: 'native',
+    baseURL: config.baseURL,
+  });
+
+  // Search deals
+  const { data: searchResults, isLoading: isSearching, error } = useSearchDeals({
+    env: 'native',
+    baseURL: config.baseURL,
+  }, debouncedQuery, selectedFilters);
 
   const handleCategoryFilter = (categoryName: string) => {
+    setSelectedFilters(prev => ({ ...prev, category: categoryName }));
     setSearchQuery(categoryName);
-    const results = searchDeals(categoryName);
-    setSearchResults(results);
+  };
+
+  const handleCityFilter = (city: string) => {
+    setSelectedFilters(prev => ({ ...prev, city }));
+    setSearchQuery(city);
   };
 
   return (
@@ -58,7 +78,6 @@ export default function SearchScreen() {
             />
             <TouchableOpacity 
               style={styles.searchButton}
-              onPress={handleSearch}
               disabled={isSearching}
             >
               <Text style={styles.searchButtonText}>🔍</Text>
@@ -68,14 +87,14 @@ export default function SearchScreen() {
           <View style={styles.filtersContainer}>
             <Text style={styles.filtersTitle}>Quick Filters</Text>
             <View style={styles.filtersRow}>
-              {mockCategories.slice(0, 3).map((category) => (
+              {categories?.slice(0, 3).map((category) => (
                 <TouchableOpacity 
                   key={category.id}
                   style={styles.filterChip}
                   onPress={() => handleCategoryFilter(category.name)}
                 >
                   <Text style={styles.filterChipText}>
-                    {category.icon} {category.name}
+                    {category.icon || '🏷️'} {category.name}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -83,19 +102,19 @@ export default function SearchScreen() {
             <View style={styles.filtersRow}>
               <TouchableOpacity 
                 style={styles.filterChip}
-                onPress={() => handleCategoryFilter('Casablanca')}
+                onPress={() => handleCityFilter('Casablanca')}
               >
                 <Text style={styles.filterChipText}>📍 Casablanca</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 style={styles.filterChip}
-                onPress={() => handleCategoryFilter('Rabat')}
+                onPress={() => handleCityFilter('Rabat')}
               >
                 <Text style={styles.filterChipText}>📍 Rabat</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 style={styles.filterChip}
-                onPress={() => handleCategoryFilter('Marrakech')}
+                onPress={() => handleCityFilter('Marrakech')}
               >
                 <Text style={styles.filterChipText}>📍 Marrakech</Text>
               </TouchableOpacity>
@@ -104,7 +123,19 @@ export default function SearchScreen() {
         </View>
 
         <View style={styles.resultsSection}>
-          {searchResults.length > 0 ? (
+          {isSearching && (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>Searching...</Text>
+            </View>
+          )}
+          
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>Search failed</Text>
+            </View>
+          )}
+          
+          {searchResults && searchResults.length > 0 ? (
             <>
               <Text style={styles.sectionTitle}>
                 Search Results ({searchResults.length})
@@ -121,7 +152,7 @@ export default function SearchScreen() {
                     {deal.original_price && ` (was ${deal.original_price.toLocaleString()} ${deal.currency})`}
                   </Text>
                   <Text style={styles.dealMerchant}>
-                    {deal.category.icon} {deal.merchant} • {deal.location}
+                    {deal.category.icon || '🏷️'} {deal.merchant} • {deal.location}
                   </Text>
                   <View style={styles.dealVotes}>
                     <Text style={styles.voteCount}>🔥 {deal.vote_count} votes</Text>
@@ -130,25 +161,11 @@ export default function SearchScreen() {
                 </TouchableOpacity>
               ))}
             </>
-          ) : (
-            <>
-              <Text style={styles.sectionTitle}>Recent Searches</Text>
-              
-              <View style={styles.recentSearchItem}>
-                <Text style={styles.recentSearchText}>iPhone deals</Text>
-                <Text style={styles.recentSearchTime}>2 hours ago</Text>
-              </View>
-              
-              <View style={styles.recentSearchItem}>
-                <Text style={styles.recentSearchText}>Nike shoes</Text>
-                <Text style={styles.recentSearchTime}>Yesterday</Text>
-              </View>
-              
-              <View style={styles.recentSearchItem}>
-                <Text style={styles.recentSearchText}>Restaurant deals Casablanca</Text>
-                <Text style={styles.recentSearchTime}>3 days ago</Text>
-              </View>
-            </>
+          ) : !isSearching && !error && debouncedQuery && (
+            <View style={styles.noResultsContainer}>
+              <Text style={styles.noResultsText}>No deals found</Text>
+              <Text style={styles.noResultsSubtext}>Try adjusting your search terms</Text>
+            </View>
           )}
         </View>
       </ScrollView>
@@ -298,5 +315,35 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#10B981',
     fontWeight: '600',
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  errorContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#ff4444',
+  },
+  noResultsContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  noResultsText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 8,
+  },
+  noResultsSubtext: {
+    fontSize: 14,
+    color: '#666',
   },
 });

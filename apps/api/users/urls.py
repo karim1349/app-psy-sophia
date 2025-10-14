@@ -11,7 +11,7 @@ app_name = "users"
 
 # Create router for UserViewSet
 router = DefaultRouter()
-router.register(r"", UserViewSet, basename="user")
+router.register(r"users", UserViewSet, basename="user")
 
 urlpatterns = [
     path("", include(router.urls)),

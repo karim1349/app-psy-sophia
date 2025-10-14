@@ -13,12 +13,13 @@ import { RegisterSchema, type RegisterInput } from '@qiima/schemas';
 import { useRegister } from '@qiima/queries';
 import { useRouter } from 'expo-router';
 import { Button, FormField, TextField } from '@qiima/ui';
+import { config } from '@/constants/config';
 
 export default function RegisterScreen() {
   const router = useRouter();
   const register_mutation = useRegister({
     env: 'native',
-    baseURL: process.env.EXPO_PUBLIC_API_BASE || 'http://localhost:8000',
+    baseURL: config.baseURL,
   });
 
   const {
@@ -104,16 +105,16 @@ export default function RegisterScreen() {
 
           <Controller
             control={control}
-            name="password_confirm"
+            name="passwordConfirm"
             render={({ field: { onChange, onBlur, value } }) => (
-              <FormField label="Confirm Password" error={errors.password_confirm?.message}>
+              <FormField label="Confirm Password" error={errors.passwordConfirm?.message}>
                 <TextField
                   value={value}
                   onChangeText={onChange}
                   onBlur={onBlur}
                   secureTextEntry
                   placeholder="••••••••"
-                  hasError={!!errors.password_confirm}
+                  hasError={!!errors.passwordConfirm}
                 />
               </FormField>
             )}

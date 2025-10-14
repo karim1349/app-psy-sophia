@@ -16,7 +16,7 @@ export function createVariants<T extends Record<string, Record<string, Style>>>(
     const used = { ...config.defaultVariants, ...variantProps } as Record<string, string>;
     for (const key in config.variants) {
       const variantKey = used[key];
-      if (variantKey) {
+      if (variantKey && config.variants[key] && config.variants[key][variantKey]) {
         styles.push(config.variants[key][variantKey]);
       }
     }
