@@ -5,7 +5,7 @@ module.exports = [
   {
     files: ['**/*.{ts,tsx}'],
     rules: {
-      // Add any api-client-specific rules here
+      // Add any i18n-specific rules here
     },
   },
 ];

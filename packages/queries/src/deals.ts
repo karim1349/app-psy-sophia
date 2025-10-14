@@ -1,7 +1,25 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { createHttp } from '@qiima/api-client';
 import type { Deal, DealCategory, DealComment } from '@qiima/schemas';
 import { queryKeys } from './keys';
+
+/**
+ * Pagination response interface
+ */
+export interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
+/**
+ * Pagination parameters
+ */
+export interface PaginationParams {
+  page?: number;
+  page_size?: number;
+}
 
 /**
  * Configuration for deal hooks
@@ -17,12 +35,10 @@ export interface UseDealsConfig {
 function getSessionStore(env: 'native' | 'web') {
   if (env === 'native') {
     // Dynamic import for native
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { useSessionStore } = require('@qiima/state/session.native');
     return useSessionStore;
   } else {
     // Dynamic import for web
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { useSessionStore } = require('@qiima/state/session.web');
     return useSessionStore;
   }
@@ -144,9 +160,30 @@ export function useDealComments(config: UseDealsConfig, dealId: string) {
 }
 
 /**
- * Hook to fetch deal categories
+ * Hook to fetch deal categories with pagination
  */
-export function useCategories(config: UseDealsConfig) {
+export function useCategories(config: UseDealsConfig, pagination?: PaginationParams) {
+  const searchParams = new URLSearchParams();
+  if (pagination?.page) searchParams.append('page', pagination.page.toString());
+  if (pagination?.page_size) searchParams.append('page_size', pagination.page_size.toString());
+
+  const queryString = searchParams.toString();
+  const url = queryString ? `/categories/?${queryString}` : '/categories/';
+
+  return useQuery({
+    queryKey: queryKeys.categories.paginated(pagination?.page, pagination?.page_size),
+    queryFn: async () => {
+      const http = createAuthenticatedHttp(config);
+      const response = await http.get<PaginatedResponse<DealCategory>>(url);
+      return response || { count: 0, next: null, previous: null, results: [] };
+    },
+  });
+}
+
+/**
+ * Hook to fetch all categories (backward compatibility)
+ */
+export function useAllCategories(config: UseDealsConfig) {
   return useQuery({
     queryKey: queryKeys.categories.all(),
     queryFn: async () => {
@@ -154,6 +191,26 @@ export function useCategories(config: UseDealsConfig) {
       const response = await http.get<DealCategory[]>('/categories/');
       return response || [];
     },
+  });
+}
+
+/**
+ * Hook to fetch categories with infinite scroll
+ */
+export function useInfiniteCategories(config: UseDealsConfig, pageSize = 20) {
+  return useInfiniteQuery({
+    queryKey: queryKeys.categories.paginated(undefined, pageSize),
+    queryFn: async ({ pageParam = 1 }) => {
+      const http = createAuthenticatedHttp(config);
+      const response = await http.get<PaginatedResponse<DealCategory>>(
+        `/categories/?page=${pageParam}&page_size=${pageSize}`
+      );
+      return response || { count: 0, next: null, previous: null, results: [] };
+    },
+    getNextPageParam: (lastPage) => {
+      return lastPage.next ? lastPage.results.length / pageSize + 1 : undefined;
+    },
+    initialPageParam: 1,
   });
 }
 
@@ -205,7 +262,7 @@ export function useVoteDeal(config: UseDealsConfig) {
       reason?: string;
     }) => {
       const http = createAuthenticatedHttp(config);
-      const response = await http.post<any>(`/deals/${dealId}/vote/`, {
+      const response = await http.post<{ message: string }>(`/deals/${dealId}/vote/`, {
         vote_type: voteType,
         reason,
       });

@@ -12,7 +12,7 @@ import {
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
-import { useCreateDeal, useCategories } from '@qiima/queries';
+import { useCreateDeal, useInfiniteCategories } from '@qiima/queries';
 import { useRouter } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
 import { config } from '@/constants/config';
@@ -37,11 +37,20 @@ export default function CreateDealScreen() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Fetch categories
-  const { data: categories } = useCategories({
+  // Fetch categories with infinite scroll
+  const { 
+    data: categoriesData, 
+    isLoading: categoriesLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage 
+  } = useInfiniteCategories({
     env: 'native',
     baseURL: config.baseURL,
-  });
+  }, 20);
+
+  // Flatten all categories from all pages
+  const categories = categoriesData?.pages.flatMap(page => page.results) || [];
 
   // Create deal mutation
   const createDealMutation = useCreateDeal({
@@ -241,7 +250,13 @@ export default function CreateDealScreen() {
             <View style={[styles.pickerContainer, errors.category && styles.inputError]}>
               <Picker
                 selectedValue={formData.category}
-                onValueChange={(value) => updateFormData('category', value)}
+                onValueChange={(value) => {
+                  if (value === 'load_more' && hasNextPage) {
+                    fetchNextPage();
+                  } else {
+                    updateFormData('category', value);
+                  }
+                }}
                 style={styles.picker}
               >
                 <Picker.Item label="Select a category" value="" />
@@ -252,6 +267,15 @@ export default function CreateDealScreen() {
                     value={category.id.toString()} 
                   />
                 ))}
+                {hasNextPage && (
+                  <Picker.Item 
+                    label={isFetchingNextPage ? "Loading more..." : "Load more categories..."} 
+                    value="load_more" 
+                  />
+                )}
+                {categoriesLoading && (
+                  <Picker.Item label="Loading categories..." value="" />
+                )}
               </Picker>
             </View>
             {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}

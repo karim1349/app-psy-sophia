@@ -5,11 +5,13 @@ import { useHotDeals } from '@qiima/queries';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { config } from '@/constants/config';
+import { useI18n } from '@qiima/i18n';
 
 export default function HomeScreen() {
   const scheme = useColorScheme() ?? 'light';
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
+  const { t } = useI18n();
 
   // Fetch hot deals from API
   const { data: hotDeals, isLoading, error, refetch } = useHotDeals({
@@ -44,24 +46,24 @@ export default function HomeScreen() {
         }
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Qiima Deals</Text>
-          <Text style={styles.subtitle}>Find the best deals in Morocco</Text>
+          <Text style={styles.title}>{t('common.qiimaDeals')}</Text>
+          <Text style={styles.subtitle}>{t('common.findBestDeals')}</Text>
         </View>
 
         <View style={styles.dealsSection}>
-          <Text style={styles.sectionTitle}>Hot Deals</Text>
+          <Text style={styles.sectionTitle}>{t('common.hotDeals')}</Text>
           
           {isLoading && !hotDeals && (
             <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>Loading deals...</Text>
+              <Text style={styles.loadingText}>{t('common.loadingDeals')}</Text>
             </View>
           )}
           
           {error && (
             <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>Failed to load deals</Text>
+              <Text style={styles.errorText}>{t('common.failedToLoadDeals')}</Text>
               <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
-                <Text style={styles.retryButtonText}>Retry</Text>
+                <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -75,14 +77,14 @@ export default function HomeScreen() {
               <Text style={styles.dealTitle}>{deal.title}</Text>
               <Text style={styles.dealPrice}>
                 {deal.current_price.toLocaleString()} {deal.currency} 
-                {deal.original_price && ` (was ${deal.original_price.toLocaleString()} ${deal.currency})`}
+                {deal.original_price && ` (${t('common.was')} ${deal.original_price.toLocaleString()} ${deal.currency})`}
               </Text>
               <Text style={styles.dealMerchant}>
                 {deal.category.icon || '🏷️'} {deal.merchant} • {deal.location}
               </Text>
               <View style={styles.dealVotes}>
-                <Text style={styles.voteCount}>🔥 {deal.vote_count} votes</Text>
-                {deal.is_verified && <Text style={styles.verifiedBadge}>✓ Verified</Text>}
+                <Text style={styles.voteCount}>🔥 {deal.vote_count} {t('common.votes')}</Text>
+                {deal.is_verified && <Text style={styles.verifiedBadge}>✓ {t('common.verified')}</Text>}
               </View>
             </TouchableOpacity>
           ))}

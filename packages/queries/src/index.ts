@@ -37,8 +37,10 @@ export {
   useDeal,
   useDealComments,
   useCategories,
+  useAllCategories,
+  useInfiniteCategories,
   useCreateDeal,
   useVoteDeal,
   useAddComment,
 } from './deals';
-export type { UseDealsConfig } from './deals';
+export type { UseDealsConfig, PaginatedResponse, PaginationParams } from './deals';

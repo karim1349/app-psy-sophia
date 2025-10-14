@@ -5,11 +5,17 @@ import { useMeQuery, useLogout } from '@qiima/queries';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { config } from '@/constants/config';
+import { LanguageSwitcher } from '@qiima/ui';
+import { useI18n } from '@qiima/i18n';
 
 export default function ProfileScreen() {
   const scheme = useColorScheme() ?? 'light';
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { t, currentLanguage } = useI18n();
+  
+  // Debug: Log current language
+  console.log('ProfileScreen: Current language:', currentLanguage);
 
   // Check if user is authenticated
   const { data: user, isLoading, error } = useMeQuery({
@@ -24,15 +30,15 @@ export default function ProfileScreen() {
 
   const handleLogout = async () => {
     Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
+      t('common.logout'),
+      t('common.logoutConfirm'),
       [
         {
-          text: 'Cancel',
+          text: t('common.cancel'),
           style: 'cancel',
         },
         {
-          text: 'Logout',
+          text: t('common.logout'),
           style: 'destructive',
           onPress: async () => {
             setIsLoggingOut(true);
@@ -41,7 +47,7 @@ export default function ProfileScreen() {
               // Navigation will be handled by auth state change
             } catch (error) {
               console.error('Logout error:', error);
-              Alert.alert('Error', 'Failed to logout. Please try again.');
+              Alert.alert(t('common.error'), t('common.logoutFailed'));
             } finally {
               setIsLoggingOut(false);
             }
@@ -69,38 +75,43 @@ export default function ProfileScreen() {
         />
         <ScrollView style={styles.content} contentContainerStyle={styles.centerContent}>
           <View style={styles.authContainer}>
-            <Text style={styles.title}>Welcome to Qiima</Text>
-            <Text style={styles.subtitle}>Join the community to share and discover amazing deals</Text>
+            <Text style={styles.title}>{t('common.welcome')}</Text>
+            <Text style={styles.subtitle}>{t('common.welcomeSubtitle')}</Text>
             
             <View style={styles.authButtons}>
               <TouchableOpacity 
                 style={[styles.button, styles.primaryButton]}
                 onPress={() => router.push('/(auth)/login')}
               >
-                <Text style={styles.primaryButtonText}>Login</Text>
+                <Text style={styles.primaryButtonText}>{t('common.login')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
                 style={[styles.button, styles.secondaryButton]}
                 onPress={() => router.push('/(auth)/register')}
               >
-                <Text style={styles.secondaryButtonText}>Create Account</Text>
+                <Text style={styles.secondaryButtonText}>{t('common.createAccount')}</Text>
               </TouchableOpacity>
             </View>
 
             <View style={styles.features}>
               <View style={styles.feature}>
                 <Text style={styles.featureIcon}>🔥</Text>
-                <Text style={styles.featureText}>Share hot deals</Text>
+                <Text style={styles.featureText}>{t('common.shareHotDeals')}</Text>
               </View>
               <View style={styles.feature}>
                 <Text style={styles.featureIcon}>💬</Text>
-                <Text style={styles.featureText}>Comment and discuss</Text>
+                <Text style={styles.featureText}>{t('common.commentAndDiscuss')}</Text>
               </View>
               <View style={styles.feature}>
                 <Text style={styles.featureIcon}>⭐</Text>
-                <Text style={styles.featureText}>Vote on deals</Text>
+                <Text style={styles.featureText}>{t('common.voteOnDeals')}</Text>
               </View>
+            </View>
+
+            <View style={styles.languageSection}>
+              <Text style={styles.sectionTitle}>{t('common.language')}</Text>
+              <LanguageSwitcher style={styles.languageSwitcher} />
             </View>
           </View>
         </ScrollView>
@@ -112,7 +123,7 @@ export default function ProfileScreen() {
   if (isLoading) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <Text style={styles.loadingText}>Loading...</Text>
+        <Text style={styles.loadingText}>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -134,7 +145,7 @@ export default function ProfileScreen() {
       />
       <ScrollView style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>Profile</Text>
+          <Text style={styles.title}>{t('common.profile')}</Text>
         </View>
 
         <View style={styles.profileCard}>
@@ -148,34 +159,39 @@ export default function ProfileScreen() {
               <Text style={styles.username}>{user?.username}</Text>
               <Text style={styles.email}>{user?.email}</Text>
               <Text style={styles.memberSince}>
-                Member since {new Date(user?.created_at || '').toLocaleDateString()}
+                {t('common.memberSince')} {new Date(user?.created_at || '').toLocaleDateString()}
               </Text>
             </View>
           </View>
         </View>
 
+        <View style={styles.languageSection}>
+          <Text style={styles.sectionTitle}>{t('common.language')}</Text>
+          <LanguageSwitcher style={styles.languageSwitcher} />
+        </View>
+
         <View style={styles.menuSection}>
           <TouchableOpacity style={styles.menuItem}>
             <Text style={styles.menuIcon}>📝</Text>
-            <Text style={styles.menuText}>My Deals</Text>
+            <Text style={styles.menuText}>{t('common.myDeals')}</Text>
             <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.menuItem}>
             <Text style={styles.menuIcon}>💬</Text>
-            <Text style={styles.menuText}>My Comments</Text>
+            <Text style={styles.menuText}>{t('common.myComments')}</Text>
             <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.menuItem}>
             <Text style={styles.menuIcon}>⭐</Text>
-            <Text style={styles.menuText}>Voted Deals</Text>
+            <Text style={styles.menuText}>{t('common.votedDeals')}</Text>
             <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.menuItem}>
             <Text style={styles.menuIcon}>⚙️</Text>
-            <Text style={styles.menuText}>Settings</Text>
+            <Text style={styles.menuText}>{t('common.settings')}</Text>
             <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
         </View>
@@ -187,7 +203,7 @@ export default function ProfileScreen() {
             disabled={isLoggingOut}
           >
             <Text style={styles.logoutButtonText}>
-              {isLoggingOut ? 'Logging out...' : 'Logout'}
+              {isLoggingOut ? t('common.loggingOut') : t('common.logout')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -356,6 +372,26 @@ const styles = StyleSheet.create({
   menuArrow: {
     fontSize: 20,
     color: '#999',
+  },
+  languageSection: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 16,
+  },
+  languageSwitcher: {
+    alignSelf: 'flex-start',
   },
   logoutSection: {
     marginTop: 20,

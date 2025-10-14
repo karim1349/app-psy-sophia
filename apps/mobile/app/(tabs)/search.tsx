@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity } from 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState, useEffect } from 'react';
-import { useSearchDeals, useCategories } from '@qiima/queries';
+import { useSearchDeals, useInfiniteCategories } from '@qiima/queries';
 import { useRouter } from 'expo-router';
 import { config } from '@/constants/config';
 
@@ -25,11 +25,19 @@ export default function SearchScreen() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Fetch categories
-  const { data: categories } = useCategories({
+  // Fetch categories with infinite scroll
+  const { 
+    data: categoriesData, 
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage 
+  } = useInfiniteCategories({
     env: 'native',
     baseURL: config.baseURL,
-  });
+  }, 10); // Smaller page size for quick filters
+
+  // Flatten all categories from all pages
+  const categories = categoriesData?.pages.flatMap(page => page.results) || [];
 
   // Search deals
   const { data: searchResults, isLoading: isSearching, error } = useSearchDeals({
@@ -87,7 +95,7 @@ export default function SearchScreen() {
           <View style={styles.filtersContainer}>
             <Text style={styles.filtersTitle}>Quick Filters</Text>
             <View style={styles.filtersRow}>
-              {categories?.slice(0, 3).map((category) => (
+              {categories?.slice(0, 6).map((category) => (
                 <TouchableOpacity 
                   key={category.id}
                   style={styles.filterChip}
@@ -99,6 +107,17 @@ export default function SearchScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+            {hasNextPage && (
+              <TouchableOpacity 
+                style={[styles.filterChip, styles.loadMoreChip]}
+                onPress={() => fetchNextPage()}
+                disabled={isFetchingNextPage}
+              >
+                <Text style={styles.filterChipText}>
+                  {isFetchingNextPage ? "Loading..." : "Load More Categories"}
+                </Text>
+              </TouchableOpacity>
+            )}
             <View style={styles.filtersRow}>
               <TouchableOpacity 
                 style={styles.filterChip}
@@ -247,6 +266,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1a1a1a',
     fontWeight: '500',
+  },
+  loadMoreChip: {
+    backgroundColor: '#FF6A00',
+    marginTop: 8,
   },
   resultsSection: {
     gap: 16,

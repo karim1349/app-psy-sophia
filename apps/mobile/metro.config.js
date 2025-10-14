@@ -6,6 +6,9 @@ const workspaceRoot = path.resolve(projectRoot, '../..');
 
 const config = getDefaultConfig(projectRoot);
 
+// Add polyfills
+config.resolver.platforms = ['ios', 'android', 'native', 'web'];
+
 // Watch all files in the monorepo
 config.watchFolders = [workspaceRoot];
 

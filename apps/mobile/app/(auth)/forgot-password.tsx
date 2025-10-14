@@ -13,12 +13,14 @@ import { ForgotPasswordSchema, type PasswordResetRequestInput } from '@qiima/sch
 import { usePasswordForgot } from '@qiima/queries';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Button, FormField, TextField } from '@qiima/ui';
+import { Button, FormField, TextField, LanguageSwitcher } from '@qiima/ui';
+import { useI18n } from '@qiima/i18n';
 import { config } from '@/constants/config';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
   const [emailSent, setEmailSent] = useState(false);
+  const { t } = useI18n();
   const passwordForgot = usePasswordForgot({
     env: 'native',
     baseURL: config.baseURL,
@@ -45,16 +47,16 @@ export default function ForgotPasswordScreen() {
       <View style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.successContainer}>
-            <Text style={styles.successTitle}>Check your email</Text>
+            <Text style={styles.successTitle}>{t('auth.forgotPassword.checkEmail')}</Text>
             <Text style={styles.successMessage}>
-              We{"'"}ve sent password reset instructions to your email address.
+              {t('auth.forgotPassword.emailSent')}
             </Text>
             <TouchableOpacity
               style={styles.button}
               onPress={() => router.push('/(auth)/login')}
               activeOpacity={0.7}
             >
-              <Text style={styles.buttonText}>Back to login</Text>
+              <Text style={styles.buttonText}>{t('auth.forgotPassword.backToLogin')}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -72,9 +74,12 @@ export default function ForgotPasswordScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Forgot password?</Text>
+          <View style={styles.languageSwitcherContainer}>
+            <LanguageSwitcher />
+          </View>
+          <Text style={styles.title}>{t('auth.forgotPassword.title')}</Text>
           <Text style={styles.subtitle}>
-            No worries, we{"'"}ll send you reset instructions
+            {t('auth.forgotPassword.subtitle')}
           </Text>
         </View>
 
@@ -84,9 +89,9 @@ export default function ForgotPasswordScreen() {
             name="email"
             render={({ field: { onChange, onBlur, value } }) => (
               <FormField
-                label="Email"
+                label={t('auth.forgotPassword.email')}
                 error={errors.email?.message}
-                hint={"Enter your email address and we'll send you instructions to reset your password."}
+                hint={t('auth.forgotPassword.emailHint')}
               >
                 <TextField
                   value={value}
@@ -104,13 +109,13 @@ export default function ForgotPasswordScreen() {
             <View style={styles.apiErrorContainer}>
               <Text style={styles.apiError}>
                 {passwordForgot.error.message ||
-                  'Failed to send reset email. Please try again.'}
+                  t('auth.forgotPassword.sendFailed')}
               </Text>
             </View>
           )}
 
           <Button
-            title="Send reset instructions"
+            title={t('auth.forgotPassword.sendButton')}
             onPress={handleSubmit(onSubmit)}
             loading={passwordForgot.isPending}
             disabled={passwordForgot.isPending}
@@ -122,7 +127,7 @@ export default function ForgotPasswordScreen() {
             style={styles.backButton}
             onPress={() => router.push('/(auth)/login')}
           >
-            <Text style={styles.backButtonText}>Back to login</Text>
+            <Text style={styles.backButtonText}>{t('auth.forgotPassword.backToLogin')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -142,6 +147,10 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 32,
+  },
+  languageSwitcherContainer: {
+    alignSelf: 'flex-end',
+    marginBottom: 16,
   },
   title: {
     fontSize: 32,

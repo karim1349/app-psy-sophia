@@ -4,11 +4,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ForgotPasswordSchema, type PasswordResetRequestInput } from '@qiima/schemas';
 import { usePasswordForgot } from '@qiima/queries';
+import { useI18n } from '@qiima/i18n';
 import Link from 'next/link';
 import { useState } from 'react';
 
 export function ForgotPasswordForm() {
   const [emailSent, setEmailSent] = useState(false);
+  const { t } = useI18n();
   const passwordForgot = usePasswordForgot({ env: 'web', baseURL: '/api' });
 
   const {
@@ -31,16 +33,16 @@ export function ForgotPasswordForm() {
     return (
       <div className="text-center">
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
-          <p className="font-medium">Check your email</p>
+          <p className="font-medium">{t('auth.forgotPassword.checkEmail')}</p>
           <p className="text-sm mt-1">
-            We&apos;ve sent password reset instructions to your email address.
+            {t('auth.forgotPassword.emailSent')}
           </p>
         </div>
         <Link
           href="/login"
           className="text-blue-600 hover:text-blue-500 text-sm font-medium"
         >
-          Back to login
+          {t('auth.forgotPassword.backToLogin')}
         </Link>
       </div>
     );
@@ -53,7 +55,7 @@ export function ForgotPasswordForm() {
           htmlFor="email"
           className="block text-sm font-medium text-gray-700 mb-1"
         >
-          Email
+          {t('auth.forgotPassword.email')}
         </label>
         <input
           {...register('email')}
@@ -66,14 +68,14 @@ export function ForgotPasswordForm() {
           <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
         )}
         <p className="text-xs text-gray-500 mt-1">
-          Enter your email address and we&apos;ll send you instructions to reset your password.
+          {t('auth.forgotPassword.emailHint')}
         </p>
       </div>
 
       {passwordForgot.error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
           <p className="text-sm">
-            {passwordForgot.error.message || 'Failed to send reset email. Please try again.'}
+            {passwordForgot.error.message || t('auth.forgotPassword.sendFailed')}
           </p>
         </div>
       )}
@@ -83,12 +85,12 @@ export function ForgotPasswordForm() {
         disabled={passwordForgot.isPending}
         className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
-        {passwordForgot.isPending ? 'Sending...' : 'Send reset instructions'}
+        {passwordForgot.isPending ? t('auth.forgotPassword.sending') : t('auth.forgotPassword.sendButton')}
       </button>
 
       <p className="text-center text-sm text-gray-600">
         <Link href="/login" className="text-blue-600 hover:text-blue-500 font-medium">
-          Back to login
+          {t('auth.forgotPassword.backToLogin')}
         </Link>
       </p>
     </form>

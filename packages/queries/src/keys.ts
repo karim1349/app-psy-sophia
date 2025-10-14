@@ -31,6 +31,8 @@ export const queryKeys = {
    */
   categories: {
     all: () => ['categories'] as const,
+    paginated: (page?: number, pageSize?: number) => 
+      ['categories', 'paginated', page, pageSize] as const,
     popular: () => ['categories', 'popular'] as const,
   },
 } as const;
