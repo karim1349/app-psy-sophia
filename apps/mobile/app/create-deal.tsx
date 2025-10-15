@@ -15,15 +15,14 @@ import { useCreateDeal, useInfiniteCategories } from '@qiima/queries';
 import { useRouter } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
 import { config } from '@/constants/config';
-import { useI18n, useI18nNamespace } from '@qiima/i18n';
+import { useI18nNamespace } from '@qiima/i18n';
 
 export default function CreateDealScreen() {
   const scheme = useColorScheme() ?? 'light';
   const router = useRouter();
   
   // i18n hooks
-  const { t: tCommon } = useI18n();
-  const { t: tErrors } = useI18nNamespace('errors');
+  const { t: tDeals } = useI18nNamespace('deals');
   
   const [formData, setFormData] = useState({
     title: '',
@@ -77,58 +76,58 @@ export default function CreateDealScreen() {
 
     // Title validation
     if (!formData.title.trim()) {
-      newErrors.title = tErrors('validation.required');
+      newErrors.title = tDeals('createDeal.validation.titleRequired');
     } else if (formData.title.trim().length < 5) {
-      newErrors.title = tErrors('validation.titleMinLength');
+      newErrors.title = tDeals('createDeal.validation.titleMinLength');
     }
     
     // Description validation
     if (!formData.description.trim()) {
-      newErrors.description = tErrors('validation.required');
+      newErrors.description = tDeals('createDeal.validation.descriptionRequired');
     } else if (formData.description.trim().length < 10) {
-      newErrors.description = tErrors('validation.descriptionMinLength');
+      newErrors.description = tDeals('createDeal.validation.descriptionMinLength');
     }
     
     // Current price validation
     if (!formData.current_price) {
-      newErrors.current_price = tErrors('validation.required');
+      newErrors.current_price = tDeals('createDeal.validation.currentPriceRequired');
     } else if (parseFloat(formData.current_price) <= 0) {
-      newErrors.current_price = tErrors('validation.minValue');
+      newErrors.current_price = tDeals('createDeal.validation.currentPriceMinValue');
     }
     
     // Merchant validation
     if (!formData.merchant.trim()) {
-      newErrors.merchant = tErrors('validation.required');
+      newErrors.merchant = tDeals('createDeal.validation.merchantRequired');
     } else if (formData.merchant.trim().length < 2) {
-      newErrors.merchant = tErrors('validation.merchantMinLength');
+      newErrors.merchant = tDeals('createDeal.validation.merchantMinLength');
     }
     
     // Category validation
     if (!formData.category) {
-      newErrors.category = tErrors('validation.required');
+      newErrors.category = tDeals('createDeal.validation.categoryRequired');
     }
     
     // Channel-specific validation
     if (formData.channel === 'online') {
       if (!formData.url.trim()) {
-        newErrors.url = tErrors('validation.required');
+        newErrors.url = tDeals('createDeal.validation.urlRequired');
       } else if (!isValidUrl(formData.url.trim())) {
-        newErrors.url = tErrors('validation.invalidUrl');
+        newErrors.url = tDeals('createDeal.validation.urlInvalid');
       }
     }
     
     if (formData.channel === 'in_store' && !formData.city.trim()) {
-      newErrors.city = tErrors('validation.required');
+      newErrors.city = tDeals('createDeal.validation.cityRequired');
     }
     
     // Proof URL validation
     if (formData.proof_url.trim() && !isValidUrl(formData.proof_url.trim())) {
-      newErrors.proof_url = tErrors('validation.invalidUrl');
+      newErrors.proof_url = tDeals('createDeal.validation.proofUrlInvalid');
     }
     
     // Require at least one proof (image or proof URL)
     if (!formData.proof_url.trim()) {
-      newErrors.proof_url = tErrors('deals.validation.proofRequired');
+      newErrors.proof_url = tDeals('createDeal.validation.proofUrlRequired');
     }
 
     setErrors(newErrors);
@@ -158,7 +157,7 @@ export default function CreateDealScreen() {
       // Success toast will be automatically shown by the global handler
       // Navigate back immediately
       router.back();
-    } catch (error: any) {
+    } catch {
       // Error will be automatically handled by the global error handler
       // No need to show error toast here as it's already handled
     }
@@ -191,19 +190,19 @@ export default function CreateDealScreen() {
       
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>← Back</Text>
+          <Text style={styles.backButtonText}>{tDeals('createDeal.back')}</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Create Deal</Text>
+        <Text style={styles.title}>{tDeals('createDeal.title')}</Text>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.form}>
           {/* Title */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Title *</Text>
+            <Text style={styles.label}>{tDeals('createDeal.form.title')} *</Text>
             <TextInput
               style={[styles.input, errors.title && styles.inputError]}
-              placeholder="Enter deal title"
+              placeholder={tDeals('createDeal.form.titlePlaceholder')}
               value={formData.title}
               onChangeText={(value) => updateFormData('title', value)}
               maxLength={200}
@@ -213,10 +212,10 @@ export default function CreateDealScreen() {
 
           {/* Description */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Description *</Text>
+            <Text style={styles.label}>{tDeals('createDeal.form.description')} *</Text>
             <TextInput
               style={[styles.textArea, errors.description && styles.inputError]}
-              placeholder="Describe the deal..."
+              placeholder={tDeals('createDeal.form.descriptionPlaceholder')}
               value={formData.description}
               onChangeText={(value) => updateFormData('description', value)}
               multiline
@@ -229,10 +228,10 @@ export default function CreateDealScreen() {
           {/* Price Section */}
           <View style={styles.priceSection}>
             <View style={styles.priceGroup}>
-              <Text style={styles.label}>Current Price *</Text>
+              <Text style={styles.label}>{tDeals('createDeal.form.currentPrice')} *</Text>
               <TextInput
                 style={[styles.input, errors.current_price && styles.inputError]}
-                placeholder="0.00"
+                placeholder={tDeals('createDeal.form.currentPricePlaceholder')}
                 value={formData.current_price}
                 onChangeText={(value) => updateFormData('current_price', value)}
                 keyboardType="numeric"
@@ -241,10 +240,10 @@ export default function CreateDealScreen() {
             </View>
             
             <View style={styles.priceGroup}>
-              <Text style={styles.label}>Original Price</Text>
+              <Text style={styles.label}>{tDeals('createDeal.form.originalPrice')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="0.00"
+                placeholder={tDeals('createDeal.form.originalPricePlaceholder')}
                 value={formData.original_price}
                 onChangeText={(value) => updateFormData('original_price', value)}
                 keyboardType="numeric"
@@ -254,7 +253,7 @@ export default function CreateDealScreen() {
 
           {/* Currency */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Currency</Text>
+            <Text style={styles.label}>{tDeals('createDeal.form.currency')}</Text>
             <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={formData.currency}
@@ -270,10 +269,10 @@ export default function CreateDealScreen() {
 
           {/* Merchant */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Merchant *</Text>
+            <Text style={styles.label}>{tDeals('createDeal.form.merchant')} *</Text>
             <TextInput
               style={[styles.input, errors.merchant && styles.inputError]}
-              placeholder="Store or website name"
+              placeholder={tDeals('createDeal.form.merchantPlaceholder')}
               value={formData.merchant}
               onChangeText={(value) => updateFormData('merchant', value)}
             />
@@ -282,7 +281,7 @@ export default function CreateDealScreen() {
 
           {/* Category */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Category *</Text>
+            <Text style={styles.label}>{tDeals('createDeal.form.category')} *</Text>
             <View style={[styles.pickerContainer, errors.category && styles.inputError]}>
               <Picker
                 selectedValue={formData.category}
@@ -295,7 +294,7 @@ export default function CreateDealScreen() {
                 }}
                 style={styles.picker}
               >
-                <Picker.Item label="Select a category" value="" />
+                <Picker.Item label={tDeals('createDeal.form.categoryPlaceholder')} value="" />
                 {categories?.map((category) => (
                   <Picker.Item 
                     key={category.id} 
@@ -305,12 +304,12 @@ export default function CreateDealScreen() {
                 ))}
                 {hasNextPage && (
                   <Picker.Item 
-                    label={isFetchingNextPage ? "Loading more..." : "Load more categories..."} 
+                    label={isFetchingNextPage ? tDeals('createDeal.form.loadingMore') : tDeals('createDeal.form.loadMoreCategories')} 
                     value="load_more" 
                   />
                 )}
                 {categoriesLoading && (
-                  <Picker.Item label="Loading categories..." value="" />
+                  <Picker.Item label={tDeals('createDeal.form.loadingCategories')} value="" />
                 )}
               </Picker>
             </View>
@@ -319,7 +318,7 @@ export default function CreateDealScreen() {
 
           {/* Deal Type */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Deal Type</Text>
+            <Text style={styles.label}>{tDeals('createDeal.form.dealType')}</Text>
             <View style={styles.dealTypeContainer}>
               <TouchableOpacity
                 style={[
@@ -334,7 +333,7 @@ export default function CreateDealScreen() {
                     formData.channel === 'online' && styles.dealTypeButtonTextActive,
                   ]}
                 >
-                  🌐 Online
+                  {tDeals('createDeal.form.dealTypeOnline')}
                 </Text>
               </TouchableOpacity>
               
@@ -351,7 +350,7 @@ export default function CreateDealScreen() {
                     formData.channel === 'in_store' && styles.dealTypeButtonTextActive,
                   ]}
                 >
-                  🏪 In Store
+                  {tDeals('createDeal.form.dealTypeInStore')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -360,10 +359,10 @@ export default function CreateDealScreen() {
           {/* URL (for online deals) */}
           {formData.channel === 'online' && (
             <View style={styles.formGroup}>
-              <Text style={styles.label}>URL *</Text>
+              <Text style={styles.label}>{tDeals('createDeal.form.url')} *</Text>
               <TextInput
                 style={[styles.input, errors.url && styles.inputError]}
-                placeholder="https://example.com/deal"
+                placeholder={tDeals('createDeal.form.urlPlaceholder')}
                 value={formData.url}
                 onChangeText={(value) => updateFormData('url', value)}
                 keyboardType="url"
@@ -376,10 +375,10 @@ export default function CreateDealScreen() {
           {/* City (for in-store deals) */}
           {formData.channel === 'in_store' && (
             <View style={styles.formGroup}>
-              <Text style={styles.label}>City *</Text>
+              <Text style={styles.label}>{tDeals('createDeal.form.city')} *</Text>
               <TextInput
                 style={[styles.input, errors.city && styles.inputError]}
-                placeholder="Casablanca, Rabat, Marrakech..."
+                placeholder={tDeals('createDeal.form.cityPlaceholder')}
                 value={formData.city}
                 onChangeText={(value) => updateFormData('city', value)}
               />
@@ -389,10 +388,10 @@ export default function CreateDealScreen() {
 
           {/* Proof URL */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Proof URL *</Text>
+            <Text style={styles.label}>{tDeals('createDeal.form.proofUrl')} *</Text>
             <TextInput
               style={[styles.input, errors.proof_url && styles.inputError]}
-              placeholder="https://example.com/screenshot or image URL"
+              placeholder={tDeals('createDeal.form.proofUrlPlaceholder')}
               value={formData.proof_url}
               onChangeText={(value) => updateFormData('proof_url', value)}
               keyboardType="url"
@@ -400,7 +399,7 @@ export default function CreateDealScreen() {
             />
             {errors.proof_url && <Text style={styles.errorText}>{errors.proof_url}</Text>}
             <Text style={styles.helpText}>
-              Provide a URL to a screenshot, image, or other proof of the deal
+              {tDeals('createDeal.form.proofUrlHelp')}
             </Text>
           </View>
 
@@ -411,7 +410,7 @@ export default function CreateDealScreen() {
             disabled={createDealMutation.isPending}
           >
             <Text style={styles.submitButtonText}>
-              {createDealMutation.isPending ? 'Creating Deal...' : 'Create Deal'}
+              {createDealMutation.isPending ? tDeals('createDeal.form.submitting') : tDeals('createDeal.form.submitButton')}
             </Text>
           </TouchableOpacity>
         </View>

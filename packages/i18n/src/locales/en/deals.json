@@ -1,0 +1,52 @@
+{
+  "createDeal": {
+    "title": "Create Deal",
+    "back": "← Back",
+    "form": {
+      "title": "Title",
+      "titlePlaceholder": "Enter deal title",
+      "description": "Description",
+      "descriptionPlaceholder": "Describe the deal...",
+      "currentPrice": "Current Price",
+      "currentPricePlaceholder": "0.00",
+      "originalPrice": "Original Price",
+      "originalPricePlaceholder": "0.00",
+      "currency": "Currency",
+      "merchant": "Merchant",
+      "merchantPlaceholder": "Store or website name",
+      "category": "Category",
+      "categoryPlaceholder": "Select a category",
+      "dealType": "Deal Type",
+      "dealTypeOnline": "🌐 Online",
+      "dealTypeInStore": "🏪 In Store",
+      "url": "URL",
+      "urlPlaceholder": "https://example.com/deal",
+      "city": "City",
+      "cityPlaceholder": "Casablanca, Rabat, Marrakech...",
+      "proofUrl": "Proof URL",
+      "proofUrlPlaceholder": "https://example.com/screenshot or image URL",
+      "proofUrlHelp": "Provide a URL to a screenshot, image, or other proof of the deal",
+      "submitButton": "Create Deal",
+      "submitting": "Creating Deal...",
+      "loadMoreCategories": "Load more categories...",
+      "loadingCategories": "Loading categories...",
+      "loadingMore": "Loading more..."
+    },
+    "validation": {
+      "titleRequired": "Title is required",
+      "titleMinLength": "Title must be at least 5 characters",
+      "descriptionRequired": "Description is required",
+      "descriptionMinLength": "Description must be at least 10 characters",
+      "currentPriceRequired": "Current price is required",
+      "currentPriceMinValue": "Current price must be greater than 0",
+      "merchantRequired": "Merchant is required",
+      "merchantMinLength": "Merchant name must be at least 2 characters",
+      "categoryRequired": "Category is required",
+      "urlRequired": "URL is required for online deals",
+      "urlInvalid": "Please enter a valid URL",
+      "cityRequired": "City is required for in-store deals",
+      "proofUrlRequired": "Proof URL is required",
+      "proofUrlInvalid": "Please enter a valid URL"
+    }
+  }
+}

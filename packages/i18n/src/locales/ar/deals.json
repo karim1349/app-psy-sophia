@@ -1,0 +1,52 @@
+{
+  "createDeal": {
+    "title": "صاوب عرض",
+    "back": "← رجع",
+    "form": {
+      "title": "العنوان",
+      "titlePlaceholder": "دخل عنوان العرض",
+      "description": "الوصف",
+      "descriptionPlaceholder": "وصف العرض...",
+      "currentPrice": "الثمن دابا",
+      "currentPricePlaceholder": "0.00",
+      "originalPrice": "الثمن القديم",
+      "originalPricePlaceholder": "0.00",
+      "currency": "العملة",
+      "merchant": "التاجر",
+      "merchantPlaceholder": "سمية المحل ولا الموقع",
+      "category": "الفئة",
+      "categoryPlaceholder": "اختر فئة",
+      "dealType": "نوع العرض",
+      "dealTypeOnline": "🌐 أونلاين",
+      "dealTypeInStore": "🏪 فالمحل",
+      "url": "اللينك",
+      "urlPlaceholder": "https://exemple.com/offre",
+      "city": "المدينة",
+      "cityPlaceholder": "الدار البيضاء، الرباط، مراكش...",
+      "proofUrl": "لينك الدليل",
+      "proofUrlPlaceholder": "https://exemple.com/screenshot ولا لينك ديال الصورة",
+      "proofUrlHelp": "دير لينك لسكرين شوت، صورة، ولا أي دليل آخر ديال العرض",
+      "submitButton": "صاوب العرض",
+      "submitting": "كايصاوب العرض...",
+      "loadMoreCategories": "حمّل فئات أكثر...",
+      "loadingCategories": "كايحمّل الفئات...",
+      "loadingMore": "كايحمّل..."
+    },
+    "validation": {
+      "titleRequired": "العنوان ضروري",
+      "titleMinLength": "العنوان خاصّو يكون على الأقل 5 حروف",
+      "descriptionRequired": "الوصف ضروري",
+      "descriptionMinLength": "الوصف خاصّو يكون على الأقل 10 حروف",
+      "currentPriceRequired": "الثمن دابا ضروري",
+      "currentPriceMinValue": "الثمن دابا خاصّو يكون كثر من 0",
+      "merchantRequired": "التاجر ضروري",
+      "merchantMinLength": "سمية التاجر خاصّها تكون على الأقل حرفين",
+      "categoryRequired": "الفئة ضرورية",
+      "urlRequired": "اللينك ضروري للعروض أونلاين",
+      "urlInvalid": "دخل لينك صحيح",
+      "cityRequired": "المدينة ضرورية للعروض فالمحل",
+      "proofUrlRequired": "لينك الدليل ضروري",
+      "proofUrlInvalid": "دخل لينك صحيح"
+    }
+  }
+}
