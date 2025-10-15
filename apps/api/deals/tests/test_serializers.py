@@ -206,7 +206,7 @@ class TestDealCreateSerializer:
 
         serializer = DealCreateSerializer(data=data)
         assert not serializer.is_valid()
-        assert "At least one proof" in str(serializer.errors)
+        assert "deals.validation.proofRequired" in str(serializer.errors)
 
     def test_invalid_price_combination(self) -> None:
         """Test validation with invalid price combination."""

@@ -157,7 +157,7 @@ class UserViewSet(GenericViewSet):
         # Check if user is active
         if not user.is_active:
             return Response(
-                {"detail": "Account is not active. Please verify your email."},
+                {"non_field_errors": ["auth.login.accountInactive"]},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -209,8 +209,11 @@ class UserViewSet(GenericViewSet):
                     "detail": "Email verified successfully.",
                 }
             )
-        except ValidationError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError:
+            return Response(
+                {"non_field_errors": ["auth.verifyEmail.invalidCode"]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
     @action(
         detail=False,
@@ -239,7 +242,7 @@ class UserViewSet(GenericViewSet):
             validate_email(email)
         except ValidationError:
             return Response(
-                {"detail": "Invalid email format."}, status=status.HTTP_400_BAD_REQUEST
+                {"email": ["validation.email"]}, status=status.HTTP_400_BAD_REQUEST
             )
 
         result = self.user_proxy.request_password_reset(email)

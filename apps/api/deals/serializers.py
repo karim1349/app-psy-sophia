@@ -339,37 +339,31 @@ class DealCreateSerializer(serializers.ModelSerializer):
     def validate_title(self, value: str) -> str:
         """Validate deal title."""
         if len(value.strip()) < 5:
-            raise serializers.ValidationError(
-                "Title must be at least 5 characters long."
-            )
+            raise serializers.ValidationError("validation.titleMinLength")
         return value.strip()
 
     def validate_description(self, value: str) -> str:
         """Validate deal description."""
         if len(value.strip()) < 10:
-            raise serializers.ValidationError(
-                "Description must be at least 10 characters long."
-            )
+            raise serializers.ValidationError("validation.descriptionMinLength")
         return value.strip()
 
     def validate_current_price(self, value: float) -> float:
         """Validate current price."""
         if value <= 0:
-            raise serializers.ValidationError("Current price must be greater than 0.")
+            raise serializers.ValidationError("validation.minValue")
         return value
 
     def validate_original_price(self, value: float | None) -> float | None:
         """Validate original price."""
         if value is not None and value <= 0:
-            raise serializers.ValidationError("Original price must be greater than 0.")
+            raise serializers.ValidationError("validation.minValue")
         return value
 
     def validate_merchant(self, value: str) -> str:
         """Validate merchant name."""
         if len(value.strip()) < 2:
-            raise serializers.ValidationError(
-                "Merchant name must be at least 2 characters long."
-            )
+            raise serializers.ValidationError("validation.merchantMinLength")
         return value.strip()
 
     def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
@@ -384,25 +378,19 @@ class DealCreateSerializer(serializers.ModelSerializer):
 
         # Channel-specific validation
         if channel == "online" and not url:
-            raise serializers.ValidationError(
-                {"url": "URL is required for online deals."}
-            )
+            raise serializers.ValidationError({"url": "validation.required"})
 
         if channel == "in_store" and not city:
-            raise serializers.ValidationError(
-                {"city": "City is required for in-store deals."}
-            )
+            raise serializers.ValidationError({"city": "validation.required"})
 
         # Require at least one proof
         if not image and not proof_url:
-            raise serializers.ValidationError(
-                "At least one proof (image or proof URL) is required."
-            )
+            raise serializers.ValidationError("deals.validation.proofRequired")
 
         # Price validation
         if original_price and current_price and original_price <= current_price:
             raise serializers.ValidationError(
-                {"original_price": "Original price must be higher than current price."}
+                {"original_price": "deals.validation.invalidDiscount"}
             )
 
         return attrs
@@ -463,29 +451,25 @@ class DealUpdateSerializer(serializers.ModelSerializer):
     def validate_description(self, value: str) -> str:
         """Validate deal description."""
         if len(value.strip()) < 10:
-            raise serializers.ValidationError(
-                "Description must be at least 10 characters long."
-            )
+            raise serializers.ValidationError("validation.descriptionMinLength")
         return value.strip()
 
     def validate_current_price(self, value: float) -> float:
         """Validate current price."""
         if value <= 0:
-            raise serializers.ValidationError("Current price must be greater than 0.")
+            raise serializers.ValidationError("validation.minValue")
         return value
 
     def validate_original_price(self, value: float | None) -> float | None:
         """Validate original price."""
         if value is not None and value <= 0:
-            raise serializers.ValidationError("Original price must be greater than 0.")
+            raise serializers.ValidationError("validation.minValue")
         return value
 
     def validate_merchant(self, value: str) -> str:
         """Validate merchant name."""
         if len(value.strip()) < 2:
-            raise serializers.ValidationError(
-                "Merchant name must be at least 2 characters long."
-            )
+            raise serializers.ValidationError("validation.merchantMinLength")
         return value.strip()
 
     def update(self, instance: Deal, validated_data: Dict[str, Any]) -> Deal:

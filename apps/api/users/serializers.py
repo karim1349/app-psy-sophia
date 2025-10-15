@@ -88,25 +88,19 @@ class RegisterSerializer(serializers.ModelSerializer):
         normalized_email = value.lower()
         proxy = UserProxy()
         if proxy.get_user_by_email(normalized_email):
-            raise serializers.ValidationError("A user with that email already exists.")
+            raise serializers.ValidationError("auth.register.emailExists")
         return normalized_email
 
     def validate_username(self, value: str) -> str:
         """Validate username length and uniqueness."""
 
         if len(value) < 3:
-            raise serializers.ValidationError(
-                "Username must be at least 3 characters long."
-            )
+            raise serializers.ValidationError("validation.minLength")
         if len(value) > 30:
-            raise serializers.ValidationError(
-                "Username must be at most 30 characters long."
-            )
+            raise serializers.ValidationError("validation.maxLength")
         proxy = UserProxy()
         if proxy.get_user_by_username(value):
-            raise serializers.ValidationError(
-                "A user with that username already exists."
-            )
+            raise serializers.ValidationError("auth.register.usernameExists")
         return value
 
     def validate_password(self, value: str) -> str:
@@ -121,7 +115,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         """Validate that passwords match."""
         if attrs.get("password") != attrs.get("password_confirm"):
             raise serializers.ValidationError(
-                {"password_confirm": "Passwords do not match."}
+                {"password_confirm": "auth.register.passwordMismatch"}
             )
         return attrs
 
@@ -156,18 +150,12 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         """Validate username length and uniqueness."""
 
         if len(value) < 3:
-            raise serializers.ValidationError(
-                "Username must be at least 3 characters long."
-            )
+            raise serializers.ValidationError("validation.minLength")
         if len(value) > 30:
-            raise serializers.ValidationError(
-                "Username must be at most 30 characters long."
-            )
+            raise serializers.ValidationError("validation.maxLength")
         proxy = UserProxy()
         if proxy.get_user_by_username(value):
-            raise serializers.ValidationError(
-                "A user with that username already exists."
-            )
+            raise serializers.ValidationError("auth.register.usernameExists")
         return value
 
 
@@ -196,18 +184,18 @@ class LoginSerializer(serializers.Serializer):
         password = attrs.get("password")
 
         if not email or not password:
-            raise serializers.ValidationError("Must include email and password.")
+            raise serializers.ValidationError("auth.login.missingFields")
 
         # Use proxy to get user
         proxy = UserProxy()
         user = proxy.get_user_by_email(email)
 
         if not user:
-            raise serializers.ValidationError("Invalid credentials.")
+            raise serializers.ValidationError("auth.login.invalidCredentials")
 
         # Check password
         if not user.check_password(password):
-            raise serializers.ValidationError("Invalid credentials.")
+            raise serializers.ValidationError("auth.login.invalidCredentials")
 
         attrs["user"] = user
         return attrs
@@ -274,7 +262,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         """Validate that passwords match."""
         if attrs.get("password") != attrs.get("password_confirm"):
             raise serializers.ValidationError(
-                {"password_confirm": "Passwords do not match."}
+                {"password_confirm": "auth.register.passwordMismatch"}
             )
         return attrs
 
@@ -308,9 +296,9 @@ class VerifyEmailSerializer(serializers.Serializer):
     def validate_code(self, value: str) -> str:
         """Validate that code is exactly 6 numeric digits."""
         if not value.isdigit():
-            raise serializers.ValidationError("Code must contain only digits.")
+            raise serializers.ValidationError("auth.verifyEmail.invalidCode")
         if len(value) != 6:
-            raise serializers.ValidationError("Code must be exactly 6 digits.")
+            raise serializers.ValidationError("auth.verifyEmail.invalidCode")
         return value
 
     def update(self, instance: Any, validated_data: Dict[str, Any]) -> Any:
