@@ -175,15 +175,19 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
           getAccessToken: undefined // No access token needed for refresh
         });
         
-        const data = await http.post<{ access: string }>('/users/refresh/', {
+        const data = await http.post<{ access: string; refresh: string }>('/users/refresh/', {
           refresh: refreshToken,
         });
         
-        log('Token refresh successful', { accessTokenLength: data.access?.length });
+        log('Token refresh successful', { 
+          accessTokenLength: data.access?.length,
+          refreshTokenLength: data.refresh?.length  
+        });
         
-        // Store the new access token
+        // Store BOTH the new access token AND new refresh token
         set({ accessToken: data.access });
-        log('Access token restored successfully');
+        await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, data.refresh);
+        log('Access token and refresh token restored successfully');
         return true;
         
       } catch (refreshError) {
