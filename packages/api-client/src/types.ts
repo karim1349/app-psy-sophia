@@ -34,7 +34,8 @@ export class HttpError extends Error {
   constructor(
     message: string,
     public status: number,
-    public errors?: Record<string, string[]>
+    public errors?: Record<string, string[]>,
+    public code?: string
   ) {
     super(message);
     this.name = 'HttpError';

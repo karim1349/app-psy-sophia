@@ -132,7 +132,8 @@ export function createHttp(config: HttpConfig): HttpClient {
         throw new HttpError(
           data.message || data.detail || response.statusText,
           response.status,
-          errors
+          errors,
+          data.code
         );
       }
 

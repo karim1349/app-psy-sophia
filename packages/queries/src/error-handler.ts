@@ -264,13 +264,15 @@ export function shouldSuppressError(error: unknown, meta?: Record<string, unknow
 
   // Suppress specific error types that are handled elsewhere
   if (error instanceof HttpError) {
-    // For 401 errors, only suppress if it's a token refresh scenario
-    // Show toast for "not authenticated" errors (when user needs to log in)
+    // For 401 errors, check the code
     if (error.status === 401) {
-      const errorMessage = error.message?.toLowerCase() || '';
+      // Suppress token expiration errors (handled by refresh logic)
+      if (error.code === 'token_not_valid') {
+        return true;
+      }
       
-      // Don't suppress if it's an "authentication required" error
-      // These messages indicate the user is not logged in, not that the token expired
+      // Don't suppress "not authenticated" errors (show toast for these)
+      const errorMessage = error.message?.toLowerCase() || '';
       if (
         errorMessage.includes('credentials were not provided') ||
         errorMessage.includes('authentication credentials') ||
@@ -280,7 +282,7 @@ export function shouldSuppressError(error: unknown, meta?: Record<string, unknow
         return false; // Show toast
       }
       
-      // Suppress token expiration errors (handled by refresh logic)
+      // Default: suppress other 401s
       return true;
     }
   }

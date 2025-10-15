@@ -7,7 +7,7 @@ describe('createQueryClient', () => {
 
     expect(client).toBeInstanceOf(QueryClient);
     expect(client.getDefaultOptions().queries?.staleTime).toBe(1000 * 60 * 5);
-    expect(client.getDefaultOptions().queries?.retry).toBe(1);
+    expect(typeof client.getDefaultOptions().queries?.retry).toBe('function');
     expect(client.getDefaultOptions().queries?.refetchOnWindowFocus).toBe(true);
     expect(client.getDefaultOptions().queries?.refetchOnReconnect).toBe(true);
     expect(client.getDefaultOptions().mutations?.retry).toBe(false);

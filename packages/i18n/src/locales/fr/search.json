@@ -1,0 +1,29 @@
+{
+  "title": "Rechercher des Offres",
+  "subtitle": "Trouvez des offres par catégorie, marchand ou mot-clé",
+  "searchPlaceholder": "Rechercher des offres...",
+  "filters": {
+    "title": "Filtres Rapides",
+    "categories": "Catégories",
+    "cities": "Villes",
+    "loadMore": "Charger plus de catégories...",
+    "loadingMore": "Chargement..."
+  },
+  "results": {
+    "title": "Résultats de Recherche",
+    "noResults": "Aucune offre trouvée",
+    "noResultsDescription": "Essayez d'ajuster vos termes de recherche ou filtres",
+    "loading": "Recherche en cours...",
+    "error": "Échec de la recherche d'offres"
+  },
+  "recentSearches": {
+    "title": "Recherches Récentes",
+    "clearAll": "Tout Effacer"
+  },
+  "dealCard": {
+    "verified": "Vérifié",
+    "votes": "votes",
+    "comments": "commentaires",
+    "ago": "il y a"
+  }
+}

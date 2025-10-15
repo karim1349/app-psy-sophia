@@ -187,14 +187,6 @@ export default function CreateDealScreen() {
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-      
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>{tDeals('createDeal.back')}</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>{tDeals('createDeal.title')}</Text>
-      </View>
-
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.form}>
           {/* Title */}

@@ -1,0 +1,29 @@
+{
+  "title": "دور على العروض",
+  "subtitle": "لقى العروض بالفئة، التاجر، ولا الكلمة المفتاحية",
+  "searchPlaceholder": "دور على العروض...",
+  "filters": {
+    "title": "فلاتر سريعة",
+    "categories": "الفئات",
+    "cities": "المدن",
+    "loadMore": "حمّل المزيد من الفئات...",
+    "loadingMore": "كايحمّل المزيد..."
+  },
+  "results": {
+    "title": "نتائج البحث",
+    "noResults": "ما لقيتش عروض",
+    "noResultsDescription": "جرب تغيير كلمات البحث ولا الفلاتر",
+    "loading": "كايبحث...",
+    "error": "فشل فالبحث على العروض"
+  },
+  "recentSearches": {
+    "title": "البحثات الأخيرة",
+    "clearAll": "امحي الكل"
+  },
+  "dealCard": {
+    "verified": "مؤكد",
+    "votes": "أصوات",
+    "comments": "تعليقات",
+    "ago": "منذ"
+  }
+}

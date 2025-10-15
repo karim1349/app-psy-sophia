@@ -10,15 +10,19 @@ import {
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
-import { useDeal, useDealComments, useVoteDeal, useAddComment } from '@qiima/queries';
+import { useDeal, useDealComments, useVoteDeal } from '@qiima/queries';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { config } from '@/constants/config';
+import { useI18nNamespace } from '@qiima/i18n';
 
 export default function DealDetailScreen() {
   const scheme = useColorScheme() ?? 'light';
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [refreshing, setRefreshing] = useState(false);
+  
+  // i18n hooks
+  const { t: tDealDetail } = useI18nNamespace('dealDetail');
 
   // Fetch deal data
   const { data: deal, isLoading, error, refetch } = useDeal({
@@ -72,7 +76,7 @@ export default function DealDetailScreen() {
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
-        <Text style={styles.loadingText}>Loading deal...</Text>
+        <Text style={styles.loadingText}>{tDealDetail('loading')}</Text>
       </View>
     );
   }
@@ -92,9 +96,9 @@ export default function DealDetailScreen() {
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
-        <Text style={styles.errorText}>Deal not found</Text>
+        <Text style={styles.errorText}>{tDealDetail('error')}</Text>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>Go Back</Text>
+          <Text style={styles.backButtonText}>{tDealDetail('back')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -121,7 +125,7 @@ export default function DealDetailScreen() {
       
       <View style={styles.header}>
         <TouchableOpacity style={styles.headerBackButton} onPress={() => router.back()}>
-          <Text style={styles.headerBackButtonText}>← Back</Text>
+          <Text style={styles.headerBackButtonText}>{tDealDetail('back')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -136,7 +140,7 @@ export default function DealDetailScreen() {
             <Text style={styles.dealTitle}>{deal.title}</Text>
             {deal.is_verified && (
               <View style={styles.verifiedBadge}>
-                <Text style={styles.verifiedText}>✓ Verified</Text>
+                <Text style={styles.verifiedText}>{tDealDetail('verified')}</Text>
               </View>
             )}
           </View>
@@ -161,7 +165,7 @@ export default function DealDetailScreen() {
             </Text>
             <Text style={styles.location}>📍 {deal.location}</Text>
             <Text style={styles.author}>
-              By {deal.author.username} • {new Date(deal.created_at).toLocaleDateString()}
+              {tDealDetail('by')} {deal.author.username} • {new Date(deal.created_at).toLocaleDateString()}
             </Text>
           </View>
 
@@ -176,10 +180,10 @@ export default function DealDetailScreen() {
               onPress={() => handleVote('up')}
               disabled={voteMutation.isPending}
             >
-              <Text style={styles.voteButtonText}>👍 Upvote</Text>
+              <Text style={styles.voteButtonText}>{tDealDetail('upvote')}</Text>
             </TouchableOpacity>
             
-            <Text style={styles.voteCount}>{deal.vote_count} votes</Text>
+            <Text style={styles.voteCount}>{deal.vote_count} {tDealDetail('votes')}</Text>
             
             <TouchableOpacity
               style={[
@@ -189,14 +193,14 @@ export default function DealDetailScreen() {
               onPress={() => handleVote('down')}
               disabled={voteMutation.isPending}
             >
-              <Text style={styles.voteButtonText}>👎 Downvote</Text>
+              <Text style={styles.voteButtonText}>{tDealDetail('downvote')}</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.commentsSection}>
           <Text style={styles.commentsTitle}>
-            Comments ({deal.comment_count})
+            {tDealDetail('comments.title')} ({deal.comment_count})
           </Text>
           
           {comments && comments.length > 0 ? (
@@ -210,12 +214,12 @@ export default function DealDetailScreen() {
                 </View>
                 <Text style={styles.commentContent}>{comment.content}</Text>
                 {comment.is_edited && (
-                  <Text style={styles.editedLabel}>Edited</Text>
+                  <Text style={styles.editedLabel}>{tDealDetail('comments.edited')}</Text>
                 )}
               </View>
             ))
           ) : (
-            <Text style={styles.noCommentsText}>No comments yet</Text>
+            <Text style={styles.noCommentsText}>{tDealDetail('comments.noComments')}</Text>
           )}
         </View>
       </ScrollView>

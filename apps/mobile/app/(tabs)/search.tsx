@@ -5,10 +5,15 @@ import { useState, useEffect } from 'react';
 import { useSearchDeals, useInfiniteCategories } from '@qiima/queries';
 import { useRouter } from 'expo-router';
 import { config } from '@/constants/config';
+import { useI18nNamespace } from '@qiima/i18n';
 
 export default function SearchScreen() {
   const scheme = useColorScheme() ?? 'light';
   const router = useRouter();
+  
+  // i18n hooks
+  const { t: tSearch } = useI18nNamespace('search');
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [selectedFilters, setSelectedFilters] = useState<{
@@ -71,15 +76,15 @@ export default function SearchScreen() {
       />
       <ScrollView style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>Search Deals</Text>
-          <Text style={styles.subtitle}>Find deals by category, merchant, or keyword</Text>
+          <Text style={styles.title}>{tSearch('title')}</Text>
+          <Text style={styles.subtitle}>{tSearch('subtitle')}</Text>
         </View>
 
         <View style={styles.searchSection}>
           <View style={styles.searchInputContainer}>
             <TextInput
               style={styles.searchInput}
-              placeholder="Search for deals..."
+              placeholder={tSearch('searchPlaceholder')}
               placeholderTextColor="#999"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -93,7 +98,7 @@ export default function SearchScreen() {
           </View>
 
           <View style={styles.filtersContainer}>
-            <Text style={styles.filtersTitle}>Quick Filters</Text>
+            <Text style={styles.filtersTitle}>{tSearch('filters.title')}</Text>
             <View style={styles.filtersRow}>
               {categories?.slice(0, 6).map((category) => (
                 <TouchableOpacity 
@@ -114,7 +119,7 @@ export default function SearchScreen() {
                 disabled={isFetchingNextPage}
               >
                 <Text style={styles.filterChipText}>
-                  {isFetchingNextPage ? "Loading..." : "Load More Categories"}
+                  {isFetchingNextPage ? tSearch('filters.loadingMore') : tSearch('filters.loadMore')}
                 </Text>
               </TouchableOpacity>
             )}
@@ -144,20 +149,20 @@ export default function SearchScreen() {
         <View style={styles.resultsSection}>
           {isSearching && (
             <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>Searching...</Text>
+              <Text style={styles.loadingText}>{tSearch('results.loading')}</Text>
             </View>
           )}
           
           {error && (
             <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>Search failed</Text>
+              <Text style={styles.errorText}>{tSearch('results.error')}</Text>
             </View>
           )}
           
           {searchResults && searchResults.length > 0 ? (
             <>
               <Text style={styles.sectionTitle}>
-                Search Results ({searchResults.length})
+                {tSearch('results.title')} ({searchResults.length})
               </Text>
               {searchResults.map((deal) => (
                 <TouchableOpacity 
@@ -174,16 +179,16 @@ export default function SearchScreen() {
                     {deal.category.icon || '🏷️'} {deal.merchant} • {deal.location}
                   </Text>
                   <View style={styles.dealVotes}>
-                    <Text style={styles.voteCount}>🔥 {deal.vote_count} votes</Text>
-                    {deal.is_verified && <Text style={styles.verifiedBadge}>✓ Verified</Text>}
+                    <Text style={styles.voteCount}>🔥 {deal.vote_count} {tSearch('dealCard.votes')}</Text>
+                    {deal.is_verified && <Text style={styles.verifiedBadge}>✓ {tSearch('dealCard.verified')}</Text>}
                   </View>
                 </TouchableOpacity>
               ))}
             </>
           ) : !isSearching && !error && debouncedQuery && (
             <View style={styles.noResultsContainer}>
-              <Text style={styles.noResultsText}>No deals found</Text>
-              <Text style={styles.noResultsSubtext}>Try adjusting your search terms</Text>
+              <Text style={styles.noResultsText}>{tSearch('results.noResults')}</Text>
+              <Text style={styles.noResultsSubtext}>{tSearch('results.noResultsDescription')}</Text>
             </View>
           )}
         </View>

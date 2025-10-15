@@ -48,3 +48,6 @@ export {
   useAddComment,
 } from './deals';
 export type { UseDealsConfig, PaginatedResponse, PaginationParams } from './deals';
+
+// Refresh handler
+export { setGlobalRefreshCallback, triggerGlobalRefresh } from './refresh-handler';

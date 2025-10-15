@@ -5,7 +5,6 @@ import type {
   MessageResponse,
   User,
   RefreshResponse,
-  HttpError,
 } from '@qiima/api-client';
 import type {
   RegisterInput,
@@ -253,13 +252,8 @@ export function useMeQuery(config: UseAuthConfig) {
       return http.get<User>('/users/me/');
     },
     enabled: env === 'web' || !!sessionStore.getState().accessToken,
-    retry: (failureCount, error: HttpError) => {
-      // Don't retry on 401 (will be handled by refresh logic)
-      if (error?.status === 401) {
-        return false;
-      }
-      return failureCount < 1;
-    },
+    // Remove custom retry logic, use default from QueryClient
+    // The global error handler will trigger refresh on token_not_valid
   });
 }
 
