@@ -1,0 +1,26 @@
+{
+  "auth": {
+    "login": {
+      "success": "دخلتي بنجاح",
+      "welcomeBack": "مرحبا بيك من جديد!"
+    },
+    "register": {
+      "success": "تسجّلتي بنجاح",
+      "checkEmail": "شوف الإيميل ديالك باش تأكد الحساب"
+    },
+    "verifyEmail": {
+      "success": "تأكّد الإيميل",
+      "verified": "الإيميل ديالك تأكّد بنجاح"
+    },
+    "resetPassword": {
+      "success": "كلمة السر تبدّلات",
+      "resetSuccess": "كلمة السر تبدّلات بنجاح"
+    }
+  },
+  "deals": {
+    "create": {
+      "success": "تخلقات الصفقة",
+      "created": "الصفقة ديالك تخلقات بنجاح"
+    }
+  }
+}

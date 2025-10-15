@@ -1,0 +1,112 @@
+{
+  "title": {
+    "validation": "Erreur de validation",
+    "auth": "Erreur d'authentification",
+    "network": "Erreur de connexion",
+    "server": "Erreur serveur",
+    "notFound": "Non trouvé",
+    "forbidden": "Accès refusé",
+    "conflict": "Conflit",
+    "rateLimit": "Trop de requêtes"
+  },
+  "generic": {
+    "validation": "Veuillez vérifier vos données et réessayer",
+    "network": "Vérifiez votre connexion internet et réessayez",
+    "server": "Une erreur s'est produite. Veuillez réessayer plus tard",
+    "unknown": "Une erreur inattendue s'est produite"
+  },
+  "auth": {
+    "login": {
+      "invalidCredentials": "Email ou mot de passe invalide",
+      "accountInactive": "Votre compte n'est pas actif. Veuillez vérifier votre email",
+      "accountLocked": "Votre compte a été verrouillé. Contactez le support",
+      "missingFields": "Email et mot de passe sont requis",
+      "required": "Vous devez être connecté pour effectuer cette action"
+    },
+    "register": {
+      "emailExists": "Cet email est déjà enregistré",
+      "usernameExists": "Ce nom d'utilisateur est déjà pris",
+      "weakPassword": "Mot de passe trop faible. Utilisez au moins 8 caractères",
+      "passwordMismatch": "Les mots de passe ne correspondent pas"
+    },
+    "verifyEmail": {
+      "invalidCode": "Code de vérification invalide",
+      "expiredCode": "Le code de vérification a expiré",
+      "alreadyVerified": "L'email est déjà vérifié",
+      "codeSent": "Code de vérification envoyé à votre email"
+    },
+    "resetPassword": {
+      "invalidToken": "Le lien de réinitialisation est invalide ou expiré",
+      "emailNotFound": "Aucun compte trouvé avec cet email",
+      "resetSuccess": "Réinitialisation du mot de passe réussie",
+      "emailSent": "Instructions de réinitialisation envoyées à votre email"
+    },
+    "session": {
+      "expired": "Votre session a expiré",
+      "expiredMessage": "Veuillez vous reconnecter pour continuer"
+    }
+  },
+  "validation": {
+    "required": "Ce champ est requis",
+    "email": "Veuillez entrer une adresse email valide",
+    "minLength": "Doit contenir au moins {{min}} caractères",
+    "maxLength": "Doit contenir moins de {{max}} caractères",
+    "invalidFormat": "Format invalide",
+    "invalidUrl": "Veuillez entrer une URL valide",
+    "minValue": "Doit être supérieur à 0",
+    "titleMinLength": "Le titre doit contenir au moins 5 caractères",
+    "descriptionMinLength": "La description doit contenir au moins 10 caractères",
+    "merchantMinLength": "Le nom du marchand doit contenir au moins 2 caractères"
+  },
+  "network": {
+    "offline": "Vous semblez être hors ligne",
+    "timeout": "Délai d'attente dépassé. Veuillez réessayer",
+    "connectionFailed": "Échec de connexion. Vérifiez votre internet"
+  },
+  "server": {
+    "internal": "Erreur serveur interne. Veuillez réessayer plus tard",
+    "unavailable": "Service temporairement indisponible",
+    "maintenance": "Serveur en maintenance"
+  },
+  "resource": {
+    "notFound": "La ressource demandée n'a pas été trouvée",
+    "forbidden": "Vous n'avez pas la permission d'effectuer cette action",
+    "conflict": "Cette action entre en conflit avec les données existantes"
+  },
+  "rateLimit": {
+    "exceeded": "Trop de requêtes. Veuillez attendre un moment avant de réessayer"
+  },
+  "deals": {
+    "validation": {
+      "proofRequired": "Au moins une preuve (image ou URL de preuve) est requise",
+      "invalidDiscount": "Le prix original doit être supérieur au prix actuel"
+    }
+  },
+  "fields": {
+    "email": "Email",
+    "password": "Mot de passe",
+    "password_confirm": "Confirmation du mot de passe",
+    "username": "Nom d'utilisateur",
+    "merchant": "Marchand",
+    "channel": "Canal",
+    "url": "URL",
+    "proof_url": "URL de preuve",
+    "title": "Titre",
+    "description": "Description",
+    "price": "Prix",
+    "original_price": "Prix original",
+    "discount_percentage": "Pourcentage de remise",
+    "expires_at": "Date d'expiration",
+    "first_name": "Prénom",
+    "last_name": "Nom de famille",
+    "phone": "Numéro de téléphone",
+    "address": "Adresse",
+    "city": "Ville",
+    "country": "Pays",
+    "name": "Nom",
+    "image": "Image",
+    "file": "Fichier",
+    "code": "Code",
+    "token": "Jeton"
+  }
+}

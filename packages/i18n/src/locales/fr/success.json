@@ -1,0 +1,27 @@
+{
+  "auth": {
+    "login": {
+      "success": "Succès",
+      "welcomeBack": "Bon retour !"
+    },
+    "register": {
+      "success": "Inscription réussie",
+      "checkEmail": "Veuillez vérifier votre email pour confirmer votre compte"
+    },
+    "verifyEmail": {
+      "success": "Email vérifié",
+      "verified": "Votre email a été vérifié avec succès"
+    },
+    "resetPassword": {
+      "success": "Mot de passe réinitialisé",
+      "resetSuccess": "Votre mot de passe a été réinitialisé avec succès"
+    }
+  },
+  "deals": {
+    "create": {
+      "success": "Deal créé",
+      "created": "Votre deal a été créé avec succès"
+    }
+  }
+}
+
