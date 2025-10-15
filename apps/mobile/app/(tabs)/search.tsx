@@ -1,6 +1,5 @@
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity } from 'react-native';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { TabScreen } from '@/components/tab-screen';
 import { useState, useEffect } from 'react';
 import { useSearchDeals, useInfiniteCategories } from '@qiima/queries';
 import { useRouter } from 'expo-router';
@@ -8,7 +7,6 @@ import { config } from '@/constants/config';
 import { useI18nNamespace } from '@qiima/i18n';
 
 export default function SearchScreen() {
-  const scheme = useColorScheme() ?? 'light';
   const router = useRouter();
   
   // i18n hooks
@@ -61,20 +59,7 @@ export default function SearchScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: 'transparent' }]}>
-      <LinearGradient
-        pointerEvents="none"
-        colors={
-          scheme === 'dark'
-            ? ['#21110D', '#28180F', '#17120A']
-            : ['#FFECE5', '#FFE3CC', '#FFF6D6']
-        }
-        locations={[0, 0.6, 1]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-      <ScrollView style={styles.content}>
+    <TabScreen>
         <View style={styles.header}>
           <Text style={styles.title}>{tSearch('title')}</Text>
           <Text style={styles.subtitle}>{tSearch('subtitle')}</Text>
@@ -192,19 +177,11 @@ export default function SearchScreen() {
             </View>
           )}
         </View>
-      </ScrollView>
-    </View>
+    </TabScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
   header: {
     marginBottom: 32,
     marginTop: 60,

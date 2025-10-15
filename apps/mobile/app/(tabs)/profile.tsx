@@ -1,6 +1,5 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { TabScreen } from '@/components/tab-screen';
 import { useMeQuery, useLogout } from '@qiima/queries';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -9,7 +8,6 @@ import { LanguageSwitcher } from '@qiima/ui';
 import { useI18n } from '@qiima/i18n';
 
 export default function ProfileScreen() {
-  const scheme = useColorScheme() ?? 'light';
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { t, currentLanguage } = useI18n();
@@ -60,20 +58,7 @@ export default function ProfileScreen() {
   // If not authenticated, show login/register options
   if (error || (!isLoading && !user)) {
     return (
-      <View style={[styles.container, { backgroundColor: 'transparent' }]}>
-        <LinearGradient
-          pointerEvents="none"
-          colors={
-            scheme === 'dark'
-              ? ['#21110D', '#28180F', '#17120A']
-              : ['#FFECE5', '#FFE3CC', '#FFF6D6']
-          }
-          locations={[0, 0.6, 1]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-        <ScrollView style={styles.content} contentContainerStyle={styles.centerContent}>
+      <TabScreen centered>
           <View style={styles.authContainer}>
             <Text style={styles.title}>{t('common.welcome')}</Text>
             <Text style={styles.subtitle}>{t('common.welcomeSubtitle')}</Text>
@@ -114,36 +99,22 @@ export default function ProfileScreen() {
               <LanguageSwitcher style={styles.languageSwitcher} />
             </View>
           </View>
-        </ScrollView>
-      </View>
+      </TabScreen>
     );
   }
 
   // Loading state
   if (isLoading) {
     return (
-      <View style={[styles.container, styles.centerContent]}>
+      <TabScreen centered>
         <Text style={styles.loadingText}>{t('common.loading')}</Text>
-      </View>
+      </TabScreen>
     );
   }
 
   // Authenticated user profile
   return (
-    <View style={[styles.container, { backgroundColor: 'transparent' }]}>
-      <LinearGradient
-        pointerEvents="none"
-        colors={
-          scheme === 'dark'
-            ? ['#21110D', '#28180F', '#17120A']
-            : ['#FFECE5', '#FFE3CC', '#FFF6D6']
-        }
-        locations={[0, 0.6, 1]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-      <ScrollView style={styles.content}>
+    <TabScreen>
         <View style={styles.header}>
           <Text style={styles.title}>{t('common.profile')}</Text>
         </View>
@@ -207,24 +178,11 @@ export default function ProfileScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
-    </View>
+    </TabScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  centerContent: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: '100%',
-  },
   header: {
     marginBottom: 32,
     marginTop: 60,

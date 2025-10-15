@@ -1,6 +1,5 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { TabScreen } from '@/components/tab-screen';
 import { useHotDeals } from '@qiima/queries';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -8,13 +7,12 @@ import { config } from '@/constants/config';
 import { useI18n } from '@qiima/i18n';
 
 export default function HomeScreen() {
-  const scheme = useColorScheme() ?? 'light';
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const { t } = useI18n();
 
   // Fetch hot deals from API
-  const { data: hotDeals, isLoading, error, refetch } = useHotDeals({
+  const { data: hotDeals, isLoading, refetch } = useHotDeals({
     env: 'native',
     baseURL: config.baseURL,
   }, 10);
@@ -26,25 +24,8 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: 'transparent' }]}>
-      <LinearGradient
-        pointerEvents="none"
-        colors={
-          scheme === 'dark'
-            ? ['#21110D', '#28180F', '#17120A']
-            : ['#FFECE5', '#FFE3CC', '#FFF6D6']
-        }
-        locations={[0, 0.6, 1]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-      <ScrollView 
-        style={styles.content}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
+    <View style={styles.container}>
+      <TabScreen onRefresh={onRefresh} refreshing={refreshing}>
         <View style={styles.header}>
           <Text style={styles.title}>{t('common.qiimaDeals')}</Text>
           <Text style={styles.subtitle}>{t('common.findBestDeals')}</Text>
@@ -52,7 +33,7 @@ export default function HomeScreen() {
 
         <View style={styles.dealsSection}>
           <Text style={styles.sectionTitle}>{t('common.hotDeals')}</Text>
-          
+
           {isLoading && !hotDeals && (
             <View style={styles.loadingContainer}>
               <Text style={styles.loadingText}>{t('common.loadingDeals')}</Text>
@@ -81,7 +62,7 @@ export default function HomeScreen() {
             </TouchableOpacity>
           ))}
         </View>
-      </ScrollView>
+      </TabScreen>
 
       <View style={styles.fabContainer}>
         <TouchableOpacity 
@@ -107,10 +88,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  content: {
-    flex: 1,
-    padding: 20,
   },
   header: {
     marginBottom: 32,
@@ -179,7 +156,7 @@ const styles = StyleSheet.create({
   },
   fabContainer: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 100,
     right: 20,
   },
   fab: {
@@ -229,7 +206,7 @@ const styles = StyleSheet.create({
   },
   demoButtonContainer: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 100,
     left: 20,
   },
   demoButton: {
