@@ -8,7 +8,7 @@ export interface HttpConfig {
 
 export interface HttpClient {
   get<T>(url: string, config?: RequestInit): Promise<T>;
-  post<T>(url: string, data?: any, config?: RequestInit): Promise<T>;
+  post<T>(url: string, data?: Record<string, unknown>, config?: RequestInit): Promise<T>;
   patch<T>(url: string, data?: any, config?: RequestInit): Promise<T>;
   delete<T>(url: string, config?: RequestInit): Promise<T | undefined>;
 }
@@ -110,7 +110,7 @@ export function createHttp(config: HttpConfig): HttpClient {
       }
 
       // Parse response body
-      let data: any;
+      let data: Record<string, any>;
       try {
         data = await response.json();
       } catch {
@@ -120,10 +120,19 @@ export function createHttp(config: HttpConfig): HttpClient {
 
       // Handle error responses
       if (!response.ok) {
+        // DRF sends validation errors at the top level (e.g., { "non_field_errors": [...], "email": [...] })
+        // Check if we have DRF-style validation errors at the top level
+        const hasValidationErrors = Object.keys(data).some(key => 
+          Array.isArray(data[key]) && key !== 'message'
+        );
+        
+        // Use data.errors if nested, otherwise use the whole data object (DRF format)
+        const errors = data.errors || (hasValidationErrors ? data : undefined);
+        
         throw new HttpError(
-          data.message || response.statusText,
+          data.message || data.detail || response.statusText,
           response.status,
-          data.errors
+          errors
         );
       }
 
@@ -155,7 +164,7 @@ export function createHttp(config: HttpConfig): HttpClient {
       }) as Promise<T>;
     },
 
-    patch<T>(url: string, data?: any, config?: RequestInit): Promise<T> {
+    patch<T>(url: string, data?: Record<string, unknown>, config?: RequestInit): Promise<T> {
       return request<T>(url, {
         ...config,
         method: 'PATCH',

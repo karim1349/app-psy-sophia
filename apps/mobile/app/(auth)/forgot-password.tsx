@@ -105,14 +105,6 @@ export default function ForgotPasswordScreen() {
             )}
           />
 
-          {passwordForgot.error && (
-            <View style={styles.apiErrorContainer}>
-              <Text style={styles.apiError}>
-                {passwordForgot.error.message ||
-                  t('auth.forgotPassword.sendFailed')}
-              </Text>
-            </View>
-          )}
 
           <Button
             title={t('auth.forgotPassword.sendButton')}
@@ -195,18 +187,6 @@ const styles = StyleSheet.create({
     color: '#999',
     fontSize: 12,
     marginTop: 4,
-  },
-  apiErrorContainer: {
-    backgroundColor: '#fee',
-    borderWidth: 1,
-    borderColor: '#fcc',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-  },
-  apiError: {
-    color: '#c33',
-    fontSize: 14,
   },
   button: {
     backgroundColor: '#007AFF',

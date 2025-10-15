@@ -5,7 +5,6 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -16,10 +15,15 @@ import { useCreateDeal, useInfiniteCategories } from '@qiima/queries';
 import { useRouter } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
 import { config } from '@/constants/config';
+import { useI18n, useI18nNamespace } from '@qiima/i18n';
 
 export default function CreateDealScreen() {
   const scheme = useColorScheme() ?? 'light';
   const router = useRouter();
+  
+  // i18n hooks
+  const { t: tCommon } = useI18n();
+  const { t: tErrors } = useI18nNamespace('errors');
   
   const [formData, setFormData] = useState({
     title: '',
@@ -58,32 +62,73 @@ export default function CreateDealScreen() {
     baseURL: config.baseURL,
   });
 
+  // URL validation helper
+  const isValidUrl = (url: string): boolean => {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.title.trim()) newErrors.title = 'Title is required';
-    if (formData.title.length < 5) newErrors.title = 'Title must be at least 5 characters';
+    // Title validation
+    if (!formData.title.trim()) {
+      newErrors.title = tErrors('validation.required');
+    } else if (formData.title.trim().length < 5) {
+      newErrors.title = tErrors('validation.titleMinLength');
+    }
     
-    if (!formData.description.trim()) newErrors.description = 'Description is required';
-    if (formData.description.length < 10) newErrors.description = 'Description must be at least 10 characters';
+    // Description validation
+    if (!formData.description.trim()) {
+      newErrors.description = tErrors('validation.required');
+    } else if (formData.description.trim().length < 10) {
+      newErrors.description = tErrors('validation.descriptionMinLength');
+    }
     
-    if (!formData.current_price) newErrors.current_price = 'Current price is required';
-    if (parseFloat(formData.current_price) <= 0) newErrors.current_price = 'Price must be greater than 0';
+    // Current price validation
+    if (!formData.current_price) {
+      newErrors.current_price = tErrors('validation.required');
+    } else if (parseFloat(formData.current_price) <= 0) {
+      newErrors.current_price = tErrors('validation.minValue');
+    }
     
-    if (!formData.merchant.trim()) newErrors.merchant = 'Merchant is required';
-    if (!formData.category) newErrors.category = 'Category is required';
+    // Merchant validation
+    if (!formData.merchant.trim()) {
+      newErrors.merchant = tErrors('validation.required');
+    } else if (formData.merchant.trim().length < 2) {
+      newErrors.merchant = tErrors('validation.merchantMinLength');
+    }
     
-    if (formData.channel === 'online' && !formData.url.trim()) {
-      newErrors.url = 'URL is required for online deals';
+    // Category validation
+    if (!formData.category) {
+      newErrors.category = tErrors('validation.required');
+    }
+    
+    // Channel-specific validation
+    if (formData.channel === 'online') {
+      if (!formData.url.trim()) {
+        newErrors.url = tErrors('validation.required');
+      } else if (!isValidUrl(formData.url.trim())) {
+        newErrors.url = tErrors('validation.invalidUrl');
+      }
     }
     
     if (formData.channel === 'in_store' && !formData.city.trim()) {
-      newErrors.city = 'City is required for in-store deals';
+      newErrors.city = tErrors('validation.required');
+    }
+    
+    // Proof URL validation
+    if (formData.proof_url.trim() && !isValidUrl(formData.proof_url.trim())) {
+      newErrors.proof_url = tErrors('validation.invalidUrl');
     }
     
     // Require at least one proof (image or proof URL)
     if (!formData.proof_url.trim()) {
-      newErrors.proof_url = 'At least one proof (image or proof URL) is required';
+      newErrors.proof_url = tErrors('deals.validation.proofRequired');
     }
 
     setErrors(newErrors);
@@ -101,30 +146,21 @@ export default function CreateDealScreen() {
         original_price: formData.original_price ? parseFloat(formData.original_price) : undefined,
         currency: formData.currency,
         merchant: formData.merchant.trim(),
-        deal_type: formData.channel,
-        deal_url: formData.channel === 'online' ? formData.url.trim() : undefined,
+        channel: formData.channel,
+        url: formData.channel === 'online' ? formData.url.trim() : undefined,
         city: formData.channel === 'in_store' ? formData.city.trim() : undefined,
         category: formData.category,
-        proof_image: formData.proof_url.trim() || undefined,
+        proof_url: formData.proof_url.trim() || undefined,
       };
 
       await createDealMutation.mutateAsync(dealData);
       
-      Alert.alert(
-        'Success!',
-        'Your deal has been created successfully.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.back(),
-          },
-        ]
-      );
+      // Success toast will be automatically shown by the global handler
+      // Navigate back immediately
+      router.back();
     } catch (error: any) {
-      Alert.alert(
-        'Error',
-        error?.message || 'Failed to create deal. Please try again.'
-      );
+      // Error will be automatically handled by the global error handler
+      // No need to show error toast here as it's already handled
     }
   };
 

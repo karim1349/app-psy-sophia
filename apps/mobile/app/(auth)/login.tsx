@@ -109,13 +109,6 @@ export default function LoginScreen() {
             <Text style={styles.forgotPasswordText}>Forgot password?</Text>
           </TouchableOpacity>
 
-          {login.error && (
-            <View style={styles.apiErrorContainer}>
-              <Text style={styles.apiError}>
-                {login.error.message || 'Login failed. Please check your credentials.'}
-              </Text>
-            </View>
-          )}
 
           <Button
             title="Login"
@@ -179,18 +172,6 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     fontSize: 14,
     fontWeight: '500',
-  },
-  apiErrorContainer: {
-    backgroundColor: '#fee',
-    borderWidth: 1,
-    borderColor: '#fcc',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-  },
-  apiError: {
-    color: '#c33',
-    fontSize: 14,
   },
   button: {
     backgroundColor: '#007AFF',

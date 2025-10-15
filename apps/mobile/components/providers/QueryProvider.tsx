@@ -1,12 +1,16 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { createQueryClient } from '@qiima/queries';
 import { useSessionStore } from '@qiima/state/session.native';
+import { useToast } from '@qiima/ui';
 import NetInfo from '@react-native-community/netinfo';
 import { useEffect, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 
 export function QueryProvider({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => createQueryClient());
+  const { showToast } = useToast();
+  
+  // Toast i18n translation is now handled in ToastItem component
+  const [queryClient] = useState(() => createQueryClient(showToast));
   const { initializeSession } = useSessionStore();
 
   useEffect(() => {

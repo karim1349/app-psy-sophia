@@ -99,21 +99,7 @@ export default function VerifyEmailScreen() {
             )}
           />
 
-          {verifyEmail.error && (
-            <View style={styles.apiErrorContainer}>
-              <Text style={styles.apiError}>
-                {verifyEmail.error.message || 'Verification failed. Please try again.'}
-              </Text>
-            </View>
-          )}
 
-          {resendSuccess && (
-            <View style={styles.successContainer}>
-              <Text style={styles.successText}>
-                Code sent to your email
-              </Text>
-            </View>
-          )}
 
           <Button
             title="Verify"
@@ -140,14 +126,6 @@ export default function VerifyEmailScreen() {
               </Text>
             </TouchableOpacity>
           </View>
-
-          {resendVerification.error && (
-            <View style={styles.apiErrorContainer}>
-              <Text style={styles.apiError}>
-                {resendVerification.error.message || 'Failed to resend code. Please try again.'}
-              </Text>
-            </View>
-          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -222,30 +200,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
   },
-  apiErrorContainer: {
-    backgroundColor: '#fee',
-    borderWidth: 1,
-    borderColor: '#fcc',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-  },
-  apiError: {
-    color: '#c33',
-    fontSize: 14,
-  },
-  successContainer: {
-    backgroundColor: '#d1fae5',
-    borderWidth: 1,
-    borderColor: '#a7f3d0',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-  },
-  successText: {
-    color: '#065f46',
-    fontSize: 14,
-  },
+
   button: {
     backgroundColor: '#007AFF',
     padding: 16,

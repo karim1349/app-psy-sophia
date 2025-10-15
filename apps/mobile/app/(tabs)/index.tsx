@@ -59,14 +59,6 @@ export default function HomeScreen() {
             </View>
           )}
           
-          {error && (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{t('common.failedToLoadDeals')}</Text>
-              <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
-                <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
-              </TouchableOpacity>
-            </View>
-          )}
           
           {hotDeals?.map((deal) => (
             <TouchableOpacity 
@@ -97,6 +89,15 @@ export default function HomeScreen() {
           onPress={() => router.push('/create-deal')}
         >
           <Text style={styles.fabText}>+</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.demoButtonContainer}>
+        <TouchableOpacity 
+          style={styles.demoButton}
+          onPress={() => router.push('/toast-demo')}
+        >
+          <Text style={styles.demoButtonText}>Toast Demo</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -225,5 +226,21 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: 'white',
     fontWeight: '600',
+  },
+  demoButtonContainer: {
+    position: 'absolute',
+    bottom: 30,
+    left: 20,
+  },
+  demoButton: {
+    backgroundColor: '#10B981',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  demoButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 14,
   },
 });

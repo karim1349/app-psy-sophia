@@ -120,13 +120,6 @@ export default function RegisterScreen() {
             )}
           />
 
-          {register_mutation.error && (
-            <View style={styles.apiErrorContainer}>
-              <Text style={styles.apiError}>
-                {register_mutation.error.message || 'Registration failed. Please try again.'}
-              </Text>
-            </View>
-          )}
 
           <Button
             title="Sign up"
@@ -205,18 +198,6 @@ const styles = StyleSheet.create({
     color: '#999',
     fontSize: 12,
     marginTop: 4,
-  },
-  apiErrorContainer: {
-    backgroundColor: '#fee',
-    borderWidth: 1,
-    borderColor: '#fcc',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-  },
-  apiError: {
-    color: '#c33',
-    fontSize: 14,
   },
   button: {
     backgroundColor: '#007AFF',
