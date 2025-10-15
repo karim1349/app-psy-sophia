@@ -7,7 +7,7 @@ import {
   Platform,
   StyleSheet,
 } from 'react-native';
-import { Button, FormField, TextField } from '@qiima/ui';
+import { Button, FormField, TextField, useTheme } from '@qiima/ui';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LoginSchema, type LoginInput } from '@qiima/schemas';
@@ -20,6 +20,9 @@ import { config } from '@/constants/config';
 export default function LoginScreen() {
   const router = useRouter();
   const scheme = useColorScheme() ?? 'light';
+  const theme = useTheme();
+
+  const styles = createStyles(theme);
   const login = useLogin({
     env: 'native',
     baseURL: config.baseURL,
@@ -132,10 +135,10 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: theme.colors.bgCanvas,
   },
   scrollContent: {
     flexGrow: 1,
@@ -148,18 +151,18 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: theme.colors.fgMuted,
   },
   form: {
     gap: 16,
   },
   error: {
-    color: '#ef4444',
+    color: theme.colors.danger,
     fontSize: 12,
     marginTop: 4,
   },
@@ -169,12 +172,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   forgotPasswordText: {
-    color: '#007AFF',
+    color: theme.colors.brand,
     fontSize: 14,
     fontWeight: '500',
   },
   button: {
-    backgroundColor: '#007AFF',
+    backgroundColor: theme.colors.brand,
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
@@ -196,12 +199,13 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   footerText: {
-    color: '#666',
+    color: theme.colors.fgMuted,
     fontSize: 14,
   },
   footerLink: {
-    color: '#007AFF',
+    color: theme.colors.brand,
     fontSize: 14,
     fontWeight: '600',
   },
 });
+

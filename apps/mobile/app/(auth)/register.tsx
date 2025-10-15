@@ -12,15 +12,18 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { RegisterSchema, type RegisterInput } from '@qiima/schemas';
 import { useRegister } from '@qiima/queries';
 import { useRouter } from 'expo-router';
-import { Button, FormField, TextField } from '@qiima/ui';
+import { Button, FormField, TextField, useTheme } from '@qiima/ui';
 import { config } from '@/constants/config';
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const theme = useTheme();
   const register_mutation = useRegister({
     env: 'native',
     baseURL: config.baseURL,
   });
+
+  const styles = createStyles(theme);
 
   const {
     control,
@@ -142,10 +145,10 @@ export default function RegisterScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: theme.colors.bgCanvas,
   },
   scrollContent: {
     flexGrow: 1,
@@ -158,12 +161,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: theme.colors.fgMuted,
   },
   form: {
     gap: 16,
@@ -174,33 +177,33 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: theme.colors.fgDefault,
     marginBottom: 8,
   },
   input: {
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.bgSurface,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: theme.colors.border,
     borderRadius: 8,
     padding: 14,
     fontSize: 16,
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
   },
   inputError: {
-    borderColor: '#ef4444',
+    borderColor: theme.colors.danger,
   },
   error: {
-    color: '#ef4444',
+    color: theme.colors.danger,
     fontSize: 12,
     marginTop: 4,
   },
   hint: {
-    color: '#999',
+    color: theme.colors.fgMuted,
     fontSize: 12,
     marginTop: 4,
   },
   button: {
-    backgroundColor: '#007AFF',
+    backgroundColor: theme.colors.brand,
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
@@ -222,11 +225,11 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   footerText: {
-    color: '#666',
+    color: theme.colors.fgMuted,
     fontSize: 14,
   },
   footerLink: {
-    color: '#007AFF',
+    color: theme.colors.brand,
     fontSize: 14,
     fontWeight: '600',
   },

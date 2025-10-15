@@ -4,13 +4,16 @@ import { useMeQuery, useLogout } from '@qiima/queries';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { config } from '@/constants/config';
-import { LanguageSwitcher } from '@qiima/ui';
+import { LanguageSwitcher, useTheme } from '@qiima/ui';
 import { useI18n } from '@qiima/i18n';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { t, currentLanguage } = useI18n();
+  const theme = useTheme();
+
+  const styles = createStyles(theme);
   
   // Debug: Log current language
   console.log('ProfileScreen: Current language:', currentLanguage);
@@ -182,7 +185,7 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   header: {
     marginBottom: 32,
     marginTop: 60,
@@ -190,19 +193,19 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: theme.colors.fgMuted,
     textAlign: 'center',
     marginBottom: 32,
   },
   loadingText: {
     fontSize: 16,
-    color: '#666',
+    color: theme.colors.fgMuted,
   },
   authContainer: {
     alignItems: 'center',
@@ -220,7 +223,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primaryButton: {
-    backgroundColor: '#FF6A00',
+    backgroundColor: theme.colors.brand,
   },
   primaryButtonText: {
     color: 'white',
@@ -228,12 +231,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   secondaryButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: theme.colors.bgSurface,
     borderWidth: 1,
-    borderColor: '#FF6A00',
+    borderColor: theme.colors.brand,
   },
   secondaryButtonText: {
-    color: '#FF6A00',
+    color: theme.colors.brand,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -250,11 +253,11 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: 16,
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     fontWeight: '500',
   },
   profileCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: theme.colors.bgSurface,
     borderRadius: 12,
     padding: 20,
     marginBottom: 24,
@@ -273,7 +276,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#FF6A00',
+    backgroundColor: theme.colors.brand,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -288,20 +291,20 @@ const styles = StyleSheet.create({
   username: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     marginBottom: 4,
   },
   email: {
     fontSize: 14,
-    color: '#666',
+    color: theme.colors.fgMuted,
     marginBottom: 4,
   },
   memberSince: {
     fontSize: 12,
-    color: '#999',
+    color: theme.colors.fgMuted,
   },
   menuSection: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: theme.colors.bgSurface,
     borderRadius: 12,
     marginBottom: 24,
     shadowColor: '#000',
@@ -315,7 +318,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: theme.colors.border,
   },
   menuIcon: {
     fontSize: 20,
@@ -325,14 +328,14 @@ const styles = StyleSheet.create({
   menuText: {
     flex: 1,
     fontSize: 16,
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
   },
   menuArrow: {
     fontSize: 20,
-    color: '#999',
+    color: theme.colors.fgMuted,
   },
   languageSection: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: theme.colors.bgSurface,
     borderRadius: 12,
     padding: 20,
     marginBottom: 24,
@@ -345,7 +348,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     marginBottom: 16,
   },
   languageSwitcher: {
@@ -355,7 +358,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   logoutButton: {
-    backgroundColor: '#ff4444',
+    backgroundColor: theme.colors.danger,
   },
   logoutButtonText: {
     color: 'white',
@@ -363,3 +366,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+

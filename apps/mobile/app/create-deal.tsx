@@ -16,13 +16,17 @@ import { useRouter } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
 import { config } from '@/constants/config';
 import { useI18nNamespace } from '@qiima/i18n';
+import { useTheme } from '@qiima/ui';
 
 export default function CreateDealScreen() {
   const scheme = useColorScheme() ?? 'light';
   const router = useRouter();
+  const theme = useTheme();
   
   // i18n hooks
   const { t: tDeals } = useI18nNamespace('deals');
+
+  const styles = createStyles(theme);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -411,7 +415,7 @@ export default function CreateDealScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -427,13 +431,13 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 16,
-    color: '#FF6A00',
+    color: theme.colors.brand,
     fontWeight: '600',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
   },
   content: {
     flex: 1,
@@ -448,39 +452,39 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     marginBottom: 8,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: theme.colors.bgSurface,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     borderWidth: 1,
     borderColor: 'transparent',
   },
   textArea: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: theme.colors.bgSurface,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     borderWidth: 1,
     borderColor: 'transparent',
     minHeight: 100,
     textAlignVertical: 'top',
   },
   inputError: {
-    borderColor: '#ff4444',
+    borderColor: theme.colors.danger,
   },
   errorText: {
-    color: '#ff4444',
+    color: theme.colors.danger,
     fontSize: 14,
     marginTop: 4,
   },
   helpText: {
-    color: '#666',
+    color: theme.colors.fgMuted,
     fontSize: 12,
     marginTop: 4,
     fontStyle: 'italic',
@@ -493,7 +497,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   pickerContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: theme.colors.bgSurface,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: 'transparent',
@@ -507,7 +511,7 @@ const styles = StyleSheet.create({
   },
   dealTypeButton: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: theme.colors.bgSurface,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -515,20 +519,20 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   dealTypeButtonActive: {
-    borderColor: '#FF6A00',
-    backgroundColor: 'rgba(255, 106, 0, 0.1)',
+    borderColor: theme.colors.brand,
+    backgroundColor: `${theme.colors.brand}1A`, // 10% opacity
   },
   dealTypeButtonText: {
     fontSize: 16,
-    color: '#666',
+    color: theme.colors.fgMuted,
     fontWeight: '500',
   },
   dealTypeButtonTextActive: {
-    color: '#FF6A00',
+    color: theme.colors.brand,
     fontWeight: '600',
   },
   submitButton: {
-    backgroundColor: '#FF6A00',
+    backgroundColor: theme.colors.brand,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -540,7 +544,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   submitButtonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: theme.colors.fgMuted,
   },
   submitButtonText: {
     color: 'white',

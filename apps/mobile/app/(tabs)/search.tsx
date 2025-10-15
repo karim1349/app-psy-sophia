@@ -5,12 +5,16 @@ import { useSearchDeals, useInfiniteCategories } from '@qiima/queries';
 import { useRouter } from 'expo-router';
 import { config } from '@/constants/config';
 import { useI18nNamespace } from '@qiima/i18n';
+import { useTheme } from '@qiima/ui';
 
 export default function SearchScreen() {
   const router = useRouter();
+  const theme = useTheme();
   
   // i18n hooks
   const { t: tSearch } = useI18nNamespace('search');
+
+  const styles = createStyles(theme);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -181,7 +185,7 @@ export default function SearchScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   header: {
     marginBottom: 32,
     marginTop: 60,
@@ -189,12 +193,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: theme.colors.fgMuted,
   },
   searchSection: {
     marginBottom: 32,
@@ -205,15 +209,15 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: theme.colors.bgSurface,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     marginRight: 12,
   },
   searchButton: {
-    backgroundColor: '#FF6A00',
+    backgroundColor: theme.colors.brand,
     borderRadius: 12,
     padding: 16,
     justifyContent: 'center',
@@ -230,7 +234,7 @@ const styles = StyleSheet.create({
   filtersTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     marginBottom: 12,
   },
   filtersRow: {
@@ -239,18 +243,18 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   filterChip: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: theme.colors.bgSurface,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
   filterChipText: {
     fontSize: 14,
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     fontWeight: '500',
   },
   loadMoreChip: {
-    backgroundColor: '#FF6A00',
+    backgroundColor: theme.colors.brand,
     marginTop: 8,
   },
   resultsSection: {
@@ -259,11 +263,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     marginBottom: 16,
   },
   recentSearchItem: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: theme.colors.bgSurface,
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
@@ -272,14 +276,14 @@ const styles = StyleSheet.create({
   },
   recentSearchText: {
     fontSize: 16,
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
   },
   recentSearchTime: {
     fontSize: 14,
-    color: '#666',
+    color: theme.colors.fgMuted,
   },
   dealCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: theme.colors.bgSurface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -292,18 +296,18 @@ const styles = StyleSheet.create({
   dealTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     marginBottom: 8,
   },
   dealPrice: {
     fontSize: 14,
-    color: '#FF6A00',
+    color: theme.colors.brand,
     fontWeight: '600',
     marginBottom: 4,
   },
   dealMerchant: {
     fontSize: 12,
-    color: '#666',
+    color: theme.colors.fgMuted,
     marginBottom: 8,
   },
   dealVotes: {
@@ -313,7 +317,7 @@ const styles = StyleSheet.create({
   },
   voteCount: {
     fontSize: 12,
-    color: '#FF6A00',
+    color: theme.colors.brand,
     fontWeight: '500',
   },
   verifiedBadge: {
@@ -327,7 +331,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: '#666',
+    color: theme.colors.fgMuted,
   },
   errorContainer: {
     padding: 40,
@@ -335,7 +339,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    color: '#ff4444',
+    color: theme.colors.danger,
   },
   noResultsContainer: {
     padding: 40,
@@ -344,11 +348,12 @@ const styles = StyleSheet.create({
   noResultsText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     marginBottom: 8,
   },
   noResultsSubtext: {
     fontSize: 14,
-    color: '#666',
+    color: theme.colors.fgMuted,
   },
 });
+

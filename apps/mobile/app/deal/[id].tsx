@@ -14,15 +14,19 @@ import { useDeal, useDealComments, useVoteDeal } from '@qiima/queries';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { config } from '@/constants/config';
 import { useI18nNamespace } from '@qiima/i18n';
+import { useTheme } from '@qiima/ui';
 
 export default function DealDetailScreen() {
   const scheme = useColorScheme() ?? 'light';
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [refreshing, setRefreshing] = useState(false);
+  const theme = useTheme();
   
   // i18n hooks
   const { t: tDealDetail } = useI18nNamespace('dealDetail');
+
+  const styles = createStyles(theme);
 
   // Fetch deal data
   const { data: deal, isLoading, error, refetch } = useDeal({
@@ -227,7 +231,7 @@ export default function DealDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -245,7 +249,7 @@ const styles = StyleSheet.create({
   },
   headerBackButtonText: {
     fontSize: 16,
-    color: '#FF6A00',
+    color: theme.colors.brand,
     fontWeight: '600',
   },
   content: {
@@ -254,15 +258,15 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: '#666',
+    color: theme.colors.fgMuted,
   },
   errorText: {
     fontSize: 16,
-    color: '#ff4444',
+    color: theme.colors.danger,
     marginBottom: 20,
   },
   backButton: {
-    backgroundColor: '#FF6A00',
+    backgroundColor: theme.colors.brand,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
@@ -272,7 +276,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   dealCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: theme.colors.bgSurface,
     borderRadius: 12,
     padding: 20,
     marginBottom: 20,
@@ -291,7 +295,7 @@ const styles = StyleSheet.create({
   dealTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     flex: 1,
     marginRight: 12,
   },
@@ -312,7 +316,7 @@ const styles = StyleSheet.create({
   currentPrice: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#FF6A00',
+    color: theme.colors.brand,
     marginBottom: 4,
   },
   originalPriceSection: {
@@ -322,11 +326,11 @@ const styles = StyleSheet.create({
   },
   originalPrice: {
     fontSize: 16,
-    color: '#999',
+    color: theme.colors.fgMuted,
     textDecorationLine: 'line-through',
   },
   discount: {
-    backgroundColor: '#ff4444',
+    backgroundColor: theme.colors.danger,
     color: 'white',
     fontSize: 12,
     fontWeight: 'bold',
@@ -341,19 +345,19 @@ const styles = StyleSheet.create({
   merchant: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
   },
   location: {
     fontSize: 14,
-    color: '#666',
+    color: theme.colors.fgMuted,
   },
   author: {
     fontSize: 12,
-    color: '#999',
+    color: theme.colors.fgMuted,
   },
   description: {
     fontSize: 16,
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     lineHeight: 24,
     marginBottom: 20,
   },
@@ -363,26 +367,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: theme.colors.border,
   },
   voteButton: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: theme.colors.border,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
   },
   voteButtonActive: {
-    backgroundColor: '#FF6A00',
+    backgroundColor: theme.colors.brand,
   },
   voteButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
   },
   voteCount: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FF6A00',
+    color: theme.colors.brand,
   },
   commentsSection: {
     marginBottom: 40,
@@ -390,11 +394,11 @@ const styles = StyleSheet.create({
   commentsTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     marginBottom: 16,
   },
   commentCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: theme.colors.bgSurface,
     borderRadius: 8,
     padding: 16,
     marginBottom: 12,
@@ -408,26 +412,26 @@ const styles = StyleSheet.create({
   commentAuthor: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
   },
   commentDate: {
     fontSize: 12,
-    color: '#999',
+    color: theme.colors.fgMuted,
   },
   commentContent: {
     fontSize: 14,
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     lineHeight: 20,
   },
   editedLabel: {
     fontSize: 10,
-    color: '#999',
+    color: theme.colors.fgMuted,
     fontStyle: 'italic',
     marginTop: 4,
   },
   noCommentsText: {
     fontSize: 14,
-    color: '#666',
+    color: theme.colors.fgMuted,
     textAlign: 'center',
     padding: 20,
   },

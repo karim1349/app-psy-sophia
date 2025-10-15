@@ -13,7 +13,7 @@ import { ForgotPasswordSchema, type PasswordResetRequestInput } from '@qiima/sch
 import { usePasswordForgot } from '@qiima/queries';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Button, FormField, TextField, LanguageSwitcher } from '@qiima/ui';
+import { Button, FormField, TextField, LanguageSwitcher, useTheme } from '@qiima/ui';
 import { useI18n } from '@qiima/i18n';
 import { config } from '@/constants/config';
 
@@ -21,6 +21,9 @@ export default function ForgotPasswordScreen() {
   const router = useRouter();
   const [emailSent, setEmailSent] = useState(false);
   const { t } = useI18n();
+  const theme = useTheme();
+
+  const styles = createStyles(theme);
   const passwordForgot = usePasswordForgot({
     env: 'native',
     baseURL: config.baseURL,
@@ -127,10 +130,10 @@ export default function ForgotPasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: theme.colors.bgCanvas,
   },
   scrollContent: {
     flexGrow: 1,
@@ -147,12 +150,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: theme.colors.fgMuted,
   },
   form: {
     gap: 16,
@@ -163,33 +166,33 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: theme.colors.fgDefault,
     marginBottom: 8,
   },
   input: {
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.bgSurface,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: theme.colors.border,
     borderRadius: 8,
     padding: 14,
     fontSize: 16,
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
   },
   inputError: {
-    borderColor: '#ef4444',
+    borderColor: theme.colors.danger,
   },
   error: {
-    color: '#ef4444',
+    color: theme.colors.danger,
     fontSize: 12,
     marginTop: 4,
   },
   hint: {
-    color: '#999',
+    color: theme.colors.fgMuted,
     fontSize: 12,
     marginTop: 4,
   },
   button: {
-    backgroundColor: '#007AFF',
+    backgroundColor: theme.colors.brand,
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
@@ -209,7 +212,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backButtonText: {
-    color: '#007AFF',
+    color: theme.colors.brand,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -220,13 +223,14 @@ const styles = StyleSheet.create({
   successTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     marginBottom: 8,
   },
   successMessage: {
     fontSize: 16,
-    color: '#666',
+    color: theme.colors.fgMuted,
     textAlign: 'center',
     marginBottom: 16,
   },
 });
+

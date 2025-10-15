@@ -5,11 +5,15 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { config } from '@/constants/config';
 import { useI18n } from '@qiima/i18n';
+import { useTheme } from '@qiima/ui';
 
 export default function HomeScreen() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const { t } = useI18n();
+  const theme = useTheme();
+
+  const styles = createStyles(theme);
 
   // Fetch hot deals from API
   const { data: hotDeals, isLoading, refetch } = useHotDeals({
@@ -85,7 +89,7 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -96,12 +100,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: theme.colors.fgMuted,
   },
   dealsSection: {
     gap: 16,
@@ -109,11 +113,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     marginBottom: 16,
   },
   dealCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: theme.colors.bgSurface,
     borderRadius: 12,
     padding: 16,
     shadowColor: '#000',
@@ -125,18 +129,18 @@ const styles = StyleSheet.create({
   dealTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: theme.colors.fgDefault,
     marginBottom: 8,
   },
   dealPrice: {
     fontSize: 16,
-    color: '#FF6A00',
+    color: theme.colors.brand,
     fontWeight: '600',
     marginBottom: 4,
   },
   dealMerchant: {
     fontSize: 14,
-    color: '#666',
+    color: theme.colors.fgMuted,
     marginBottom: 12,
   },
   dealVotes: {
@@ -146,7 +150,7 @@ const styles = StyleSheet.create({
   },
   voteCount: {
     fontSize: 14,
-    color: '#FF6A00',
+    color: theme.colors.brand,
     fontWeight: '500',
   },
   verifiedBadge: {
@@ -163,7 +167,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#FF6A00',
+    backgroundColor: theme.colors.brand,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -183,7 +187,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: '#666',
+    color: theme.colors.fgMuted,
   },
   errorContainer: {
     padding: 40,
@@ -191,11 +195,11 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    color: '#ff4444',
+    color: theme.colors.danger,
     marginBottom: 16,
   },
   retryButton: {
-    backgroundColor: '#FF6A00',
+    backgroundColor: theme.colors.brand,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
@@ -221,3 +225,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+
