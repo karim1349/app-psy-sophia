@@ -229,14 +229,18 @@ export function useCreateDeal(config: UseDealsConfig) {
       currency: string;
       category: string;
       merchant: string;
-      deal_type: 'online' | 'in_store';
-      deal_url?: string;
+      channel: 'online' | 'in_store';
+      url?: string;
       city?: string;
-      proof_image?: string;
+      proof_url?: string;
     }) => {
       const http = createAuthenticatedHttp(config);
       const response = await http.post<Deal>('/deals/', dealData);
       return response;
+    },
+    meta: {
+      showSuccessToast: true,
+      action: 'create-deal',
     },
     onSuccess: () => {
       // Invalidate and refetch deals

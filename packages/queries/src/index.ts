@@ -8,6 +8,10 @@
 // Query client setup
 export { createQueryClient } from './client';
 
+// Error handling
+export { mapErrorToToast, shouldSuppressError, mapSuccessToToast } from './error-handler';
+export type { ToastError } from './error-handler';
+
 // Query keys
 export { queryKeys } from './keys';
 

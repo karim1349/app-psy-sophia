@@ -7,6 +7,14 @@ import enCommon from './locales/en/common.json';
 import frCommon from './locales/fr/common.json';
 import arCommon from './locales/ar/common.json';
 
+import enErrors from './locales/en/errors.json';
+import frErrors from './locales/fr/errors.json';
+import arErrors from './locales/ar/errors.json';
+
+import enSuccess from './locales/en/success.json';
+import frSuccess from './locales/fr/success.json';
+import arSuccess from './locales/ar/success.json';
+
 export const supportedLanguages = ['en', 'fr', 'ar'] as const;
 export type SupportedLanguage = typeof supportedLanguages[number];
 
@@ -15,12 +23,18 @@ export const defaultLanguage: SupportedLanguage = 'en';
 export const resources = {
   en: {
     common: enCommon,
+    errors: enErrors,
+    success: enSuccess,
   },
   fr: {
     common: frCommon,
+    errors: frErrors,
+    success: frSuccess,
   },
   ar: {
     common: arCommon,
+    errors: arErrors,
+    success: arSuccess,
   },
 } as const;
 
@@ -51,7 +65,7 @@ export const initI18n = async (language?: SupportedLanguage) => {
       lng: savedLanguage || defaultLanguage,
       fallbackLng: defaultLanguage,
       defaultNS: 'common',
-      ns: ['common'],
+      ns: ['common', 'errors', 'success'],
       
       interpolation: {
         escapeValue: false, // React already does escaping

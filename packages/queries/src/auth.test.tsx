@@ -723,6 +723,7 @@ describe('useRefresh', () => {
     it('should refresh access token successfully', async () => {
       const refreshResponse: RefreshResponse = {
         access: 'new-access-token',
+        refresh: 'new-refresh-token',
       };
       mockPost.mockResolvedValue(refreshResponse);
       const setTokens = jest.fn();
@@ -746,7 +747,7 @@ describe('useRefresh', () => {
       expect(mockPost).toHaveBeenCalledWith('/users/refresh/', {
         refresh: 'refresh-token',
       });
-      expect(setTokens).toHaveBeenCalledWith('new-access-token', 'refresh-token');
+      expect(setTokens).toHaveBeenCalledWith('new-access-token', 'new-refresh-token');
     });
 
     it('should handle refresh failure and logout user', async () => {
@@ -796,6 +797,7 @@ describe('useRefresh', () => {
     it('should refresh access token via cookies successfully', async () => {
       const refreshResponse: RefreshResponse = {
         access: 'new-access-token',
+        refresh: 'new-refresh-token',
       };
       mockPost.mockResolvedValue(refreshResponse);
       mockWebStore.getState.mockReturnValue({

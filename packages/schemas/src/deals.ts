@@ -89,10 +89,12 @@ export interface CreateDealInput {
   original_price: number;
   currency: Currency;
   merchant: string;
-  location: string;
+  channel: 'online' | 'in_store';
+  city?: string;
+  url?: string;
   category: number; // Category ID
   image?: File; // For image upload
-  proof?: File; // For proof upload
+  proof_url?: string; // For proof URL
   expires_at?: Timestamp;
 }
 

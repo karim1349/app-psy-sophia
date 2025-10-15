@@ -5,6 +5,7 @@ import type {
   MessageResponse,
   User,
   RefreshResponse,
+  HttpError,
 } from '@qiima/api-client';
 import type {
   RegisterInput,
@@ -30,12 +31,10 @@ export interface UseAuthConfig {
 function getSessionStore(env: 'native' | 'web') {
   if (env === 'native') {
     // Dynamic import for native
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { useSessionStore } = require('@qiima/state/session.native');
     return useSessionStore;
   } else {
     // Dynamic import for web
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { useSessionStore } = require('@qiima/state/session.web');
     return useSessionStore;
   }
@@ -65,7 +64,11 @@ export function useRegister(config: UseAuthConfig) {
   return useMutation({
     mutationFn: async (input: RegisterInput) => {
       const http = createHttp({ env, baseURL });
-      return http.post('/users/', input);
+      return http.post('/users/', input as unknown as Record<string, unknown>);
+    },
+    meta: {
+      showSuccessToast: true,
+      action: 'register',
     },
     // No onSuccess - caller handles redirect to verify-email screen
   });
@@ -95,7 +98,11 @@ export function useLogin(config: UseAuthConfig) {
   return useMutation({
     mutationFn: async (input: LoginInput): Promise<AuthResponse> => {
       const http = createHttp({ env, baseURL });
-      return http.post<AuthResponse>('/users/login/', input);
+      return http.post<AuthResponse>('/users/login/', input as unknown as Record<string, unknown>);
+    },
+    meta: {
+      showSuccessToast: false,
+      action: 'login',
     },
     onSuccess: async (data: AuthResponse) => {
       const state = sessionStore.getState();
@@ -180,7 +187,7 @@ export function usePasswordForgot(config: UseAuthConfig) {
   return useMutation({
     mutationFn: async (input: PasswordResetRequestInput): Promise<MessageResponse> => {
       const http = createHttp({ env, baseURL });
-      return http.post<MessageResponse>('/users/request_password_reset/', input);
+      return http.post<MessageResponse>('/users/request_password_reset/', input as unknown as Record<string, unknown>);
     },
   });
 }
@@ -205,7 +212,11 @@ export function usePasswordReset(config: UseAuthConfig) {
   return useMutation({
     mutationFn: async (input: PasswordResetConfirmInput): Promise<MessageResponse> => {
       const http = createHttp({ env, baseURL });
-      return http.post<MessageResponse>('/users/confirm_password_reset/', input);
+      return http.post<MessageResponse>('/users/confirm_password_reset/', input as unknown as Record<string, unknown>);
+    },
+    meta: {
+      showSuccessToast: true,
+      action: 'reset-password',
     },
   });
 }
@@ -242,7 +253,7 @@ export function useMeQuery(config: UseAuthConfig) {
       return http.get<User>('/users/me/');
     },
     enabled: env === 'web' || !!sessionStore.getState().accessToken,
-    retry: (failureCount, error: any) => {
+    retry: (failureCount, error: HttpError) => {
       // Don't retry on 401 (will be handled by refresh logic)
       if (error?.status === 401) {
         return false;
@@ -299,11 +310,8 @@ export function useRefresh(config: UseAuthConfig) {
       const state = sessionStore.getState();
 
       if (env === 'native') {
-        // Update access token, keep same refresh token
-        const refreshToken = await state.getRefreshToken();
-        if (refreshToken) {
-          await state.setTokens(data.access, refreshToken);
-        }
+        // Update BOTH access token AND refresh token
+        await state.setTokens(data.access, data.refresh);
       }
       // Web: cookies updated by BFF automatically
 
@@ -342,7 +350,11 @@ export function useVerifyEmail(config: UseAuthConfig) {
   return useMutation({
     mutationFn: async (input: VerifyEmailInput): Promise<AuthResponse> => {
       const http = createHttp({ env, baseURL });
-      return http.post<AuthResponse>('/users/verify_email/', input);
+      return http.post<AuthResponse>('/users/verify_email/', input as unknown as Record<string, unknown>);
+    },
+    meta: {
+      showSuccessToast: true,
+      action: 'verify-email',
     },
     onSuccess: async (data: AuthResponse) => {
       const state = sessionStore.getState();
@@ -382,7 +394,7 @@ export function useResendVerification(config: UseAuthConfig) {
   return useMutation({
     mutationFn: async (input: ResendVerificationInput): Promise<MessageResponse> => {
       const http = createHttp({ env, baseURL });
-      return http.post<MessageResponse>('/users/resend_verification/', input);
+      return http.post<MessageResponse>('/users/resend_verification/', input as unknown as Record<string, unknown>);
     },
   });
 }
