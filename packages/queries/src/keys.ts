@@ -35,4 +35,12 @@ export const queryKeys = {
       ['categories', 'paginated', page, pageSize] as const,
     popular: () => ['categories', 'popular'] as const,
   },
+
+  /**
+   * User-specific query keys
+   */
+  user: {
+    deals: () => ['user', 'deals'] as const,
+    comments: () => ['user', 'comments'] as const,
+  },
 } as const;

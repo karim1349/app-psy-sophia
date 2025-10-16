@@ -22,24 +22,33 @@ from datetime import timedelta
 from typing import Any, Dict, List, cast
 
 from django.conf import settings
+from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from rest_framework import status
+from django.core.validators import validate_email
+from rest_framework import serializers, status
 from rest_framework.decorators import action
-from rest_framework.permissions import (AllowAny, BasePermission,
-                                        IsAuthenticated)
+from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
-from rest_framework_simplejwt.views import \
-    TokenRefreshView as SimpleJWTRefreshView
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenRefreshView as SimpleJWTRefreshView
 
 from .models import User
 from .permissions import IsOwnerOrStaff
 from .proxy.user_proxy import UserProxy
-from .serializers import (LoginSerializer, RegisterSerializer, UserSerializer,
-                          UserUpdateSerializer)
-from .throttles import (LoginThrottle, PasswordResetThrottle,
-                        ResendVerificationThrottle)
+from .serializers import (
+    LoginSerializer,
+    RegisterSerializer,
+    UserSerializer,
+    UserUpdateSerializer,
+)
+from .throttles import LoginThrottle, PasswordResetThrottle, ResendVerificationThrottle
+
+# Import deals models and serializers at the top
+from deals.models import Comment, Deal
+from deals.serializers import CommentSerializer, DealSerializer
 
 
 class UserViewSet(GenericViewSet):
@@ -50,6 +59,14 @@ class UserViewSet(GenericViewSet):
     permission_classes = [IsAuthenticated]  # Default to authenticated only
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+    def _get_authenticated_user(self, request: Request) -> User:
+        """Get the authenticated user with proper type checking."""
+        # Django's IsAuthenticated permission ensures this is always a User
+        # We add a runtime check for extra safety
+        if not hasattr(request.user, "id") or not request.user.is_authenticated:
+            raise ValueError("User is not authenticated")
+        return request.user
 
     def get_permissions(self) -> List[BasePermission]:
         # Override permissions per action
@@ -235,8 +252,6 @@ class UserViewSet(GenericViewSet):
     )
     def request_password_reset(self, request: Request) -> Response:
         """Send password reset email."""
-        from django.core.validators import validate_email
-
         email = request.data.get("email", "")
         try:
             validate_email(email)
@@ -273,9 +288,6 @@ class UserViewSet(GenericViewSet):
             )
 
         try:
-            from rest_framework_simplejwt.exceptions import TokenError
-            from rest_framework_simplejwt.tokens import RefreshToken
-
             try:
                 token = RefreshToken(refresh_token)
                 token.blacklist()
@@ -351,4 +363,98 @@ class UserViewSet(GenericViewSet):
         self.user_proxy.deactivate_user(user)
         return Response(
             {"detail": "Account deactivated successfully."}, status=status.HTTP_200_OK
+        )
+
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
+    def my_deals(self, request: Request) -> Response:
+        """Get current user's deals with pagination."""
+        user = self._get_authenticated_user(request)
+        deals = (
+            Deal.objects.filter(author=user, status="active")
+            .select_related("category")
+            .order_by("-created_at")
+        )
+
+        page = self.paginate_queryset(deals)
+        if page is not None:
+            serializer = DealSerializer(page, many=True, context={"request": request})
+            return self.get_paginated_response(serializer.data)
+
+        serializer = DealSerializer(deals, many=True, context={"request": request})
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
+    def my_comments(self, request: Request) -> Response:
+        """Get current user's comments with pagination."""
+        user = self._get_authenticated_user(request)
+        comments = (
+            Comment.objects.filter(user=user)
+            .select_related("deal", "user")
+            .order_by("-created_at")
+        )
+
+        page = self.paginate_queryset(comments)
+        if page is not None:
+            serializer = CommentSerializer(
+                page, many=True, context={"request": request}
+            )
+            return self.get_paginated_response(serializer.data)
+
+        serializer = CommentSerializer(
+            comments, many=True, context={"request": request}
+        )
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["post"], permission_classes=[IsAuthenticated])
+    def change_password(self, request: Request) -> Response:
+        """Change user password with current password verification."""
+
+        class ChangePasswordSerializer(serializers.Serializer):
+            current_password = serializers.CharField(required=True)
+            new_password = serializers.CharField(required=True)
+            new_password_confirm = serializers.CharField(required=True)
+
+            def create(self, validated_data: Dict[str, Any]) -> Any:
+                """Not used - this is a validation-only serializer."""
+                raise NotImplementedError("This serializer is for validation only.")
+
+            def update(self, instance: Any, validated_data: Dict[str, Any]) -> Any:
+                """Not used - this is a validation-only serializer."""
+                raise NotImplementedError("This serializer is for validation only.")
+
+            def validate_current_password(self, value: str) -> str:
+                """Verify current password is correct."""
+                user = self.context["request"].user
+                if not user.check_password(value):
+                    raise serializers.ValidationError("Current password is incorrect.")
+                return value
+
+            def validate_new_password(self, value: str) -> str:
+                """Validate new password strength."""
+                try:
+                    validate_password(value)
+                except ValidationError as e:
+                    raise serializers.ValidationError(list(e.messages))
+                return value
+
+            def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
+                """Validate that new passwords match."""
+                if attrs["new_password"] != attrs["new_password_confirm"]:
+                    raise serializers.ValidationError(
+                        {"new_password_confirm": "New passwords do not match."}
+                    )
+                return attrs
+
+        serializer = ChangePasswordSerializer(
+            data=request.data, context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+
+        # Update password
+        user = self._get_authenticated_user(request)
+        user.set_password(serializer.validated_data["new_password"])
+        user.save()
+
+        return Response(
+            {"detail": "Password changed successfully."}, status=status.HTTP_200_OK
         )

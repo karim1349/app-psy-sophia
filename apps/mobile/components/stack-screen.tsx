@@ -1,8 +1,8 @@
-import { View, ScrollView, StyleSheet, RefreshControl, ViewStyle, ScrollViewProps, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, ScrollView, StyleSheet, RefreshControl, ViewStyle, ScrollViewProps, KeyboardAvoidingView, Platform, useColorScheme } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ReactNode } from 'react';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useThemeStore } from '@qiima/state';
 
 interface StackScreenProps {
   /**
@@ -116,7 +116,9 @@ export function StackScreen({
   gradientColors,
 }: StackScreenProps) {
   const insets = useSafeAreaInsets();
-  const scheme = useColorScheme() ?? 'light';
+  const themeStore = useThemeStore();
+  const systemScheme = useColorScheme() ?? 'light';
+  const scheme = themeStore.mode === 'system' ? systemScheme : themeStore.mode;
   
   const paddingTop = insets.top + extraTopPadding;
   const paddingBottom = insets.bottom + extraBottomPadding;

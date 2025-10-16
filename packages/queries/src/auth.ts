@@ -13,7 +13,10 @@ import type {
   PasswordResetConfirmInput,
   VerifyEmailInput,
   ResendVerificationInput,
+  Deal,
+  DealComment,
 } from '@qiima/schemas';
+import type { PaginatedResponse } from './deals';
 import { queryKeys } from './keys';
 
 /**
@@ -389,6 +392,105 @@ export function useResendVerification(config: UseAuthConfig) {
     mutationFn: async (input: ResendVerificationInput): Promise<MessageResponse> => {
       const http = createHttp({ env, baseURL });
       return http.post<MessageResponse>('/users/resend_verification/', input as unknown as Record<string, unknown>);
+    },
+  });
+}
+
+/**
+ * Helper function to create authenticated HTTP client
+ */
+function createAuthenticatedHttp(config: UseAuthConfig) {
+  const { env, baseURL } = config;
+  const sessionStore = getSessionStore(env);
+  const state = sessionStore.getState();
+  
+  let getAccessToken: (() => string | null) | undefined;
+  if (env === 'native') {
+    getAccessToken = state.getAccessToken;
+  }
+  
+  return createHttp({ env, baseURL, getAccessToken });
+}
+
+/**
+ * Hook for fetching current user's deals
+ *
+ * @example
+ * ```ts
+ * const { data: deals, isLoading } = useMyDeals({
+ *   env: 'native',
+ *   baseURL: 'https://api.qiima.ma'
+ * });
+ * ```
+ */
+export function useMyDeals(config: UseAuthConfig) {
+  const { env } = config;
+  const sessionStore = getSessionStore(env);
+
+  return useQuery({
+    queryKey: queryKeys.user.deals(),
+    queryFn: async () => {
+      const http = createAuthenticatedHttp(config);
+      const response = await http.get<PaginatedResponse<Deal>>('/users/my_deals/');
+      return response?.results || [];
+    },
+    enabled: env === 'web' || !!sessionStore.getState().accessToken,
+  });
+}
+
+/**
+ * Hook for fetching current user's comments
+ *
+ * @example
+ * ```ts
+ * const { data: comments, isLoading } = useMyComments({
+ *   env: 'native',
+ *   baseURL: 'https://api.qiima.ma'
+ * });
+ * ```
+ */
+export function useMyComments(config: UseAuthConfig) {
+  const { env } = config;
+  const sessionStore = getSessionStore(env);
+
+  return useQuery({
+    queryKey: queryKeys.user.comments(),
+    queryFn: async () => {
+      const http = createAuthenticatedHttp(config);
+      const response = await http.get<PaginatedResponse<DealComment>>('/users/my_comments/');
+      return response?.results || [];
+    },
+    enabled: env === 'web' || !!sessionStore.getState().accessToken,
+  });
+}
+
+/**
+ * Hook for changing user password
+ *
+ * @example
+ * ```ts
+ * const changePassword = useChangePassword({ env: 'native', baseURL: 'https://api.qiima.ma' });
+ *
+ * changePassword.mutate({
+ *   current_password: 'OldPassword1!',
+ *   new_password: 'NewPassword1!',
+ *   new_password_confirm: 'NewPassword1!',
+ * });
+ * ```
+ */
+export function useChangePassword(config: UseAuthConfig) {
+  return useMutation({
+    mutationFn: async (input: {
+      current_password: string;
+      new_password: string;
+      new_password_confirm: string;
+    }): Promise<MessageResponse> => {
+      const http = createAuthenticatedHttp(config);
+      return http.post<MessageResponse>('/users/change_password/', input);
+    },
+    meta: {
+      showSuccessToast: true,
+      action: 'change-password',
     },
   });
 }

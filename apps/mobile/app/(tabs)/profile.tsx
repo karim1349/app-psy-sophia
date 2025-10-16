@@ -4,19 +4,17 @@ import { useMeQuery, useLogout } from '@qiima/queries';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { config } from '@/constants/config';
-import { LanguageSwitcher, useTheme } from '@qiima/ui';
+import { useTheme } from '@qiima/ui';
 import { useI18n } from '@qiima/i18n';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const { t, currentLanguage } = useI18n();
+  const { t } = useI18n();
   const theme = useTheme();
 
   const styles = createStyles(theme);
   
-  // Debug: Log current language
-  console.log('ProfileScreen: Current language:', currentLanguage);
 
   // Check if user is authenticated
   const { data: user, isLoading, error } = useMeQuery({
@@ -97,10 +95,6 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            <View style={styles.languageSection}>
-              <Text style={styles.sectionTitle}>{t('common.language')}</Text>
-              <LanguageSwitcher style={styles.languageSwitcher} />
-            </View>
           </View>
       </TabScreen>
     );
@@ -139,31 +133,30 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <View style={styles.languageSection}>
-          <Text style={styles.sectionTitle}>{t('common.language')}</Text>
-          <LanguageSwitcher style={styles.languageSwitcher} />
-        </View>
 
         <View style={styles.menuSection}>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => router.push('/my-deals')}
+          >
             <Text style={styles.menuIcon}>📝</Text>
             <Text style={styles.menuText}>{t('common.myDeals')}</Text>
             <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => router.push('/my-comments')}
+          >
             <Text style={styles.menuIcon}>💬</Text>
             <Text style={styles.menuText}>{t('common.myComments')}</Text>
             <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.menuIcon}>⭐</Text>
-            <Text style={styles.menuText}>{t('common.votedDeals')}</Text>
-            <Text style={styles.menuArrow}>›</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => router.push('/settings')}
+          >
             <Text style={styles.menuIcon}>⚙️</Text>
             <Text style={styles.menuText}>{t('common.settings')}</Text>
             <Text style={styles.menuArrow}>›</Text>
@@ -333,26 +326,6 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   menuArrow: {
     fontSize: 20,
     color: theme.colors.fgMuted,
-  },
-  languageSection: {
-    backgroundColor: theme.colors.bgSurface,
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: theme.colors.fgDefault,
-    marginBottom: 16,
-  },
-  languageSwitcher: {
-    alignSelf: 'flex-start',
   },
   logoutSection: {
     marginTop: 20,

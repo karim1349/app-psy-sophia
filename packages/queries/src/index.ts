@@ -30,6 +30,9 @@ export {
   useRefresh,
   useVerifyEmail,
   useResendVerification,
+  useMyDeals,
+  useMyComments,
+  useChangePassword,
 } from './auth';
 export type { UseAuthConfig } from './auth';
 

@@ -400,6 +400,9 @@ importers:
       '@qiima/api-client':
         specifier: workspace:*
         version: link:../api-client
+      '@react-native-async-storage/async-storage':
+        specifier: ^2.1.0
+        version: 2.2.0(react-native@0.81.4)
       react:
         specifier: 19.1.0
         version: 19.1.0
@@ -440,6 +443,9 @@ importers:
       '@qiima/i18n':
         specifier: workspace:^
         version: link:../i18n
+      '@qiima/state':
+        specifier: workspace:*
+        version: link:../state
       react:
         specifier: 19.1.0
         version: 19.1.0

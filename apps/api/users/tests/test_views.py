@@ -11,6 +11,8 @@ from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from deals.models import Comment, Deal, DealCategory
+
 UserModel = get_user_model()
 
 
@@ -478,3 +480,233 @@ class TestLogoutView:
         refresh_cookie = response.cookies.get("refresh_token")
         assert access_cookie is not None and access_cookie.value == ""
         assert refresh_cookie is not None and refresh_cookie.value == ""
+
+    def test_my_deals_authenticated(self) -> None:
+        """Test getting user's deals when authenticated."""
+        # Create user and authenticate
+        user = UserModel.objects.create_user(
+            email="test@example.com",
+            username="testuser",
+            password="testpass123",
+            is_active=True,
+        )
+        refresh = RefreshToken.for_user(user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+
+        # Create category and deals
+        category = DealCategory.objects.create(
+            name="Electronics", slug="electronics", icon="laptop"
+        )
+
+        # Create deals for this user
+        Deal.objects.create(
+            title="Test Deal 1",
+            description="Test description",
+            current_price=100.00,
+            currency="MAD",
+            category=category,
+            merchant="Test Store",
+            channel="online",
+            author=user,
+        )
+
+        Deal.objects.create(
+            title="Test Deal 2",
+            description="Test description 2",
+            current_price=200.00,
+            currency="MAD",
+            category=category,
+            merchant="Test Store 2",
+            channel="in_store",
+            author=user,
+        )
+
+        # Create deal for another user (should not appear)
+        other_user = UserModel.objects.create_user(
+            email="other@example.com",
+            username="otheruser",
+            password="testpass123",
+            is_active=True,
+        )
+        Deal.objects.create(
+            title="Other User Deal",
+            description="Other description",
+            current_price=150.00,
+            currency="MAD",
+            category=category,
+            merchant="Other Store",
+            channel="online",
+            author=other_user,
+        )
+
+        response = self.client.get(reverse("users:user-my-deals"))
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data["results"]) == 2
+
+        # Check that only user's deals are returned
+        deal_titles = [deal["title"] for deal in response.data["results"]]
+        assert "Test Deal 1" in deal_titles
+        assert "Test Deal 2" in deal_titles
+        assert "Other User Deal" not in deal_titles
+
+    def test_my_deals_unauthenticated(self) -> None:
+        """Test getting user's deals when not authenticated."""
+        response = self.client.get(reverse("users:user-my-deals"))
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_my_comments_authenticated(self) -> None:
+        """Test getting user's comments when authenticated."""
+        # Create user and authenticate
+        user = UserModel.objects.create_user(
+            email="test@example.com",
+            username="testuser",
+            password="testpass123",
+            is_active=True,
+        )
+        refresh = RefreshToken.for_user(user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+
+        # Create category and deal
+        category = DealCategory.objects.create(
+            name="Electronics", slug="electronics", icon="laptop"
+        )
+
+        deal = Deal.objects.create(
+            title="Test Deal",
+            description="Test description",
+            current_price=100.00,
+            currency="MAD",
+            category=category,
+            merchant="Test Store",
+            channel="online",
+            author=user,
+        )
+
+        # Create comments for this user
+        Comment.objects.create(content="Great deal!", deal=deal, user=user)
+
+        Comment.objects.create(
+            content="Thanks for sharing!", deal=deal, user=user
+        )
+
+        # Create comment for another user (should not appear)
+        other_user = UserModel.objects.create_user(
+            email="other@example.com",
+            username="otheruser",
+            password="testpass123",
+            is_active=True,
+        )
+        Comment.objects.create(content="Other user comment", deal=deal, user=other_user)
+
+        response = self.client.get(reverse("users:user-my-comments"))
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data["results"]) == 2
+
+        # Check that only user's comments are returned
+        comment_contents = [comment["content"] for comment in response.data["results"]]
+        assert "Great deal!" in comment_contents
+        assert "Thanks for sharing!" in comment_contents
+        assert "Other user comment" not in comment_contents
+
+    def test_my_comments_unauthenticated(self) -> None:
+        """Test getting user's comments when not authenticated."""
+        response = self.client.get(reverse("users:user-my-comments"))
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_change_password_success(self) -> None:
+        """Test successful password change."""
+        user = UserModel.objects.create_user(
+            email="test@example.com",
+            username="testuser",
+            password="oldpass123",
+            is_active=True,
+        )
+        refresh = RefreshToken.for_user(user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+
+        data = {
+            "current_password": "oldpass123",
+            "new_password": "newpass123!",
+            "new_password_confirm": "newpass123!",
+        }
+
+        response = self.client.post(reverse("users:user-change-password"), data)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["detail"] == "Password changed successfully."
+
+        # Verify password was actually changed
+        user.refresh_from_db()
+        assert user.check_password("newpass123!")
+
+    def test_change_password_wrong_current(self) -> None:
+        """Test password change with wrong current password."""
+        user = UserModel.objects.create_user(
+            email="test@example.com",
+            username="testuser",
+            password="oldpass123",
+            is_active=True,
+        )
+        refresh = RefreshToken.for_user(user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+
+        data = {
+            "current_password": "wrongpass",
+            "new_password": "newpass123!",
+            "new_password_confirm": "newpass123!",
+        }
+
+        response = self.client.post(reverse("users:user-change-password"), data)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "Current password is incorrect" in str(response.data)
+
+    def test_change_password_mismatch(self) -> None:
+        """Test password change with mismatched new passwords."""
+        user = UserModel.objects.create_user(
+            email="test@example.com",
+            username="testuser",
+            password="oldpass123",
+            is_active=True,
+        )
+        refresh = RefreshToken.for_user(user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+
+        data = {
+            "current_password": "oldpass123",
+            "new_password": "newpass123!",
+            "new_password_confirm": "differentpass123!",
+        }
+
+        response = self.client.post(reverse("users:user-change-password"), data)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "New passwords do not match" in str(response.data)
+
+    def test_change_password_weak_password(self) -> None:
+        """Test password change with weak new password."""
+        user = UserModel.objects.create_user(
+            email="test@example.com",
+            username="testuser",
+            password="oldpass123",
+            is_active=True,
+        )
+        refresh = RefreshToken.for_user(user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+
+        data = {
+            "current_password": "oldpass123",
+            "new_password": "123",  # Too weak
+            "new_password_confirm": "123",
+        }
+
+        response = self.client.post(reverse("users:user-change-password"), data)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_change_password_unauthenticated(self) -> None:
+        """Test password change when not authenticated."""
+        data = {
+            "current_password": "oldpass123",
+            "new_password": "newpass123!",
+            "new_password_confirm": "newpass123!",
+        }
+
+        response = self.client.post(reverse("users:user-change-password"), data)
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED

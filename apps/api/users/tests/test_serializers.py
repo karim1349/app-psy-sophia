@@ -8,8 +8,12 @@ import pytest
 from django.contrib.auth import get_user_model
 
 from ..factories import UserFactory
-from ..serializers import (LoginSerializer, RegisterSerializer, UserSerializer,
-                           UserUpdateSerializer)
+from ..serializers import (
+    LoginSerializer,
+    RegisterSerializer,
+    UserSerializer,
+    UserUpdateSerializer,
+)
 
 UserModel = get_user_model()
 

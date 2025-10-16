@@ -18,7 +18,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@qiima/i18n": "workspace:^"
+    "@qiima/i18n": "workspace:^",
+    "@qiima/state": "workspace:*"
   },
   "peerDependencies": {
     "react": "19.1.0",

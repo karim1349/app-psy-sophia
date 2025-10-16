@@ -3,5 +3,6 @@ export { useTheme, getTheme } from './native/theme';
 export { FormField } from './components/FormField.native';
 export { TextField } from './components/TextField.native';
 export { LanguageSwitcher } from './components/LanguageSwitcher.native';
+export { ThemeSwitcher } from './components/ThemeSwitcher.native';
 export { ToastProvider, useToast, ToastContainer } from './components/Toast';
 export type { Toast, ToastType, ToastPosition } from './components/Toast';

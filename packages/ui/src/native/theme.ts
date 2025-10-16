@@ -1,4 +1,5 @@
 import { useColorScheme } from 'react-native';
+import { useThemeStore } from '@qiima/state';
 
 export type Theme = ReturnType<typeof getTheme>;
 
@@ -94,8 +95,10 @@ export function getTheme(mode: 'light' | 'dark') {
 }
 
 export function useTheme() {
-  const mode = (useColorScheme() ?? 'light') as 'light' | 'dark';
-  return getTheme(mode);
+  const themeStore = useThemeStore();
+  const systemMode = useColorScheme() ?? 'light';
+  const mode = themeStore.mode === 'system' ? systemMode : themeStore.mode;
+  return getTheme(mode as 'light' | 'dark');
 }
 
 

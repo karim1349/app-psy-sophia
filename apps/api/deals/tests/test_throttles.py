@@ -14,10 +14,17 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from users.factories import UserFactory
 
-from ..throttles import (AnonSearchThrottle, CategoryCreateThrottle,
-                         CommentThrottle, CommentUpdateThrottle,
-                         DealCreateThrottle, DealListThrottle,
-                         DealUpdateThrottle, SearchThrottle, VoteThrottle)
+from ..throttles import (
+    AnonSearchThrottle,
+    CategoryCreateThrottle,
+    CommentThrottle,
+    CommentUpdateThrottle,
+    DealCreateThrottle,
+    DealListThrottle,
+    DealUpdateThrottle,
+    SearchThrottle,
+    VoteThrottle,
+)
 
 
 @pytest.mark.django_db
@@ -84,8 +91,7 @@ class TestDealThrottles:
 
     def test_throttle_inheritance(self) -> None:
         """Test that throttles inherit from correct base classes."""
-        from rest_framework.throttling import (AnonRateThrottle,
-                                               UserRateThrottle)
+        from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
         # User throttles
         assert issubclass(DealCreateThrottle, UserRateThrottle)

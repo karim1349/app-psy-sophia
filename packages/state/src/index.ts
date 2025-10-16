@@ -11,3 +11,7 @@ export type { User } from './types';
 // Import them directly using platform-specific paths:
 // - import { useSessionStore } from '@qiima/state/session.native'
 // - import { useSessionStore } from '@qiima/state/session.web'
+
+// Theme store
+export { useThemeStore } from './theme.native';
+export type { ThemeMode } from './theme.native';

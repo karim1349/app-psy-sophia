@@ -12,30 +12,51 @@ from django.core.exceptions import ValidationError
 from django.db.models import Count, Q, QuerySet
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin,
-                                   ListModelMixin, RetrieveModelMixin,
-                                   UpdateModelMixin)
-from rest_framework.permissions import (AllowAny, BasePermission,
-                                        IsAuthenticated)
+from rest_framework.mixins import (
+    CreateModelMixin,
+    DestroyModelMixin,
+    ListModelMixin,
+    RetrieveModelMixin,
+    UpdateModelMixin,
+)
+from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from .models import Comment, Deal
-from .permissions import (CanCommentOnDeal, CanVoteOnDeal, IsActiveUser,
-                          IsOwnerOrStaff, IsStaffOrReadOnly)
+from .permissions import (
+    CanCommentOnDeal,
+    CanVoteOnDeal,
+    IsActiveUser,
+    IsOwnerOrStaff,
+    IsStaffOrReadOnly,
+)
 from .proxy.category_proxy import CategoryProxy
 from .proxy.comment_proxy import CommentProxy
 from .proxy.deal_proxy import DealProxy
-from .serializers import (CommentCreateSerializer, CommentSerializer,
-                          CommentUpdateSerializer,
-                          DealCategoryCreateSerializer, DealCategorySerializer,
-                          DealCreateSerializer, DealSerializer,
-                          VoteCreateSerializer, VoteSerializer)
-from .throttles import (AnonSearchThrottle, CategoryCreateThrottle,
-                        CommentThrottle, CommentUpdateThrottle,
-                        DealCreateThrottle, DealListThrottle,
-                        DealUpdateThrottle, SearchThrottle, VoteThrottle)
+from .serializers import (
+    CommentCreateSerializer,
+    CommentSerializer,
+    CommentUpdateSerializer,
+    DealCategoryCreateSerializer,
+    DealCategorySerializer,
+    DealCreateSerializer,
+    DealSerializer,
+    VoteCreateSerializer,
+    VoteSerializer,
+)
+from .throttles import (
+    AnonSearchThrottle,
+    CategoryCreateThrottle,
+    CommentThrottle,
+    CommentUpdateThrottle,
+    DealCreateThrottle,
+    DealListThrottle,
+    DealUpdateThrottle,
+    SearchThrottle,
+    VoteThrottle,
+)
 
 if TYPE_CHECKING:
     from users.models import User

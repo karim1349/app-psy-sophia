@@ -14,10 +14,15 @@ from rest_framework.test import APIRequestFactory
 from users.factories import UserFactory
 
 from ..factories import CommentFactory, DealCategoryFactory, DealFactory
-from ..serializers import (CommentCreateSerializer, CommentUpdateSerializer,
-                           DealCategoryCreateSerializer,
-                           DealCategorySerializer, DealCreateSerializer,
-                           DealSerializer, VoteCreateSerializer)
+from ..serializers import (
+    CommentCreateSerializer,
+    CommentUpdateSerializer,
+    DealCategoryCreateSerializer,
+    DealCategorySerializer,
+    DealCreateSerializer,
+    DealSerializer,
+    VoteCreateSerializer,
+)
 
 User = get_user_model()
 

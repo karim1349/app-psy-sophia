@@ -178,6 +178,7 @@ export default function CreateDealScreen() {
             <TextInput
               style={[styles.input, errors.title && styles.inputError]}
               placeholder={tDeals('createDeal.form.titlePlaceholder')}
+              placeholderTextColor={theme.colors.fgMuted}
               value={formData.title}
               onChangeText={(value) => updateFormData('title', value)}
               maxLength={200}
@@ -191,6 +192,7 @@ export default function CreateDealScreen() {
             <TextInput
               style={[styles.textArea, errors.description && styles.inputError]}
               placeholder={tDeals('createDeal.form.descriptionPlaceholder')}
+              placeholderTextColor={theme.colors.fgMuted}
               value={formData.description}
               onChangeText={(value) => updateFormData('description', value)}
               multiline
@@ -207,6 +209,7 @@ export default function CreateDealScreen() {
               <TextInput
                 style={[styles.input, errors.current_price && styles.inputError]}
                 placeholder={tDeals('createDeal.form.currentPricePlaceholder')}
+                placeholderTextColor={theme.colors.fgMuted}
                 value={formData.current_price}
                 onChangeText={(value) => updateFormData('current_price', value)}
                 keyboardType="numeric"
@@ -219,6 +222,7 @@ export default function CreateDealScreen() {
               <TextInput
                 style={styles.input}
                 placeholder={tDeals('createDeal.form.originalPricePlaceholder')}
+                placeholderTextColor={theme.colors.fgMuted}
                 value={formData.original_price}
                 onChangeText={(value) => updateFormData('original_price', value)}
                 keyboardType="numeric"
@@ -248,6 +252,7 @@ export default function CreateDealScreen() {
             <TextInput
               style={[styles.input, errors.merchant && styles.inputError]}
               placeholder={tDeals('createDeal.form.merchantPlaceholder')}
+              placeholderTextColor={theme.colors.fgMuted}
               value={formData.merchant}
               onChangeText={(value) => updateFormData('merchant', value)}
             />
@@ -338,6 +343,7 @@ export default function CreateDealScreen() {
               <TextInput
                 style={[styles.input, errors.url && styles.inputError]}
                 placeholder={tDeals('createDeal.form.urlPlaceholder')}
+                placeholderTextColor={theme.colors.fgMuted}
                 value={formData.url}
                 onChangeText={(value) => updateFormData('url', value)}
                 keyboardType="url"
@@ -354,6 +360,7 @@ export default function CreateDealScreen() {
               <TextInput
                 style={[styles.input, errors.city && styles.inputError]}
                 placeholder={tDeals('createDeal.form.cityPlaceholder')}
+                placeholderTextColor={theme.colors.fgMuted}
                 value={formData.city}
                 onChangeText={(value) => updateFormData('city', value)}
               />
@@ -367,6 +374,7 @@ export default function CreateDealScreen() {
             <TextInput
               style={[styles.input, errors.proof_url && styles.inputError]}
               placeholder={tDeals('createDeal.form.proofUrlPlaceholder')}
+              placeholderTextColor={theme.colors.fgMuted}
               value={formData.proof_url}
               onChangeText={(value) => updateFormData('proof_url', value)}
               keyboardType="url"

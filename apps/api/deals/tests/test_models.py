@@ -14,8 +14,14 @@ from django.utils import timezone
 
 from users.factories import UserFactory
 
-from ..factories import (CommentFactory, DealCategoryFactory, DealFactory,
-                         InStoreDealFactory, OnlineDealFactory, VoteFactory)
+from ..factories import (
+    CommentFactory,
+    DealCategoryFactory,
+    DealFactory,
+    InStoreDealFactory,
+    OnlineDealFactory,
+    VoteFactory,
+)
 
 
 @pytest.mark.django_db
