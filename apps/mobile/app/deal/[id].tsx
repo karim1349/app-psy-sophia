@@ -2,22 +2,18 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   Alert,
-  RefreshControl,
 } from 'react-native';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import { useDeal, useDealComments, useVoteDeal } from '@qiima/queries';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { config } from '@/constants/config';
 import { useI18nNamespace } from '@qiima/i18n';
 import { useTheme } from '@qiima/ui';
+import { StackScreen } from '@/components/stack-screen';
 
 export default function DealDetailScreen() {
-  const scheme = useColorScheme() ?? 'light';
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [refreshing, setRefreshing] = useState(false);
@@ -67,44 +63,20 @@ export default function DealDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, styles.centerContent]}>
-        <LinearGradient
-          pointerEvents="none"
-          colors={
-            scheme === 'dark'
-              ? ['#21110D', '#28180F', '#17120A']
-              : ['#FFECE5', '#FFE3CC', '#FFF6D6']
-          }
-          locations={[0, 0.6, 1]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
+      <StackScreen centered>
         <Text style={styles.loadingText}>{tDealDetail('loading')}</Text>
-      </View>
+      </StackScreen>
     );
   }
 
   if (error || !deal) {
     return (
-      <View style={[styles.container, styles.centerContent]}>
-        <LinearGradient
-          pointerEvents="none"
-          colors={
-            scheme === 'dark'
-              ? ['#21110D', '#28180F', '#17120A']
-              : ['#FFECE5', '#FFE3CC', '#FFF6D6']
-          }
-          locations={[0, 0.6, 1]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
+      <StackScreen centered>
         <Text style={styles.errorText}>{tDealDetail('error')}</Text>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backButtonText}>{tDealDetail('back')}</Text>
         </TouchableOpacity>
-      </View>
+      </StackScreen>
     );
   }
 
@@ -113,32 +85,12 @@ export default function DealDetailScreen() {
     : 0;
 
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        pointerEvents="none"
-        colors={
-          scheme === 'dark'
-            ? ['#21110D', '#28180F', '#17120A']
-            : ['#FFECE5', '#FFE3CC', '#FFF6D6']
-        }
-        locations={[0, 0.6, 1]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-      
+    <StackScreen onRefresh={onRefresh} refreshing={refreshing}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.headerBackButton} onPress={() => router.back()}>
           <Text style={styles.headerBackButtonText}>{tDealDetail('back')}</Text>
         </TouchableOpacity>
       </View>
-
-      <ScrollView 
-        style={styles.content}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
         <View style={styles.dealCard}>
           <View style={styles.dealHeader}>
             <Text style={styles.dealTitle}>{deal.title}</Text>
@@ -226,22 +178,12 @@ export default function DealDetailScreen() {
             <Text style={styles.noCommentsText}>{tDealDetail('comments.noComments')}</Text>
           )}
         </View>
-      </ScrollView>
-    </View>
+    </StackScreen>
   );
 }
 
 const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  centerContent: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 60,
     paddingBottom: 20,
   },
   headerBackButton: {
@@ -251,10 +193,6 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     fontSize: 16,
     color: theme.colors.brand,
     fontWeight: '600',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
   },
   loadingText: {
     fontSize: 16,
