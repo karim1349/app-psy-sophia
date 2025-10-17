@@ -10,7 +10,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Initialize theme store on app startup
     themeStore.initialize();
-  }, [themeStore]);
+  }, []);
 
   return <>{children}</>;
 }

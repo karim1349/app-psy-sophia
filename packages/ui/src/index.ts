@@ -6,3 +6,7 @@ export { LanguageSwitcher } from './components/LanguageSwitcher.native';
 export { ThemeSwitcher } from './components/ThemeSwitcher.native';
 export { ToastProvider, useToast, ToastContainer } from './components/Toast';
 export type { Toast, ToastType, ToastPosition } from './components/Toast';
+export { BottomSheet, BottomSheetModal } from './components/BottomSheet';
+export type { BottomSheetProps, BottomSheetModalProps } from './components/BottomSheet';
+export { PickerField } from './components/PickerField';
+export type { PickerFieldProps, PickerOption } from './components/PickerField';

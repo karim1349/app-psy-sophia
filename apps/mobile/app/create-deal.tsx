@@ -5,13 +5,12 @@ import {
   TextInput,
   TouchableOpacity,
 } from 'react-native';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useCreateDeal, useInfiniteCategories } from '@qiima/queries';
 import { useRouter } from 'expo-router';
-import { Picker } from '@react-native-picker/picker';
 import { config } from '@/constants/config';
 import { useI18nNamespace } from '@qiima/i18n';
-import { useTheme } from '@qiima/ui';
+import { useTheme, PickerField } from '@qiima/ui';
 import { StackScreen } from '@/components/stack-screen';
 
 export default function CreateDealScreen() {
@@ -53,6 +52,21 @@ export default function CreateDealScreen() {
 
   // Flatten all categories from all pages
   const categories = categoriesData?.pages.flatMap(page => page.results) || [];
+
+  // Currency options
+  const currencyOptions = useMemo(() => [
+    { label: 'MAD (Moroccan Dirham)', value: 'MAD' },
+    { label: 'USD (US Dollar)', value: 'USD' },
+    { label: 'EUR (Euro)', value: 'EUR' },
+  ], []);
+
+  // Category options for picker
+  const categoryOptions = useMemo(() =>
+    categories.map(cat => ({
+      label: `${cat.icon || '🏷️'} ${cat.name}`,
+      value: cat.id.toString(),
+    }))
+  , [categories]);
 
   // Create deal mutation
   const createDealMutation = useCreateDeal({
@@ -231,20 +245,13 @@ export default function CreateDealScreen() {
           </View>
 
           {/* Currency */}
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>{tDeals('createDeal.form.currency')}</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={formData.currency}
-                onValueChange={(value) => updateFormData('currency', value)}
-                style={styles.picker}
-              >
-                <Picker.Item label="MAD (Moroccan Dirham)" value="MAD" />
-                <Picker.Item label="USD (US Dollar)" value="USD" />
-                <Picker.Item label="EUR (Euro)" value="EUR" />
-              </Picker>
-            </View>
-          </View>
+          <PickerField
+            label={tDeals('createDeal.form.currency')}
+            value={formData.currency}
+            onValueChange={(value) => updateFormData('currency', value)}
+            options={currencyOptions}
+            placeholder={tDeals('createDeal.form.currency')}
+          />
 
           {/* Merchant */}
           <View style={styles.formGroup}>
@@ -260,41 +267,17 @@ export default function CreateDealScreen() {
           </View>
 
           {/* Category */}
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>{tDeals('createDeal.form.category')} *</Text>
-            <View style={[styles.pickerContainer, errors.category && styles.inputError]}>
-              <Picker
-                selectedValue={formData.category}
-                onValueChange={(value) => {
-                  if (value === 'load_more' && hasNextPage) {
-                    fetchNextPage();
-                  } else {
-                    updateFormData('category', value);
-                  }
-                }}
-                style={styles.picker}
-              >
-                <Picker.Item label={tDeals('createDeal.form.categoryPlaceholder')} value="" />
-                {categories?.map((category) => (
-                  <Picker.Item 
-                    key={category.id} 
-                    label={`${category.icon || '🏷️'} ${category.name}`} 
-                    value={category.id.toString()} 
-                  />
-                ))}
-                {hasNextPage && (
-                  <Picker.Item 
-                    label={isFetchingNextPage ? tDeals('createDeal.form.loadingMore') : tDeals('createDeal.form.loadMoreCategories')} 
-                    value="load_more" 
-                  />
-                )}
-                {categoriesLoading && (
-                  <Picker.Item label={tDeals('createDeal.form.loadingCategories')} value="" />
-                )}
-              </Picker>
-            </View>
-            {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
-          </View>
+          <PickerField
+            label={tDeals('createDeal.form.category')}
+            value={formData.category}
+            onValueChange={(value) => updateFormData('category', value)}
+            options={categoryOptions}
+            placeholder={tDeals('createDeal.form.categoryPlaceholder')}
+            searchable
+            searchPlaceholder={tDeals('createDeal.form.searchCategories') || 'Search categories...'}
+            error={errors.category}
+            disabled={categoriesLoading}
+          />
 
           {/* Deal Type */}
           <View style={styles.formGroup}>
@@ -440,7 +423,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   errorText: {
     color: theme.colors.danger,
     fontSize: 14,
-    marginTop: 4,
+    marginVertical: theme.space.xs,
   },
   helpText: {
     color: theme.colors.fgMuted,
@@ -454,15 +437,6 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   },
   priceGroup: {
     flex: 1,
-  },
-  pickerContainer: {
-    backgroundColor: theme.colors.bgSurface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  picker: {
-    height: 50,
   },
   dealTypeContainer: {
     flexDirection: 'row',

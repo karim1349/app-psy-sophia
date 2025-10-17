@@ -2,18 +2,55 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { TabScreen } from '@/components/tab-screen';
 import { useHotDeals } from '@qiima/queries';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { config } from '@/constants/config';
 import { useI18n } from '@qiima/i18n';
-import { useTheme } from '@qiima/ui';
+import { useTheme, BottomSheetModal, PickerField } from '@qiima/ui';
+import type { BottomSheetModal as BottomSheetModalRef } from '@gorhom/bottom-sheet';
 
 export default function HomeScreen() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const { t } = useI18n();
   const theme = useTheme();
-
+  const bottomSheetRef = useRef<BottomSheetModalRef>(null);
+  const [selectedCity, setSelectedCity] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const styles = createStyles(theme);
+
+  const cities = [
+    { label: 'Casablanca', value: 'casablanca' },
+    { label: 'Rabat', value: 'rabat' },
+    { label: 'Marrakech', value: 'marrakech' },
+    { label: 'Fès', value: 'fes' },
+    { label: 'Tanger', value: 'tanger' },
+    { label: 'Agadir', value: 'agadir' },
+    { label: 'Meknès', value: 'meknes' },
+    { label: 'Oujda', value: 'oujda' },
+    { label: 'Casablanca', value: 'casablanca' },
+    { label: 'Rabat', value: 'rabat' },
+    { label: 'Marrakech', value: 'marrakech' },
+    { label: 'Fès', value: 'fes' },
+    { label: 'Tanger', value: 'tanger' },
+    { label: 'Agadir', value: 'agadir' },
+    { label: 'Meknès', value: 'meknes' },
+    { label: 'Oujda', value: 'oujda' },
+    { label: 'Casablanca', value: 'casablanca' },
+    { label: 'Rabat', value: 'rabat' },
+    { label: 'Marrakech', value: 'marrakech' },
+    { label: 'Fès', value: 'fes' },
+    { label: 'Tanger', value: 'tanger' },
+    { label: 'Agadir', value: 'agadir' },
+    { label: 'Meknès', value: 'meknes' },
+    { label: 'Oujda', value: 'oujda' },
+  ];
+
+  const categories = [
+    { label: 'Électronique', value: 'electronics' },
+    { label: 'Mode', value: 'fashion' },
+    { label: 'Maison', value: 'home' },
+    { label: 'Sport', value: 'sport' },
+  ];
 
   // Fetch hot deals from API
   const { data: hotDeals, isLoading, refetch } = useHotDeals({
@@ -66,10 +103,49 @@ export default function HomeScreen() {
             </TouchableOpacity>
           ))}
         </View>
+        <View style={styles.pickerSection}>
+          <Text style={styles.sectionTitle}>Picker Field Demo</Text>
+
+          <PickerField
+            label="Ville"
+            value={selectedCity}
+            onValueChange={setSelectedCity}
+            options={cities}
+            placeholder="Choisir une ville"
+            searchable
+            searchPlaceholder="Rechercher une ville..."
+          />
+
+          <PickerField
+            label="Catégorie"
+            value={selectedCategory}
+            onValueChange={setSelectedCategory}
+            options={categories}
+            placeholder="Choisir une catégorie"
+          />
+
+          {(selectedCity || selectedCategory) && (
+            <View style={styles.selectionDisplay}>
+              <Text style={styles.selectionText}>
+                {selectedCity && `Ville: ${cities.find(c => c.value === selectedCity)?.label}`}
+              </Text>
+              <Text style={styles.selectionText}>
+                {selectedCategory && `Catégorie: ${categories.find(c => c.value === selectedCategory)?.label}`}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        <TouchableOpacity
+          onPress={() => bottomSheetRef.current?.present()}
+          style={styles.testButton}
+        >
+          <Text style={styles.testButtonText}>Open Bottom Sheet</Text>
+        </TouchableOpacity>
       </TabScreen>
 
       <View style={styles.fabContainer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.fab}
           onPress={() => router.push('/create-deal')}
         >
@@ -78,13 +154,26 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.demoButtonContainer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.demoButton}
           onPress={() => router.push('/toast-demo')}
         >
           <Text style={styles.demoButtonText}>Toast Demo</Text>
         </TouchableOpacity>
       </View>
+
+      <BottomSheetModal
+        ref={bottomSheetRef}
+        enableDynamicSizing
+        detached
+        enablePanDownToClose
+      >
+        <View style={styles.sheetContentWrapper}>
+          <Text style={styles.sheetContent}>Hello from Bottom Sheet!</Text>
+          <Text style={styles.sheetContent}>This sheet adapts to its content height.</Text>
+          <Text style={styles.sheetContent}>Detached mode adds margins and shadow for a floating effect.</Text>
+        </View>
+      </BottomSheetModal>
     </View>
   );
 }
@@ -223,6 +312,40 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     color: 'white',
     fontWeight: '600',
     fontSize: 14,
+  },
+  testButton: {
+    backgroundColor: theme.colors.brand,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  testButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  sheetContentWrapper: {
+    padding: theme.space.lg,
+    gap: theme.space.sm,
+  },
+  sheetContent: {
+    fontSize: 16,
+    color: theme.colors.fgDefault,
+  },
+  pickerSection: {
+    gap: 16,
+    marginTop: 24,
+  },
+  selectionDisplay: {
+    backgroundColor: theme.colors.bgSurface,
+    padding: theme.space.md,
+    borderRadius: theme.radius.md,
+    gap: theme.space.xs,
+  },
+  selectionText: {
+    fontSize: 14,
+    color: theme.colors.fgDefault,
   },
 });
 

@@ -4,6 +4,8 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 import { useColorScheme } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { useThemeStore } from '@qiima/state';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { I18nProvider } from '@/components/providers/I18nProvider';
@@ -20,23 +22,27 @@ export default function RootLayout() {
   const colorScheme = themeStore.mode === 'system' ? systemColorScheme : themeStore.mode;
 
   return (
-    <I18nProvider>
-      <ThemeProvider>
-        <ToastProvider>
-          <QueryProvider>
-            <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-              <Stack screenOptions={{ headerTransparent: true, headerTitle: '', navigationBarHidden: true}}>
-                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-                <Stack.Screen name="toast-demo" options={{ title: 'Toast Demo' }} />
-              </Stack>
-              <StatusBar style="auto" />
-              <ToastContainer />
-            </NavigationThemeProvider>
-          </QueryProvider>
-        </ToastProvider>
-      </ThemeProvider>
-    </I18nProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <BottomSheetModalProvider>
+        <I18nProvider>
+          <ThemeProvider>
+            <ToastProvider>
+              <QueryProvider>
+                <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                  <Stack screenOptions={{ headerTransparent: true, headerTitle: '', navigationBarHidden: true}}>
+                    <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                    <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+                    <Stack.Screen name="toast-demo" options={{ title: 'Toast Demo' }} />
+                  </Stack>
+                  <StatusBar style="auto" />
+                  <ToastContainer />
+                </NavigationThemeProvider>
+              </QueryProvider>
+            </ToastProvider>
+          </ThemeProvider>
+        </I18nProvider>
+      </BottomSheetModalProvider>
+    </GestureHandlerRootView>
   );
 }
