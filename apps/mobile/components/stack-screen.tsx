@@ -2,7 +2,7 @@ import { View, ScrollView, StyleSheet, RefreshControl, ViewStyle, ScrollViewProp
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ReactNode } from 'react';
-import { useThemeStore } from '@qiima/state';
+import { useThemeStore } from '@app-psy-sophia/state';
 
 interface StackScreenProps {
   /**
@@ -75,12 +75,6 @@ interface StackScreenProps {
  * // Basic scrollable screen
  * <StackScreen>
  *   <Text>My content</Text>
- * </StackScreen>
- *
- * @example
- * // With pull-to-refresh
- * <StackScreen onRefresh={handleRefresh} refreshing={isRefreshing}>
- *   <DealList deals={deals} />
  * </StackScreen>
  *
  * @example

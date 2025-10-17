@@ -9,12 +9,12 @@ import {
 } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ForgotPasswordSchema, type PasswordResetRequestInput } from '@qiima/schemas';
-import { usePasswordForgot } from '@qiima/queries';
+import { ForgotPasswordSchema, type PasswordResetRequestInput } from '@app-psy-sophia/schemas';
+import { usePasswordForgot } from '@app-psy-sophia/queries';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Button, FormField, TextField, LanguageSwitcher, useTheme } from '@qiima/ui';
-import { useI18n } from '@qiima/i18n';
+import { Button, FormField, TextField, LanguageSwitcher, useTheme } from '@app-psy-sophia/ui';
+import { useI18n } from '@app-psy-sophia/i18n';
 import { config } from '@/constants/config';
 
 export default function ForgotPasswordScreen() {

@@ -9,10 +9,10 @@ import {
 } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { RegisterSchema, type RegisterInput } from '@qiima/schemas';
-import { useRegister } from '@qiima/queries';
+import { RegisterSchema, type RegisterInput } from '@app-psy-sophia/schemas';
+import { useRegister } from '@app-psy-sophia/queries';
 import { useRouter } from 'expo-router';
-import { Button, FormField, TextField, useTheme } from '@qiima/ui';
+import { Button, FormField, TextField, useTheme } from '@app-psy-sophia/ui';
 import { config } from '@/constants/config';
 
 export default function RegisterScreen() {
@@ -52,7 +52,7 @@ export default function RegisterScreen() {
       >
         <View style={styles.header}>
           <Text style={styles.title}>Create account</Text>
-          <Text style={styles.subtitle}>Sign up to start finding great deals</Text>
+          <Text style={styles.subtitle}>Sign up to start</Text>
         </View>
 
         <View style={styles.form}>

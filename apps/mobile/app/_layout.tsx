@@ -6,11 +6,11 @@ import 'react-native-reanimated';
 import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-import { useThemeStore } from '@qiima/state';
+import { useThemeStore } from '@app-psy-sophia/state';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { I18nProvider } from '@/components/providers/I18nProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
-import { ToastProvider, ToastContainer } from '@qiima/ui';
+import { ToastProvider, ToastContainer } from '@app-psy-sophia/ui';
 
 export const unstable_settings = {
   anchor: '(tabs)',

@@ -6,8 +6,8 @@
       "@/*": [
         "./*"
       ],
-      "@qiima/ui": ["../../packages/ui/src/index.ts"],
-      "@qiima/ui/*": ["../../packages/ui/src/*"]
+      "@app-psy-sophia/ui": ["../../packages/ui/src/index.ts"],
+      "@app-psy-sophia/ui/*": ["../../packages/ui/src/*"]
     },
     "baseUrl": "."
   },

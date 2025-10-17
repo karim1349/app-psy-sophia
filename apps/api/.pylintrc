@@ -462,4 +462,4 @@ overgeneral-exceptions=Exception
 
 [django]
 # Django settings module
-django-settings-module=qiima.settings
+django-settings-module=app-psy-sophia.settings

@@ -2,7 +2,7 @@ import { View, ScrollView, StyleSheet, RefreshControl, ViewStyle, ScrollViewProp
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTabBarHeight } from '@/hooks/use-tab-bar-height';
 import { ReactNode } from 'react';
-import { useTheme } from '@qiima/ui';
+import { useTheme } from '@app-psy-sophia/ui';
 
 interface TabScreenProps {
   /**
@@ -55,12 +55,6 @@ interface TabScreenProps {
  * // Basic scrollable screen
  * <TabScreen>
  *   <Text>My content</Text>
- * </TabScreen>
- *
- * @example
- * // With pull-to-refresh
- * <TabScreen onRefresh={handleRefresh} refreshing={isRefreshing}>
- *   <DealList deals={deals} />
  * </TabScreen>
  *
  * @example

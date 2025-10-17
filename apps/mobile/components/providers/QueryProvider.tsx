@@ -1,7 +1,7 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { createQueryClient, setGlobalRefreshCallback, useRefresh } from '@qiima/queries';
-import { useSessionStore } from '@qiima/state/session.native';
-import { useToast } from '@qiima/ui';
+import { createQueryClient, setGlobalRefreshCallback, useRefresh } from '@app-psy-sophia/queries';
+import { useSessionStore } from '@app-psy-sophia/state/session.native';
+import { useToast } from '@app-psy-sophia/ui';
 import NetInfo from '@react-native-community/netinfo';
 import { useEffect, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';

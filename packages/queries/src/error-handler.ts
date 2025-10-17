@@ -1,4 +1,4 @@
-import { HttpError } from '@qiima/api-client';
+import { HttpError } from '@app-psy-sophia/api-client';
 
 export interface ToastError {
   type: 'error' | 'warning' | 'info' | 'success';
@@ -333,13 +333,6 @@ export function mapSuccessToToast(action: string, _data?: unknown): ToastError[]
         type: 'success',
         title: 'auth.resetPassword.success',
         message: 'auth.resetPassword.resetSuccess',
-      }];
-
-    case 'create-deal':
-      return [{
-        type: 'success',
-        title: 'deals.create.success',
-        message: 'deals.create.created',
       }];
 
     default:

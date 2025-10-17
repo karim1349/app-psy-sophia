@@ -1,5 +1,5 @@
 {
-  "name": "@qiima/schemas",
+  "name": "@app-psy-sophia/schemas",
   "version": "0.0.0",
   "private": true,
   "main": "./src/index.ts",

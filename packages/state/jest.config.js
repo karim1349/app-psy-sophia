@@ -2,6 +2,6 @@ const baseConfig = require('../../config/jest.base');
 
 module.exports = {
   ...baseConfig,
-  displayName: '@qiima/state',
+  displayName: '@app-psy-sophia/state',
   testEnvironment: 'jsdom',
 };

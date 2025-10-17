@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createHttp } from '@qiima/api-client';
+import { createHttp } from '@app-psy-sophia/api-client';
 import type {
   AuthResponse,
   MessageResponse,
   User,
   RefreshResponse,
-} from '@qiima/api-client';
+} from '@app-psy-sophia/api-client';
 import type {
   RegisterInput,
   LoginInput,
@@ -13,10 +13,7 @@ import type {
   PasswordResetConfirmInput,
   VerifyEmailInput,
   ResendVerificationInput,
-  Deal,
-  DealComment,
-} from '@qiima/schemas';
-import type { PaginatedResponse } from './deals';
+} from '@app-psy-sophia/schemas';
 import { queryKeys } from './keys';
 
 /**
@@ -33,11 +30,11 @@ export interface UseAuthConfig {
 function getSessionStore(env: 'native' | 'web') {
   if (env === 'native') {
     // Dynamic import for native
-    const { useSessionStore } = require('@qiima/state/session.native');
+    const { useSessionStore } = require('@app-psy-sophia/state/session.native');
     return useSessionStore;
   } else {
     // Dynamic import for web
-    const { useSessionStore } = require('@qiima/state/session.web');
+    const { useSessionStore } = require('@app-psy-sophia/state/session.web');
     return useSessionStore;
   }
 }
@@ -50,7 +47,7 @@ function getSessionStore(env: 'native' | 'web') {
  *
  * @example
  * ```ts
- * const register = useRegister({ env: 'native', baseURL: 'https://api.qiima.ma' });
+ * const register = useRegister({ env: 'native', baseURL: 'https://api.app-psy-sophia.ma' });
  *
  * register.mutate({
  *   email: 'user@example.com',
@@ -84,7 +81,7 @@ export function useRegister(config: UseAuthConfig) {
  *
  * @example
  * ```ts
- * const login = useLogin({ env: 'native', baseURL: 'https://api.qiima.ma' });
+ * const login = useLogin({ env: 'native', baseURL: 'https://api.app-psy-sophia.ma' });
  *
  * login.mutate({
  *   email: 'user@example.com',
@@ -132,7 +129,7 @@ export function useLogin(config: UseAuthConfig) {
  *
  * @example
  * ```ts
- * const logout = useLogout({ env: 'native', baseURL: 'https://api.qiima.ma' });
+ * const logout = useLogout({ env: 'native', baseURL: 'https://api.app-psy-sophia.ma' });
  *
  * logout.mutate();
  * ```
@@ -176,7 +173,7 @@ export function useLogout(config: UseAuthConfig) {
  *
  * @example
  * ```ts
- * const forgotPassword = usePasswordForgot({ env: 'native', baseURL: 'https://api.qiima.ma' });
+ * const forgotPassword = usePasswordForgot({ env: 'native', baseURL: 'https://api.app-psy-sophia.ma' });
  *
  * forgotPassword.mutate({
  *   email: 'user@example.com',
@@ -199,7 +196,7 @@ export function usePasswordForgot(config: UseAuthConfig) {
  *
  * @example
  * ```ts
- * const resetPassword = usePasswordReset({ env: 'native', baseURL: 'https://api.qiima.ma' });
+ * const resetPassword = usePasswordReset({ env: 'native', baseURL: 'https://api.app-psy-sophia.ma' });
  *
  * resetPassword.mutate({
  *   token: 'reset-token-from-email',
@@ -233,7 +230,7 @@ export function usePasswordReset(config: UseAuthConfig) {
  * ```ts
  * const { data: user, isLoading } = useMeQuery({
  *   env: 'native',
- *   baseURL: 'https://api.qiima.ma'
+ *   baseURL: 'https://api.app-psy-sophia.ma'
  * });
  * ```
  */
@@ -270,7 +267,7 @@ export function useMeQuery(config: UseAuthConfig) {
  *
  * @example
  * ```ts
- * const refresh = useRefresh({ env: 'native', baseURL: 'https://api.qiima.ma' });
+ * const refresh = useRefresh({ env: 'native', baseURL: 'https://api.app-psy-sophia.ma' });
  *
  * // Typically called automatically on 401
  * refresh.mutate();
@@ -331,7 +328,7 @@ export function useRefresh(config: UseAuthConfig) {
  *
  * @example
  * ```ts
- * const verifyEmail = useVerifyEmail({ env: 'native', baseURL: 'https://api.qiima.ma' });
+ * const verifyEmail = useVerifyEmail({ env: 'native', baseURL: 'https://api.app-psy-sophia.ma' });
  *
  * verifyEmail.mutate({
  *   email: 'user@example.com',
@@ -378,7 +375,7 @@ export function useVerifyEmail(config: UseAuthConfig) {
  *
  * @example
  * ```ts
- * const resendVerification = useResendVerification({ env: 'native', baseURL: 'https://api.qiima.ma' });
+ * const resendVerification = useResendVerification({ env: 'native', baseURL: 'https://api.app-psy-sophia.ma' });
  *
  * resendVerification.mutate({
  *   email: 'user@example.com',
@@ -412,64 +409,13 @@ function createAuthenticatedHttp(config: UseAuthConfig) {
   return createHttp({ env, baseURL, getAccessToken });
 }
 
-/**
- * Hook for fetching current user's deals
- *
- * @example
- * ```ts
- * const { data: deals, isLoading } = useMyDeals({
- *   env: 'native',
- *   baseURL: 'https://api.qiima.ma'
- * });
- * ```
- */
-export function useMyDeals(config: UseAuthConfig) {
-  const { env } = config;
-  const sessionStore = getSessionStore(env);
-
-  return useQuery({
-    queryKey: queryKeys.user.deals(),
-    queryFn: async () => {
-      const http = createAuthenticatedHttp(config);
-      const response = await http.get<PaginatedResponse<Deal>>('/users/my_deals/');
-      return response?.results || [];
-    },
-    enabled: env === 'web' || !!sessionStore.getState().accessToken,
-  });
-}
-
-/**
- * Hook for fetching current user's comments
- *
- * @example
- * ```ts
- * const { data: comments, isLoading } = useMyComments({
- *   env: 'native',
- *   baseURL: 'https://api.qiima.ma'
- * });
- * ```
- */
-export function useMyComments(config: UseAuthConfig) {
-  const { env } = config;
-  const sessionStore = getSessionStore(env);
-
-  return useQuery({
-    queryKey: queryKeys.user.comments(),
-    queryFn: async () => {
-      const http = createAuthenticatedHttp(config);
-      const response = await http.get<PaginatedResponse<DealComment>>('/users/my_comments/');
-      return response?.results || [];
-    },
-    enabled: env === 'web' || !!sessionStore.getState().accessToken,
-  });
-}
 
 /**
  * Hook for changing user password
  *
  * @example
  * ```ts
- * const changePassword = useChangePassword({ env: 'native', baseURL: 'https://api.qiima.ma' });
+ * const changePassword = useChangePassword({ env: 'native', baseURL: 'https://api.app-psy-sophia.ma' });
  *
  * changePassword.mutate({
  *   current_password: 'OldPassword1!',

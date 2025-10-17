@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { initI18n } from '@qiima/i18n';
+import { initI18n } from '@app-psy-sophia/i18n';
 
 interface I18nProviderProps {
   children: React.ReactNode;

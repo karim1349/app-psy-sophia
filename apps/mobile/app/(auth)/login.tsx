@@ -7,11 +7,11 @@ import {
   Platform,
   StyleSheet,
 } from 'react-native';
-import { Button, FormField, TextField, useTheme } from '@qiima/ui';
+import { Button, FormField, TextField, useTheme } from '@app-psy-sophia/ui';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { LoginSchema, type LoginInput } from '@qiima/schemas';
-import { useLogin } from '@qiima/queries';
+import { LoginSchema, type LoginInput } from '@app-psy-sophia/schemas';
+import { useLogin } from '@app-psy-sophia/queries';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { LinearGradient } from 'expo-linear-gradient';

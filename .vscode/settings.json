@@ -10,7 +10,7 @@
     "python.linting.pylintEnabled": true,
     "python.linting.pylintArgs": [
         "--load-plugins=pylint_django",
-        "--django-settings-module=qiima.settings"
+        "--django-settings-module=app-psy-sophia.settings"
     ],
     "python.linting.flake8Enabled": true,
     "python.linting.mypyEnabled": true,

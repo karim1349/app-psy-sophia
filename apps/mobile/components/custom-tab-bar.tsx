@@ -8,7 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useTheme } from '@qiima/ui';
+import { useTheme } from '@app-psy-sophia/ui';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';

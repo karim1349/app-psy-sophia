@@ -76,12 +76,6 @@
   "rateLimit": {
     "exceeded": "Too many requests. Please wait a moment before trying again"
   },
-  "deals": {
-    "validation": {
-      "proofRequired": "At least one proof (image or proof URL) is required",
-      "invalidDiscount": "Original price must be greater than current price"
-    }
-  },
   "fields": {
     "email": "Email",
     "password": "Password",

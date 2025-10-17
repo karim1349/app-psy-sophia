@@ -9,11 +9,11 @@ import {
 } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { VerifyEmailSchema, type VerifyEmailInput } from '@qiima/schemas';
-import { useVerifyEmail, useResendVerification } from '@qiima/queries';
+import { VerifyEmailSchema, type VerifyEmailInput } from '@app-psy-sophia/schemas';
+import { useVerifyEmail, useResendVerification } from '@app-psy-sophia/queries';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Button, FormField, TextField, useTheme } from '@qiima/ui';
+import { Button, FormField, TextField, useTheme } from '@app-psy-sophia/ui';
 import { config } from '@/constants/config';
 
 export default function VerifyEmailScreen() {

@@ -1,6 +1,6 @@
 # Backend Rules — Django REST API
 
-> **Purpose**: Backend-specific rules for Django REST API development in the Qiima project. This covers models, serializers, views, permissions, and API design patterns.
+> **Purpose**: Backend-specific rules for Django REST API development in the app-psy-sophia project. This covers models, serializers, views, permissions, and API design patterns.
 
 ---
 
@@ -17,7 +17,7 @@ apps/api/
 ├─ moderation/               # Content moderation & flags
 ├─ subscriptions/            # User subscriptions & alerts
 ├─ notifications/            # Push notifications & email
-└─ qiima/                    # Project settings & main config
+└─ app-psy-sophia/                    # Project settings & main config
 ```
 
 ### 1.2 Each App Should Have
@@ -767,7 +767,7 @@ Use `drf-spectacular` for automatic API documentation:
 ```python
 # In settings.py
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Qiima API',
+    'TITLE': 'app-psy-sophia API',
     'DESCRIPTION': 'Community-driven deals platform for Morocco',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
@@ -1070,8 +1070,8 @@ CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL')
 ```bash
 # Required
 DJANGO_SECRET_KEY=your-secret-key
-DB_NAME=qiima
-DB_USER=qiima_user
+DB_NAME=app-psy-sophia
+DB_USER=app-psy-sophia_user
 DB_PASSWORD=your-password
 DB_HOST=localhost
 DB_PORT=5432
@@ -1079,7 +1079,7 @@ REDIS_URL=redis://localhost:6379/0
 
 # Optional
 DEBUG=False
-ALLOWED_HOSTS=localhost,127.0.0.1,api.qiima.ma
+ALLOWED_HOSTS=localhost,127.0.0.1,api.app-psy-sophia.ma
 CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:19006
 ```
 
@@ -1141,4 +1141,4 @@ CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:19006
 
 ---
 
-This backend rules file provides comprehensive guidance for Django REST API development in the Qiima project, following the established patterns from the users app and ensuring consistency across all future apps.
+This backend rules file provides comprehensive guidance for Django REST API development in the app-psy-sophia project, following the established patterns from the users app and ensuring consistency across all future apps.

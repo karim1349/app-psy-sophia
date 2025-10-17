@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
-import { useI18n, supportedLanguages } from '@qiima/i18n';
+import { useI18n, supportedLanguages } from '@app-psy-sophia/i18n';
 import { useTheme } from '../native/theme';
 
 interface LanguageSwitcherProps {

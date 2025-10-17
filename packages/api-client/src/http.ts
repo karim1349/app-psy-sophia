@@ -23,7 +23,7 @@ export interface HttpClient {
  * ```ts
  * const http = createHttp({
  *   env: 'native',
- *   baseURL: 'https://api.qiima.ma',
+ *   baseURL: 'https://api.app-psy-sophia.ma',
  *   getAccessToken: () => sessionStore.getState().accessToken,
  * });
  * ```

@@ -14,14 +14,14 @@ A clean, themeable bottom sheet component built on `@gorhom/bottom-sheet`.
 
 ## Installation
 
-The component is part of `@qiima/ui`. The underlying library `@gorhom/bottom-sheet` is installed as a peer dependency.
+The component is part of `@app-psy-sophia/ui`. The underlying library `@gorhom/bottom-sheet` is installed as a peer dependency.
 
 ## Basic Usage
 
 ```tsx
 import { useRef } from 'react';
 import { View, Text, Button } from 'react-native';
-import { BottomSheet } from '@qiima/ui';
+import { BottomSheet } from '@app-psy-sophia/ui';
 import type BottomSheetRef from '@gorhom/bottom-sheet';
 
 function MyComponent() {
@@ -195,7 +195,7 @@ sheetRef.current?.collapse();
 ## Notes
 
 - **GestureHandlerRootView**: Ensure your app root is wrapped with `GestureHandlerRootView` from `react-native-gesture-handler`
-- **Theme**: Uses `useTheme()` hook from `@qiima/ui` for automatic light/dark mode support
+- **Theme**: Uses `useTheme()` hook from `@app-psy-sophia/ui` for automatic light/dark mode support
 - **Performance**: The sheet uses `react-native-reanimated` for smooth 60fps animations
 
 ## Related

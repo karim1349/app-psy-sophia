@@ -21,7 +21,7 @@ describe('createHttp', () => {
       const accessToken = 'test-access-token';
       const http = createHttp({
         env: 'native',
-        baseURL: 'https://api.qiima.ma',
+        baseURL: 'https://api.app-psy-sophia.ma',
         getAccessToken: () => accessToken,
       });
 
@@ -34,7 +34,7 @@ describe('createHttp', () => {
       await http.get('/test');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.qiima.ma/test',
+        'https://api.app-psy-sophia.ma/test',
         expect.objectContaining({
           headers: expect.objectContaining({
             Authorization: `Bearer ${accessToken}`,
@@ -46,7 +46,7 @@ describe('createHttp', () => {
     test('does not add Authorization header when no token', async () => {
       const http = createHttp({
         env: 'native',
-        baseURL: 'https://api.qiima.ma',
+        baseURL: 'https://api.app-psy-sophia.ma',
         getAccessToken: () => null,
       });
 
@@ -59,7 +59,7 @@ describe('createHttp', () => {
       await http.get('/test');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.qiima.ma/test',
+        'https://api.app-psy-sophia.ma/test',
         expect.objectContaining({
           headers: expect.not.objectContaining({
             Authorization: expect.anything(),
@@ -71,7 +71,7 @@ describe('createHttp', () => {
     test('sets Content-Type for POST requests', async () => {
       const http = createHttp({
         env: 'native',
-        baseURL: 'https://api.qiima.ma',
+        baseURL: 'https://api.app-psy-sophia.ma',
       });
 
       mockFetch.mockResolvedValueOnce({
@@ -83,7 +83,7 @@ describe('createHttp', () => {
       await http.post('/test', { name: 'test' });
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.qiima.ma/test',
+        'https://api.app-psy-sophia.ma/test',
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
@@ -99,7 +99,7 @@ describe('createHttp', () => {
     test('includes credentials for cookie-based auth', async () => {
       const http = createHttp({
         env: 'web',
-        baseURL: 'https://api.qiima.ma',
+        baseURL: 'https://api.app-psy-sophia.ma',
       });
 
       mockFetch.mockResolvedValueOnce({
@@ -111,7 +111,7 @@ describe('createHttp', () => {
       await http.get('/test');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.qiima.ma/test',
+        'https://api.app-psy-sophia.ma/test',
         expect.objectContaining({
           credentials: 'include',
         })
@@ -121,7 +121,7 @@ describe('createHttp', () => {
     test('does not add Authorization header', async () => {
       const http = createHttp({
         env: 'web',
-        baseURL: 'https://api.qiima.ma',
+        baseURL: 'https://api.app-psy-sophia.ma',
         getAccessToken: () => 'should-not-be-used',
       });
 
@@ -134,7 +134,7 @@ describe('createHttp', () => {
       await http.get('/test');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.qiima.ma/test',
+        'https://api.app-psy-sophia.ma/test',
         expect.objectContaining({
           headers: expect.not.objectContaining({
             Authorization: expect.anything(),
@@ -148,7 +148,7 @@ describe('createHttp', () => {
     test('GET request', async () => {
       const http = createHttp({
         env: 'native',
-        baseURL: 'https://api.qiima.ma',
+        baseURL: 'https://api.app-psy-sophia.ma',
       });
 
       const responseData = { id: 1, name: 'test' };
@@ -161,7 +161,7 @@ describe('createHttp', () => {
       const result = await http.get('/users/1');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.qiima.ma/users/1',
+        'https://api.app-psy-sophia.ma/users/1',
         expect.objectContaining({
           method: 'GET',
         })
@@ -172,7 +172,7 @@ describe('createHttp', () => {
     test('POST request with data', async () => {
       const http = createHttp({
         env: 'native',
-        baseURL: 'https://api.qiima.ma',
+        baseURL: 'https://api.app-psy-sophia.ma',
       });
 
       const postData = { email: 'test@example.com', password: 'pass' };
@@ -187,7 +187,7 @@ describe('createHttp', () => {
       const result = await http.post('/users/login/', postData);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.qiima.ma/users/login/',
+        'https://api.app-psy-sophia.ma/users/login/',
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify(postData),
@@ -199,7 +199,7 @@ describe('createHttp', () => {
     test('PATCH request with data', async () => {
       const http = createHttp({
         env: 'native',
-        baseURL: 'https://api.qiima.ma',
+        baseURL: 'https://api.app-psy-sophia.ma',
       });
 
       const patchData = { username: 'newname' };
@@ -214,7 +214,7 @@ describe('createHttp', () => {
       const result = await http.patch('/users/1', patchData);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.qiima.ma/users/1',
+        'https://api.app-psy-sophia.ma/users/1',
         expect.objectContaining({
           method: 'PATCH',
           body: JSON.stringify(patchData),
@@ -226,7 +226,7 @@ describe('createHttp', () => {
     test('DELETE request', async () => {
       const http = createHttp({
         env: 'native',
-        baseURL: 'https://api.qiima.ma',
+        baseURL: 'https://api.app-psy-sophia.ma',
       });
 
       mockFetch.mockResolvedValueOnce({
@@ -238,7 +238,7 @@ describe('createHttp', () => {
       const result = await http.delete('/users/1');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.qiima.ma/users/1',
+        'https://api.app-psy-sophia.ma/users/1',
         expect.objectContaining({
           method: 'DELETE',
         })
@@ -250,7 +250,7 @@ describe('createHttp', () => {
     test('throws HttpError for 4xx errors', async () => {
       const http = createHttp({
         env: 'native',
-        baseURL: 'https://api.qiima.ma',
+        baseURL: 'https://api.app-psy-sophia.ma',
       });
 
       mockFetch.mockResolvedValueOnce({
@@ -280,7 +280,7 @@ describe('createHttp', () => {
     test('throws HttpError for 5xx errors', async () => {
       const http = createHttp({
         env: 'native',
-        baseURL: 'https://api.qiima.ma',
+        baseURL: 'https://api.app-psy-sophia.ma',
       });
 
       mockFetch.mockResolvedValueOnce({
@@ -304,7 +304,7 @@ describe('createHttp', () => {
     test('throws HttpError for 401 unauthorized', async () => {
       const http = createHttp({
         env: 'native',
-        baseURL: 'https://api.qiima.ma',
+        baseURL: 'https://api.app-psy-sophia.ma',
       });
 
       mockFetch.mockResolvedValueOnce({
@@ -327,7 +327,7 @@ describe('createHttp', () => {
     test('throws HttpError for network errors', async () => {
       const http = createHttp({
         env: 'native',
-        baseURL: 'https://api.qiima.ma',
+        baseURL: 'https://api.app-psy-sophia.ma',
       });
 
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
@@ -338,7 +338,7 @@ describe('createHttp', () => {
     test('handles non-JSON error responses', async () => {
       const http = createHttp({
         env: 'native',
-        baseURL: 'https://api.qiima.ma',
+        baseURL: 'https://api.app-psy-sophia.ma',
       });
 
       mockFetch.mockResolvedValueOnce({
@@ -365,7 +365,7 @@ describe('createHttp', () => {
     test('merges custom headers with default headers', async () => {
       const http = createHttp({
         env: 'native',
-        baseURL: 'https://api.qiima.ma',
+        baseURL: 'https://api.app-psy-sophia.ma',
       });
 
       mockFetch.mockResolvedValueOnce({
@@ -381,7 +381,7 @@ describe('createHttp', () => {
       });
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.qiima.ma/test',
+        'https://api.app-psy-sophia.ma/test',
         expect.objectContaining({
           headers: expect.objectContaining({
             'X-Custom-Header': 'custom-value',
@@ -396,7 +396,7 @@ describe('createHttp', () => {
     test('parses JSON responses', async () => {
       const http = createHttp({
         env: 'native',
-        baseURL: 'https://api.qiima.ma',
+        baseURL: 'https://api.app-psy-sophia.ma',
       });
 
       const responseData = { id: 1, name: 'test', active: true };
@@ -417,7 +417,7 @@ describe('createHttp', () => {
     test('handles empty responses (204 No Content)', async () => {
       const http = createHttp({
         env: 'native',
-        baseURL: 'https://api.qiima.ma',
+        baseURL: 'https://api.app-psy-sophia.ma',
       });
 
       mockFetch.mockResolvedValueOnce({
@@ -436,7 +436,7 @@ describe('createHttp', () => {
     test('combines baseURL and path correctly', async () => {
       const http = createHttp({
         env: 'native',
-        baseURL: 'https://api.qiima.ma',
+        baseURL: 'https://api.app-psy-sophia.ma',
       });
 
       mockFetch.mockResolvedValueOnce({
@@ -448,7 +448,7 @@ describe('createHttp', () => {
       await http.get('/users/123');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.qiima.ma/users/123',
+        'https://api.app-psy-sophia.ma/users/123',
         expect.any(Object)
       );
     });
@@ -456,7 +456,7 @@ describe('createHttp', () => {
     test('handles baseURL without trailing slash', async () => {
       const http = createHttp({
         env: 'native',
-        baseURL: 'https://api.qiima.ma',
+        baseURL: 'https://api.app-psy-sophia.ma',
       });
 
       mockFetch.mockResolvedValueOnce({
@@ -468,7 +468,7 @@ describe('createHttp', () => {
       await http.get('/users');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.qiima.ma/users',
+        'https://api.app-psy-sophia.ma/users',
         expect.any(Object)
       );
     });
@@ -476,7 +476,7 @@ describe('createHttp', () => {
     test('handles baseURL with trailing slash', async () => {
       const http = createHttp({
         env: 'native',
-        baseURL: 'https://api.qiima.ma/',
+        baseURL: 'https://api.app-psy-sophia.ma/',
       });
 
       mockFetch.mockResolvedValueOnce({
@@ -488,7 +488,7 @@ describe('createHttp', () => {
       await http.get('/users');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.qiima.ma/users',
+        'https://api.app-psy-sophia.ma/users',
         expect.any(Object)
       );
     });
@@ -498,7 +498,7 @@ describe('createHttp', () => {
     test('POST /auth/verify-email with email and code', async () => {
       const http = createHttp({
         env: 'native',
-        baseURL: 'https://api.qiima.ma',
+        baseURL: 'https://api.app-psy-sophia.ma',
       });
 
       const verifyData = {
@@ -520,7 +520,7 @@ describe('createHttp', () => {
       const result = await http.post('/users/verify_email/', verifyData);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.qiima.ma/users/verify_email/',
+        'https://api.app-psy-sophia.ma/users/verify_email/',
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify(verifyData),
@@ -532,7 +532,7 @@ describe('createHttp', () => {
     test('POST /auth/resend-verification with email', async () => {
       const http = createHttp({
         env: 'native',
-        baseURL: 'https://api.qiima.ma',
+        baseURL: 'https://api.app-psy-sophia.ma',
       });
 
       const resendData = {
@@ -551,7 +551,7 @@ describe('createHttp', () => {
       const result = await http.post('/users/resend_verification/', resendData);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.qiima.ma/users/resend_verification/',
+        'https://api.app-psy-sophia.ma/users/resend_verification/',
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify(resendData),
@@ -563,7 +563,7 @@ describe('createHttp', () => {
     test('handles 400 error for invalid verification code', async () => {
       const http = createHttp({
         env: 'native',
-        baseURL: 'https://api.qiima.ma',
+        baseURL: 'https://api.app-psy-sophia.ma',
       });
 
       mockFetch.mockResolvedValueOnce({
@@ -593,7 +593,7 @@ describe('createHttp', () => {
     test('handles 429 error for rate limiting on resend', async () => {
       const http = createHttp({
         env: 'native',
-        baseURL: 'https://api.qiima.ma',
+        baseURL: 'https://api.app-psy-sophia.ma',
       });
 
       mockFetch.mockResolvedValueOnce({

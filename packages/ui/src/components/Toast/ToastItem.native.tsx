@@ -10,7 +10,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CircleCheck, CircleX, AlertTriangle, Info } from 'lucide-react-native';
-import { useI18n, useI18nNamespace } from '@qiima/i18n';
+import { useI18n, useI18nNamespace } from '@app-psy-sophia/i18n';
 import { useTheme } from '../../native/theme';
 import { ToastProps } from './types';
 
@@ -31,7 +31,7 @@ function translateText(
   if (!text) return '';
   
   // Check if it looks like an i18n key (contains dots and starts with known prefix)
-  const isI18nKey = /^(errors|auth|validation|common|network|server|resource|rateLimit|deals)\./.test(text);
+  const isI18nKey = /^(errors|auth|validation|common|network|server|resource|rateLimit)\./.test(text);
   
   if (isI18nKey) {
     // Try to translate from the 'errors' namespace first

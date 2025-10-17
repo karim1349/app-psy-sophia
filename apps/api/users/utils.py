@@ -23,10 +23,10 @@ def send_verification_email(user: User) -> None:
     if not user.email_verification_token:
         raise ValueError("User has no verification token")
 
-    subject = "Verify your Qiima account"
+    subject = "Verify your app-psy-sophia account"
     message = f"""Hello {user.username},
 
-Thank you for registering with Qiima!
+Thank you for registering with app-psy-sophia!
 
 Your verification code is: {user.email_verification_token}
 
@@ -35,7 +35,7 @@ This code will expire in 24 hours.
 If you didn't create this account, please ignore this email.
 
 Best regards,
-Qiima Team
+app-psy-sophia Team
 """
 
     send_mail(
@@ -60,10 +60,10 @@ def send_password_reset_email(user: User) -> None:
     if not hasattr(user, "password_reset_token") or not user.password_reset_token:
         raise ValueError("User has no password reset token")
 
-    subject = "Reset your Qiima password"
+    subject = "Reset your app-psy-sophia password"
     message = f"""Hello {user.username},
 
-You requested a password reset for your Qiima account.
+You requested a password reset for your app-psy-sophia account.
 
 Your password reset code is: {user.password_reset_token}
 
@@ -72,7 +72,7 @@ This code will expire in 1 hour.
 If you didn't request this password reset, please ignore this email.
 
 Best regards,
-Qiima Team
+app-psy-sophia Team
 """
 
     send_mail(

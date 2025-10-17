@@ -1,5 +1,5 @@
 {
-  "name": "@qiima/api-client",
+  "name": "@app-psy-sophia/api-client",
   "version": "0.0.0",
   "private": true,
   "main": "./src/index.ts",
@@ -11,7 +11,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@qiima/schemas": "workspace:*"
+    "@app-psy-sophia/schemas": "workspace:*"
   },
   "peerDependencies": {
     "react-native": "*"

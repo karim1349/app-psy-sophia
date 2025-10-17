@@ -1,29 +1,2 @@
 {
-  "title": "Search Deals",
-  "subtitle": "Find deals by category, merchant, or keyword",
-  "searchPlaceholder": "Search for deals...",
-  "filters": {
-    "title": "Quick Filters",
-    "categories": "Categories",
-    "cities": "Cities",
-    "loadMore": "Load more categories...",
-    "loadingMore": "Loading more..."
-  },
-  "results": {
-    "title": "Search Results",
-    "noResults": "No deals found",
-    "noResultsDescription": "Try adjusting your search terms or filters",
-    "loading": "Searching...",
-    "error": "Failed to search deals"
-  },
-  "recentSearches": {
-    "title": "Recent Searches",
-    "clearAll": "Clear All"
-  },
-  "dealCard": {
-    "verified": "Verified",
-    "votes": "votes",
-    "comments": "comments",
-    "ago": "ago"
-  }
 }

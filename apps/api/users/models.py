@@ -1,5 +1,5 @@
 """
-Custom User model for Qiima application.
+Custom User model for app-psy-sophia application.
 
 Uses email as the primary authentication field instead of username.
 Includes account age tracking for vote dampening.

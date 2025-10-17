@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useThemeStore } from '@qiima/state';
+import { useThemeStore } from '@app-psy-sophia/state';
 
 /**
  * Provider component to initialize theme store on app startup

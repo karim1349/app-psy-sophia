@@ -1,7 +1,7 @@
 /**
- * @qiima/api-client
+ * @app-psy-sophia/api-client
  *
- * Platform-aware HTTP client for Qiima API
+ * Platform-aware HTTP client for app-psy-sophia API
  * Handles both native (JWT) and web (cookie) authentication patterns
  */
 

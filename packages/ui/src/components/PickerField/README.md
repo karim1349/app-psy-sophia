@@ -17,7 +17,7 @@ A reusable picker/select component that uses BottomSheetModal for an elegant sel
 
 ```tsx
 import { useState } from 'react';
-import { PickerField } from '@qiima/ui';
+import { PickerField } from '@app-psy-sophia/ui';
 
 function MyForm() {
   const [city, setCity] = useState('');

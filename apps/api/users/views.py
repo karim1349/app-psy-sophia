@@ -27,28 +27,24 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from rest_framework import serializers, status
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
+from rest_framework.permissions import (AllowAny, BasePermission,
+                                        IsAuthenticated)
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenRefreshView as SimpleJWTRefreshView
+from rest_framework_simplejwt.views import \
+    TokenRefreshView as SimpleJWTRefreshView
+
 
 from .models import User
 from .permissions import IsOwnerOrStaff
 from .proxy.user_proxy import UserProxy
-from .serializers import (
-    LoginSerializer,
-    RegisterSerializer,
-    UserSerializer,
-    UserUpdateSerializer,
-)
-from .throttles import LoginThrottle, PasswordResetThrottle, ResendVerificationThrottle
-
-# Import deals models and serializers at the top
-from deals.models import Comment, Deal
-from deals.serializers import CommentSerializer, DealSerializer
+from .serializers import (LoginSerializer, RegisterSerializer, UserSerializer,
+                          UserUpdateSerializer)
+from .throttles import (LoginThrottle, PasswordResetThrottle,
+                        ResendVerificationThrottle)
 
 
 class UserViewSet(GenericViewSet):
@@ -364,46 +360,6 @@ class UserViewSet(GenericViewSet):
         return Response(
             {"detail": "Account deactivated successfully."}, status=status.HTTP_200_OK
         )
-
-    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
-    def my_deals(self, request: Request) -> Response:
-        """Get current user's deals with pagination."""
-        user = self._get_authenticated_user(request)
-        deals = (
-            Deal.objects.filter(author=user, status="active")
-            .select_related("category")
-            .order_by("-created_at")
-        )
-
-        page = self.paginate_queryset(deals)
-        if page is not None:
-            serializer = DealSerializer(page, many=True, context={"request": request})
-            return self.get_paginated_response(serializer.data)
-
-        serializer = DealSerializer(deals, many=True, context={"request": request})
-        return Response(serializer.data)
-
-    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
-    def my_comments(self, request: Request) -> Response:
-        """Get current user's comments with pagination."""
-        user = self._get_authenticated_user(request)
-        comments = (
-            Comment.objects.filter(user=user)
-            .select_related("deal", "user")
-            .order_by("-created_at")
-        )
-
-        page = self.paginate_queryset(comments)
-        if page is not None:
-            serializer = CommentSerializer(
-                page, many=True, context={"request": request}
-            )
-            return self.get_paginated_response(serializer.data)
-
-        serializer = CommentSerializer(
-            comments, many=True, context={"request": request}
-        )
-        return Response(serializer.data)
 
     @action(detail=False, methods=["post"], permission_classes=[IsAuthenticated])
     def change_password(self, request: Request) -> Response:

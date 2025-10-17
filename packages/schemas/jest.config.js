@@ -2,6 +2,6 @@ const baseConfig = require('../../config/jest.base.js');
 
 module.exports = {
   ...baseConfig,
-  displayName: '@qiima/schemas',
+  displayName: '@app-psy-sophia/schemas',
   testEnvironment: 'node',
 };

@@ -1,8 +1,8 @@
 {
-  "name": "qiima-api",
+  "name": "app-psy-sophia-api",
   "version": "1.0.0",
   "private": true,
-  "description": "Django REST API for Qiima",
+  "description": "Django REST API for app-psy-sophia",
   "scripts": {
     "dev": "source .venv/bin/activate && python manage.py runserver 0.0.0.0:8000",
     "migrate": "source .venv/bin/activate && python manage.py migrate",

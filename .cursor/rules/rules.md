@@ -1,27 +1,27 @@
-# Claude.md — Qiima Stack Guide (v1)
+# Claude.md — app-psy-sophia Stack Guide (v1)
 
-> **Purpose**: Give a coding agent everything it needs to build and ship **Qiima** (community‑driven deals/promos app for Morocco) across **Expo (mobile)**, **Next.js (web)**, and **Django REST (API)**. This doc captures the agreed architecture, constraints, and conventions.
+> **Purpose**: Give a coding agent everything it needs to build and ship **app-psy-sophia** (community‑driven deals/promos app for Morocco) across **Expo (mobile)**, **Next.js (web)**, and **Django REST (API)**. This doc captures the agreed architecture, constraints, and conventions.
 
 ---
 
 ## 0) Product brief (essentials)
-- **Core**: Users post deals, vote (+1/−1), comment, search/browse by category/merchant/city, and receive notifications for big deals or subscriptions.
-- **Ranking**: Keep scoring **simple**: net +1/−1, but show **time‑windowed lists** (Hot 24h, Top 30d/365d, Trends 6h) + minimal guardrails (vote thresholds, downvote reasons, new‑account dampening, duplicate merge).
-- **Locales**: FR + AR (RTL) + Darija. Numbers may contain **Arabic‑Indic digits**; prices displayed in **MAD**.
+- **Core**: 
+- **Ranking**: 
+- **Locales**: FR + AR (RTL) + Darija. Numbers may contain **Arabic‑Indic digits**;
 - **Compliance**: CNDP (Morocco). If API/web workloads run in EU and touch personal data, notify **transfer** in addition to treatment declaration.
 
 ---
 
 ## 1) High‑level architecture
 ```
-Mobile (Expo RN) ────────────────┐          ┌────────────── Web (Next.js)
-                                 │          │
-            (JWT: in‑memory      │          │   (Cookies HttpOnly via BFF /api/*)
-             + SecureStore)      │          │
-                                 ▼          ▼
+Mobile (Expo RN) ────────────────┐ 
+                                 │ 
+            (JWT: in‑memory      │ 
+             + SecureStore)      │ 
+                                 ▼ 
                        ┌────────────────────────────┐
                        │  Django REST API (Render)  │
-                       │  Auth, Deals, Votes, ...   │
+                       │  Auth, ...   │
                        └───────────────┬────────────┘
                                        │
                               private tunnel / allow‑list
@@ -38,10 +38,9 @@ Mobile (Expo RN) ────────────────┐          �
 
 ## 2) Monorepo layout (Turborepo + PNPM)
 ```
-qiima/
+app-psy-sophia/
 ├─ apps/
 │  ├─ mobile/                 # Expo (public app)
-│  ├─ web/                    # Next.js (public web; added after mobile)
 │  └─ api/                    # Django REST (backend)
 ├─ packages/
 │  ├─ ui/                     # RN design system (StyleSheet)
@@ -255,9 +254,9 @@ qiima/
 ## 16) Environment variables (samples)
 ```
 # Common
-EXPO_PUBLIC_API_BASE=https://api.qiima.ma
+EXPO_PUBLIC_API_BASE=https://api.app-psy-sophia.ma
 NEXT_PUBLIC_API_BASE=/api               # Next BFF path
-IMAGES_BASE=https://cdn.qiima.ma
+IMAGES_BASE=https://cdn.app-psy-sophia.ma
 
 # API
 DJANGO_SECRET_KEY=...
@@ -266,10 +265,10 @@ REDIS_URL=redis://...
 MINIO_ENDPOINT=...
 MINIO_ACCESS_KEY=...
 MINIO_SECRET_KEY=...
-ALLOWED_HOSTS=qiima.ma,api.qiima.ma
+ALLOWED_HOSTS=app-psy-sophia.ma,api.app-psy-sophia.ma
 
 # Web BFF
-API_BASE=https://api.qiima.ma
+API_BASE=https://api.app-psy-sophia.ma
 CSRF_SECRET=...
 ```
 
@@ -296,7 +295,7 @@ CSRF_SECRET=...
 ---
 
 ## 19) Open questions / switches kept easy
-- **Web images**: keep `QiimaImage.web.tsx` ready to switch to `next/image` if needed.
+- **Web images**: keep `app-psy-sophiaImage.web.tsx` ready to switch to `next/image` if needed.
 - **Search**: Postgres FTS now; can swap to OpenSearch later.
 - **Notifications**: start with thresholds; can add ML/heuristics later without touching API contracts.
 - **Reputation**: implement after MVP; current voting guardrails suffice.
@@ -312,4 +311,4 @@ CSRF_SECRET=...
 
 ---
 
-**End of Claude.md v1** — This file is intentionally concise yet complete for a coding agent to bootstrap Qiima end‑to‑end. Update alongside code changes (keep in /docs and link from README).
+**End of Claude.md v1** — This file is intentionally concise yet complete for a coding agent to bootstrap app-psy-sophia end‑to‑end. Update alongside code changes (keep in /docs and link from README).

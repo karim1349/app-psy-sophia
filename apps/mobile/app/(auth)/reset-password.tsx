@@ -9,11 +9,11 @@ import {
 } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ResetPasswordSchema, type PasswordResetConfirmInput } from '@qiima/schemas';
-import { usePasswordReset } from '@qiima/queries';
+import { ResetPasswordSchema, type PasswordResetConfirmInput } from '@app-psy-sophia/schemas';
+import { usePasswordReset } from '@app-psy-sophia/queries';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Button, FormField, TextField, useTheme } from '@qiima/ui';
+import { Button, FormField, TextField, useTheme } from '@app-psy-sophia/ui';
 import { config } from '@/constants/config';
 
 export default function ResetPasswordScreen() {

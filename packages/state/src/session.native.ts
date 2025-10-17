@@ -164,7 +164,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       // Try to refresh the access token using the stored refresh token
       try {
         // Use the same HTTP client as the auth hooks
-        const { createHttp } = await import('@qiima/api-client');
+        const { createHttp } = await import('@app-psy-sophia/api-client');
         const baseURL = process.env.EXPO_PUBLIC_API_BASE || 'http://localhost:8000/api';
         
         log('Making refresh request using createHttp', { baseURL });

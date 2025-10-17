@@ -1,5 +1,5 @@
 import React from 'react';
-import { useI18n, supportedLanguages } from '@qiima/i18n';
+import { useI18n, supportedLanguages } from '@app-psy-sophia/i18n';
 
 interface LanguageSwitcherProps {
   className?: string;

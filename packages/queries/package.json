@@ -1,5 +1,5 @@
 {
-  "name": "@qiima/queries",
+  "name": "@app-psy-sophia/queries",
   "version": "0.0.1",
   "private": true,
   "main": "./src/index.ts",
@@ -13,9 +13,9 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.62.0",
-    "@qiima/api-client": "workspace:*",
-    "@qiima/schemas": "workspace:*",
-    "@qiima/state": "workspace:*"
+    "@app-psy-sophia/api-client": "workspace:*",
+    "@app-psy-sophia/schemas": "workspace:*",
+    "@app-psy-sophia/state": "workspace:*"
   },
   "peerDependencies": {
     "react": "19.1.0",

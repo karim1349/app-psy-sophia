@@ -1,5 +1,5 @@
 {
-  "name": "qiima-monorepo",
+  "name": "app-psy-sophia-monorepo",
   "version": "0.0.0",
   "private": true,
   "workspaces": [

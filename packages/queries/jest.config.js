@@ -2,14 +2,14 @@ const baseConfig = require('../../config/jest.base');
 
 module.exports = {
   ...baseConfig,
-  displayName: '@qiima/queries',
+  displayName: '@app-psy-sophia/queries',
   testEnvironment: 'jsdom',
   testMatch: ['**/__tests__/**/*.ts', '**/__tests__/**/*.tsx', '**/?(*.)+(spec|test).ts', '**/?(*.)+(spec|test).tsx'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   moduleNameMapper: {
-    '^@qiima/state/session\\.native$': '<rootDir>/../state/src/session.native.ts',
-    '^@qiima/state/session\\.web$': '<rootDir>/../state/src/session.web.ts',
-    '^@qiima/(.*)$': '<rootDir>/../$1/src',
+    '^@app-psy-sophia/state/session\\.native$': '<rootDir>/../state/src/session.native.ts',
+    '^@app-psy-sophia/state/session\\.web$': '<rootDir>/../state/src/session.web.ts',
+    '^@app-psy-sophia/(.*)$': '<rootDir>/../$1/src',
   },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',

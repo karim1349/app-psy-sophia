@@ -1,4 +1,4 @@
-# Qiima Frontend Development Rules
+# app-psy-sophia Frontend Development Rules
 
 ## Overview
 This is a TypeScript monorepo with React Native (mobile), Next.js (web), and shared packages. All frontend code must maintain strict type safety and pass comprehensive testing.
@@ -7,12 +7,12 @@ This is a TypeScript monorepo with React Native (mobile), Next.js (web), and sha
 - `apps/mobile/` - React Native mobile app (Expo)
 - `apps/web/` - Next.js web application
 - `packages/` - Shared TypeScript packages
-  - `@qiima/api-client` - HTTP client for API communication
-  - `@qiima/schemas` - Zod validation schemas and TypeScript types
-  - `@qiima/queries` - React Query hooks and data fetching
-  - `@qiima/state` - Zustand state management
-  - `@qiima/ui` - Shared UI components
-  - `@qiima/utils` - Utility functions
+  - `@app-psy-sophia/api-client` - HTTP client for API communication
+  - `@app-psy-sophia/schemas` - Zod validation schemas and TypeScript types
+  - `@app-psy-sophia/queries` - React Query hooks and data fetching
+  - `@app-psy-sophia/state` - Zustand state management
+  - `@app-psy-sophia/ui` - Shared UI components
+  - `@app-psy-sophia/utils` - Utility functions
 
 ## MANDATORY VERIFICATIONS
 
@@ -25,9 +25,9 @@ This is a TypeScript monorepo with React Native (mobile), Next.js (web), and sha
 1. **ALWAYS run type-check**: `pnpm run type-check`
 2. **ALWAYS run tests**: `pnpm test`
 3. **ALWAYS verify no new linting errors**: `pnpm run lint`
-4. **If modifying schemas**: Run `pnpm test --filter="@qiima/schemas"`
-5. **If modifying API client**: Run `pnpm test --filter="@qiima/api-client"`
-6. **If modifying queries**: Run `pnpm test --filter="@qiima/queries"`
+4. **If modifying schemas**: Run `pnpm test --filter="@app-psy-sophia/schemas"`
+5. **If modifying API client**: Run `pnpm test --filter="@app-psy-sophia/api-client"`
+6. **If modifying queries**: Run `pnpm test --filter="@app-psy-sophia/queries"`
 
 ## Type Safety Rules
 
@@ -62,9 +62,9 @@ This is a TypeScript monorepo with React Native (mobile), Next.js (web), and sha
 pnpm test
 
 # Run specific package tests
-pnpm test --filter="@qiima/schemas"
-pnpm test --filter="@qiima/api-client"
-pnpm test --filter="@qiima/queries"
+pnpm test --filter="@app-psy-sophia/schemas"
+pnpm test --filter="@app-psy-sophia/api-client"
+pnpm test --filter="@app-psy-sophia/queries"
 
 # Run tests with coverage
 pnpm test --coverage
@@ -147,8 +147,8 @@ pnpm test
 pnpm run lint
 
 # Package-specific
-pnpm test --filter="@qiima/schemas"
-pnpm run type-check --filter="@qiima/ui"
+pnpm test --filter="@app-psy-sophia/schemas"
+pnpm run type-check --filter="@app-psy-sophia/ui"
 
 # Build verification
 pnpm run build

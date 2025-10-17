@@ -1,10 +1,10 @@
 import { QueryClient, QueryCache, MutationCache } from '@tanstack/react-query';
-import { HttpError } from '@qiima/api-client';
+import { HttpError } from '@app-psy-sophia/api-client';
 import { mapErrorToToast, shouldSuppressError, mapSuccessToToast, ToastError } from './error-handler';
 import { triggerGlobalRefresh } from './refresh-handler';
 
 /**
- * Creates a configured QueryClient instance with sensible defaults for Qiima.
+ * Creates a configured QueryClient instance with sensible defaults for app-psy-sophia.
  *
  * Configuration:
  * - 5 minute stale time for queries

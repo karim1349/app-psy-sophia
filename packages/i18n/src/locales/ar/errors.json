@@ -76,37 +76,6 @@
   "rateLimit": {
     "exceeded": "طلبات بزاف. تسنّى شوية ومن بعد جرّب"
   },
-  "deals": {
-    "validation": {
-      "proofRequired": "خاص دليل واحد على الأقل (تصويرة ولا لينك ديال الدليل)",
-      "invalidDiscount": "الثمن القديم خاصّو يكون كثر من الثمن دابا"
-    }
-  },
   "fields": {
-    "email": "الإيميل",
-    "password": "كلمة السر",
-    "password_confirm": "تأكيد كلمة السر",
-    "username": "سمية المستخدم",
-    "merchant": "التاجر",
-    "channel": "القناة",
-    "url": "اللينك",
-    "proof_url": "لينك الدليل",
-    "title": "العنوان",
-    "description": "الوصف",
-    "price": "الثمن",
-    "original_price": "الثمن القديم",
-    "discount_percentage": "نسبة التخفيض",
-    "expires_at": "تاريخ الانتهاء",
-    "first_name": "الاسم الشخصي",
-    "last_name": "الاسم العائلي",
-    "phone": "رقم التلفون",
-    "address": "العنوان",
-    "city": "المدينة",
-    "country": "البلاد",
-    "name": "الاسم",
-    "image": "الصورة",
-    "file": "الملف",
-    "code": "الكود",
-    "token": "التوكن"
   }
 }

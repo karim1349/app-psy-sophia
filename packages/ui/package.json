@@ -1,5 +1,5 @@
 {
-  "name": "@qiima/ui",
+  "name": "@app-psy-sophia/ui",
   "version": "0.0.0",
   "private": true,
   "main": "./src/index.ts",
@@ -18,8 +18,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@qiima/i18n": "workspace:^",
-    "@qiima/state": "workspace:*"
+    "@app-psy-sophia/i18n": "workspace:^",
+    "@app-psy-sophia/state": "workspace:*"
   },
   "peerDependencies": {
     "react": "19.1.0",

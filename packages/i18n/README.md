@@ -1,6 +1,6 @@
-# @qiima/i18n
+# @app-psy-sophia/i18n
 
-Shared internationalization package for Qiima mobile and web applications.
+Shared internationalization package for app-psy-sophia mobile and web applications.
 
 ## Features
 
@@ -21,7 +21,7 @@ Shared internationalization package for Qiima mobile and web applications.
 ### Basic Setup
 
 ```tsx
-import { initI18n, useI18n } from '@qiima/i18n';
+import { initI18n, useI18n } from '@app-psy-sophia/i18n';
 
 // Initialize i18n (usually done in your app's root)
 initI18n();

@@ -1,5 +1,5 @@
 /**
- * @qiima/queries - TanStack Query hooks for Qiima API
+ * @app-psy-sophia/queries - TanStack Query hooks for app-psy-sophia API
  *
  * Provides React Query hooks for authentication, data fetching, and mutations
  * with platform-specific behavior (native vs web).
@@ -30,27 +30,10 @@ export {
   useRefresh,
   useVerifyEmail,
   useResendVerification,
-  useMyDeals,
-  useMyComments,
   useChangePassword,
 } from './auth';
 export type { UseAuthConfig } from './auth';
 
-// Deal hooks
-export {
-  useHotDeals,
-  useTopDeals,
-  useSearchDeals,
-  useDeal,
-  useDealComments,
-  useCategories,
-  useAllCategories,
-  useInfiniteCategories,
-  useCreateDeal,
-  useVoteDeal,
-  useAddComment,
-} from './deals';
-export type { UseDealsConfig, PaginatedResponse, PaginationParams } from './deals';
 
 // Refresh handler
 export { setGlobalRefreshCallback, triggerGlobalRefresh } from './refresh-handler';

@@ -7,11 +7,11 @@ import {
   Linking,
 } from 'react-native';
 import { useState } from 'react';
-import { useDeal, useDealComments, useVoteDeal } from '@qiima/queries';
+import { useDeal, useDealComments, useVoteDeal } from '@app-psy-sophia/queries';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { config } from '@/constants/config';
-import { useI18nNamespace } from '@qiima/i18n';
-import { useTheme } from '@qiima/ui';
+import { useI18nNamespace } from '@app-psy-sophia/i18n';
+import { useTheme } from '@app-psy-sophia/ui';
 import { StackScreen } from '@/components/stack-screen';
 
 export default function DealDetailScreen() {

@@ -1,7 +1,7 @@
 /**
- * @qiima/state
+ * @app-psy-sophia/state
  *
- * Shared Zustand stores for Qiima application
+ * Shared Zustand stores for app-psy-sophia application
  * Platform-specific session management (native vs web)
  */
 
@@ -9,8 +9,8 @@ export type { User } from './types';
 
 // Note: Session stores are not exported from the main index
 // Import them directly using platform-specific paths:
-// - import { useSessionStore } from '@qiima/state/session.native'
-// - import { useSessionStore } from '@qiima/state/session.web'
+// - import { useSessionStore } from '@app-psy-sophia/state/session.native'
+// - import { useSessionStore } from '@app-psy-sophia/state/session.web'
 
 // Theme store
 export { useThemeStore } from './theme.native';

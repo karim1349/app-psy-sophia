@@ -1,10 +1,10 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
-import { useChangePassword } from '@qiima/queries';
+import { useChangePassword } from '@app-psy-sophia/queries';
 import { config } from '@/constants/config';
-import { useI18n } from '@qiima/i18n';
-import { useTheme, FormField, TextField, Button } from '@qiima/ui';
+import { useI18n } from '@app-psy-sophia/i18n';
+import { useTheme, FormField, TextField, Button } from '@app-psy-sophia/ui';
 import { StackScreen } from '@/components/stack-screen';
 
 interface ChangePasswordForm {

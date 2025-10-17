@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "qiima",
-    "slug": "qiima",
+    "name": "app-psy-sophia",
+    "slug": "app-psy-sophia",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "qiima",
+    "scheme": "app-psy-sophia",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {

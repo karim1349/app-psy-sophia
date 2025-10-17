@@ -1,5 +1,5 @@
 import { useColorScheme } from 'react-native';
-import { useThemeStore } from '@qiima/state';
+import { useThemeStore } from '@app-psy-sophia/state';
 
 export type Theme = ReturnType<typeof getTheme>;
 

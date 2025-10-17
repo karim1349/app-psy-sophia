@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
-import { useThemeStore, type ThemeMode } from '@qiima/state';
+import { useThemeStore, type ThemeMode } from '@app-psy-sophia/state';
 import { useTheme } from '../native/theme';
 
 interface ThemeSwitcherProps {

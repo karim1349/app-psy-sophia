@@ -13,34 +13,10 @@ export const queryKeys = {
    */
   auth: () => ['auth'] as const,
 
-  /**
-   * Deal-related query keys
-   */
-  deals: {
-    all: () => ['deals'] as const,
-    hot: (limit: number) => ['deals', 'hot', limit] as const,
-    top: (limit: number) => ['deals', 'top', limit] as const,
-    search: (query: string, filters?: Record<string, any>) => 
-      ['deals', 'search', query, filters] as const,
-    detail: (id: string) => ['deals', 'detail', id] as const,
-    comments: (dealId: string) => ['deals', 'comments', dealId] as const,
-  },
-
-  /**
-   * Category-related query keys
-   */
-  categories: {
-    all: () => ['categories'] as const,
-    paginated: (page?: number, pageSize?: number) => 
-      ['categories', 'paginated', page, pageSize] as const,
-    popular: () => ['categories', 'popular'] as const,
-  },
 
   /**
    * User-specific query keys
    */
   user: {
-    deals: () => ['user', 'deals'] as const,
-    comments: () => ['user', 'comments'] as const,
   },
 } as const;

@@ -4,13 +4,13 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
-import { createHttp, HttpError } from '@qiima/api-client';
+import { createHttp, HttpError } from '@app-psy-sophia/api-client';
 import type {
   AuthResponse,
   MessageResponse,
   User,
   RefreshResponse,
-} from '@qiima/api-client';
+} from '@app-psy-sophia/api-client';
 import {
   useRegister,
   useLogin,
@@ -24,7 +24,7 @@ import {
 } from './auth';
 
 // Mock dependencies
-jest.mock('@qiima/api-client', () => ({
+jest.mock('@app-psy-sophia/api-client', () => ({
   createHttp: jest.fn(),
   HttpError: class HttpError extends Error {
     constructor(
@@ -53,11 +53,11 @@ const mockWebStore = {
   destroy: jest.fn(),
 };
 
-jest.mock('@qiima/state/session.native', () => ({
+jest.mock('@app-psy-sophia/state/session.native', () => ({
   useSessionStore: mockNativeStore,
 }));
 
-jest.mock('@qiima/state/session.web', () => ({
+jest.mock('@app-psy-sophia/state/session.web', () => ({
   useSessionStore: mockWebStore,
 }));
 

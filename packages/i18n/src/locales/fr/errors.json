@@ -76,12 +76,6 @@
   "rateLimit": {
     "exceeded": "Trop de requêtes. Veuillez attendre un moment avant de réessayer"
   },
-  "deals": {
-    "validation": {
-      "proofRequired": "Au moins une preuve (image ou URL de preuve) est requise",
-      "invalidDiscount": "Le prix original doit être supérieur au prix actuel"
-    }
-  },
   "fields": {
     "email": "Email",
     "password": "Mot de passe",

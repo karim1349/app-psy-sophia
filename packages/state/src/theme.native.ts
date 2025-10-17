@@ -16,7 +16,7 @@ interface ThemeState {
   initialize: () => Promise<void>;
 }
 
-const THEME_STORAGE_KEY = 'qiima-theme-mode';
+const THEME_STORAGE_KEY = 'app-psy-sophia-theme-mode';
 
 export const useThemeStore = create<ThemeState>((set, get) => ({
   mode: 'system',

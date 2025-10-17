@@ -16,12 +16,6 @@
       "success": "Password Reset",
       "resetSuccess": "Your password has been successfully reset"
     }
-  },
-  "deals": {
-    "create": {
-      "success": "Deal Created",
-      "created": "Your deal has been successfully created"
-    }
   }
 }
 
