@@ -4,6 +4,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  Linking,
 } from 'react-native';
 import { useState } from 'react';
 import { useDeal, useDealComments, useVoteDeal } from '@qiima/queries';
@@ -58,6 +59,21 @@ export default function DealDetailScreen() {
       });
     } catch (error: any) {
       Alert.alert('Error', error?.message || 'Failed to vote');
+    }
+  };
+
+  const handleViewDeal = async () => {
+    if (!deal?.url) return;
+
+    try {
+      const supported = await Linking.canOpenURL(deal.url);
+      if (supported) {
+        await Linking.openURL(deal.url);
+      } else {
+        Alert.alert('Error', 'Cannot open this URL');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to open deal URL');
     }
   };
 
@@ -129,6 +145,17 @@ export default function DealDetailScreen() {
           </View>
 
           <Text style={styles.description}>{deal.description}</Text>
+
+          {deal.url && (
+            <TouchableOpacity
+              style={styles.viewDealButton}
+              onPress={handleViewDeal}
+            >
+              <Text style={styles.viewDealButtonText}>
+                {tDealDetail('viewDeal')} 🔗
+              </Text>
+            </TouchableOpacity>
+          )}
 
           <View style={styles.voteSection}>
             <TouchableOpacity
@@ -306,6 +333,26 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     color: theme.colors.fgDefault,
     lineHeight: 24,
     marginBottom: 20,
+  },
+  viewDealButton: {
+    backgroundColor: theme.colors.brand,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  viewDealButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'white',
+    textAlign: 'center',
   },
   voteSection: {
     flexDirection: 'row',

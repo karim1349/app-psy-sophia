@@ -39,6 +39,7 @@ export interface Deal {
   merchant: string;
   location: string;
   category: DealCategory;
+  url?: string; // Deal URL for online deals
   image_url?: string;
   proof_url?: string;
   created_at: Timestamp;
