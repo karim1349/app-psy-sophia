@@ -99,7 +99,7 @@ export function useTopDeals(config: UseDealsConfig, limit = 10) {
  * Hook to search deals
  */
 export function useSearchDeals(config: UseDealsConfig, query: string, filters?: {
-  category?: string;
+  category?: number;
   merchant?: string;
   city?: string;
   min_price?: number;
@@ -107,7 +107,7 @@ export function useSearchDeals(config: UseDealsConfig, query: string, filters?: 
 }) {
   const searchParams = new URLSearchParams();
   if (query) searchParams.append('q', query);
-  if (filters?.category) searchParams.append('category', filters.category);
+  if (filters?.category) searchParams.append('category', filters.category.toString());
   if (filters?.merchant) searchParams.append('merchant', filters.merchant);
   if (filters?.city) searchParams.append('city', filters.city);
   if (filters?.min_price) searchParams.append('min_price', filters.min_price.toString());

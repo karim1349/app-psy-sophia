@@ -19,7 +19,7 @@ export default function SearchScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [selectedFilters, setSelectedFilters] = useState<{
-    category?: string;
+    category?: number;
     city?: string;
   }>({});
 
@@ -52,14 +52,20 @@ export default function SearchScreen() {
     baseURL: config.baseURL,
   }, debouncedQuery, selectedFilters);
 
-  const handleCategoryFilter = (categoryName: string) => {
-    setSelectedFilters(prev => ({ ...prev, category: categoryName }));
-    setSearchQuery(categoryName);
+  const handleCategoryFilter = (categoryId: number) => {
+    setSelectedFilters(prev => ({
+      ...prev,
+      category: prev.category === categoryId ? undefined : categoryId,
+    }));
+    // Toggle filter - click again to deselect
   };
 
   const handleCityFilter = (city: string) => {
-    setSelectedFilters(prev => ({ ...prev, city }));
-    setSearchQuery(city);
+    setSelectedFilters(prev => ({
+      ...prev,
+      city: prev.city === city ? undefined : city,
+    }));
+    // Toggle filter - click again to deselect
   };
 
   return (
@@ -89,17 +95,20 @@ export default function SearchScreen() {
           <View style={styles.filtersContainer}>
             <Text style={styles.filtersTitle}>{tSearch('filters.title')}</Text>
             <View style={styles.filtersRow}>
-              {categories?.slice(0, 6).map((category) => (
-                <TouchableOpacity 
-                  key={category.id}
-                  style={styles.filterChip}
-                  onPress={() => handleCategoryFilter(category.name)}
-                >
-                  <Text style={styles.filterChipText}>
-                    {category.icon || '🏷️'} {category.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              {categories?.slice(0, 6).map((category) => {
+                const isActive = selectedFilters.category === category.id;
+                return (
+                  <TouchableOpacity
+                    key={category.id}
+                    style={[styles.filterChip, isActive && styles.filterChipActive]}
+                    onPress={() => handleCategoryFilter(category.id)}
+                  >
+                    <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive]}>
+                      {category.icon || '🏷️'} {category.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
             {hasNextPage && (
               <TouchableOpacity 
@@ -113,24 +122,20 @@ export default function SearchScreen() {
               </TouchableOpacity>
             )}
             <View style={styles.filtersRow}>
-              <TouchableOpacity 
-                style={styles.filterChip}
-                onPress={() => handleCityFilter('Casablanca')}
-              >
-                <Text style={styles.filterChipText}>📍 Casablanca</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.filterChip}
-                onPress={() => handleCityFilter('Rabat')}
-              >
-                <Text style={styles.filterChipText}>📍 Rabat</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.filterChip}
-                onPress={() => handleCityFilter('Marrakech')}
-              >
-                <Text style={styles.filterChipText}>📍 Marrakech</Text>
-              </TouchableOpacity>
+              {['Casablanca', 'Rabat', 'Marrakech'].map((city) => {
+                const isActive = selectedFilters.city === city;
+                return (
+                  <TouchableOpacity
+                    key={city}
+                    style={[styles.filterChip, isActive && styles.filterChipActive]}
+                    onPress={() => handleCityFilter(city)}
+                  >
+                    <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive]}>
+                      📍 {city}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
         </View>
@@ -164,8 +169,11 @@ export default function SearchScreen() {
                     {deal.current_price.toLocaleString()} {deal.currency}
                     {deal.original_price && ` (was ${deal.original_price.toLocaleString()} ${deal.currency})`}
                   </Text>
+                  <Text style={styles.dealCategory}>
+                    {deal.category.icon || '🏷️'} {deal.category.name}
+                  </Text>
                   <Text style={styles.dealMerchant}>
-                    {deal.category.icon || '🏷️'} {deal.merchant} • {deal.location}
+                    🏪 {deal.merchant} • 📍 {deal.location}
                   </Text>
                   <View style={styles.dealVotes}>
                     <Text style={styles.voteCount}>🔥 {deal.vote_count} {tSearch('dealCard.votes')}</Text>
@@ -248,10 +256,16 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
+  filterChipActive: {
+    backgroundColor: theme.colors.brand,
+  },
   filterChipText: {
     fontSize: 14,
     color: theme.colors.fgDefault,
     fontWeight: '500',
+  },
+  filterChipTextActive: {
+    color: 'white',
   },
   loadMoreChip: {
     backgroundColor: theme.colors.brand,
@@ -304,6 +318,12 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     color: theme.colors.brand,
     fontWeight: '600',
     marginBottom: 4,
+  },
+  dealCategory: {
+    fontSize: 12,
+    color: theme.colors.brand,
+    fontWeight: '600',
+    marginBottom: 2,
   },
   dealMerchant: {
     fontSize: 12,

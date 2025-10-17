@@ -116,8 +116,11 @@ export default function DealDetailScreen() {
           </View>
 
           <View style={styles.dealMeta}>
+            <Text style={styles.category}>
+              {deal.category.icon || '🏷️'} {deal.category.name}
+            </Text>
             <Text style={styles.merchant}>
-              {deal.category.icon || '🏷️'} {deal.merchant}
+              🏪 {deal.merchant}
             </Text>
             <Text style={styles.location}>📍 {deal.location}</Text>
             <Text style={styles.author}>
@@ -279,6 +282,11 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   dealMeta: {
     marginBottom: 16,
     gap: 4,
+  },
+  category: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.brand,
   },
   merchant: {
     fontSize: 16,

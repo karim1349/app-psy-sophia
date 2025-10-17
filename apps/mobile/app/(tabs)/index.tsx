@@ -90,11 +90,14 @@ export default function HomeScreen() {
             >
               <Text style={styles.dealTitle}>{deal.title}</Text>
               <Text style={styles.dealPrice}>
-                {deal.current_price.toLocaleString()} {deal.currency} 
+                {deal.current_price.toLocaleString()} {deal.currency}
                 {deal.original_price && ` (${t('common.was')} ${deal.original_price.toLocaleString()} ${deal.currency})`}
               </Text>
+              <Text style={styles.dealCategory}>
+                {deal.category.icon || '🏷️'} {deal.category.name}
+              </Text>
               <Text style={styles.dealMerchant}>
-                {deal.category.icon || '🏷️'} {deal.merchant} • {deal.location}
+                🏪 {deal.merchant} • 📍 {deal.location}
               </Text>
               <View style={styles.dealVotes}>
                 <Text style={styles.voteCount}>🔥 {deal.vote_count} {t('common.votes')}</Text>
@@ -226,6 +229,12 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     color: theme.colors.brand,
     fontWeight: '600',
     marginBottom: 4,
+  },
+  dealCategory: {
+    fontSize: 13,
+    color: theme.colors.brand,
+    fontWeight: '600',
+    marginBottom: 2,
   },
   dealMerchant: {
     fontSize: 14,
