@@ -33,6 +33,7 @@ class UserSerializer(serializers.ModelSerializer):
             "username",
             "created_at",
             "is_active",
+            "is_guest",
             "account_age",
             "is_new_account",
         ]
@@ -42,6 +43,7 @@ class UserSerializer(serializers.ModelSerializer):
             "username",
             "created_at",
             "is_active",
+            "is_guest",
             "account_age",
             "is_new_account",
         ]
@@ -323,6 +325,79 @@ class ResendVerificationSerializer(serializers.Serializer):
     def validate_email(self, value: str) -> str:
         """Normalize email for case-insensitive lookup."""
         return value.lower()
+
+    def update(self, instance: Any, validated_data: Dict[str, Any]) -> Any:
+        """Not implemented - this serializer is for validation only."""
+        raise NotImplementedError()
+
+    def create(self, validated_data: Dict[str, Any]) -> Any:
+        """Not implemented - this serializer is for validation only."""
+        raise NotImplementedError()
+
+
+class ConvertGuestSerializer(serializers.Serializer):
+    """
+    Serializer for converting a guest user to a full account.
+
+    Validates:
+    - Email uniqueness (case-insensitive)
+    - Username length (3-30 chars) and uniqueness
+    - Password strength (Django validators)
+    - Password confirmation match
+    """
+
+    email = serializers.EmailField(required=True)
+    username = serializers.CharField(
+        required=True, min_length=3, max_length=30
+    )
+    password = serializers.CharField(
+        write_only=True, required=True, style={"input_type": "password"}
+    )
+    password_confirm = serializers.CharField(
+        write_only=True, required=True, style={"input_type": "password"}
+    )
+
+    def validate_email(self, value: str) -> str:
+        """Validate email uniqueness (case-insensitive)."""
+        normalized_email = value.lower()
+        proxy = UserProxy()
+        existing_user = proxy.get_user_by_email(normalized_email)
+
+        # Allow if email doesn't exist or belongs to the current user
+        if existing_user and existing_user.id != self.context.get("user").id:
+            raise serializers.ValidationError("auth.register.emailExists")
+        return normalized_email
+
+    def validate_username(self, value: str) -> str:
+        """Validate username length and uniqueness."""
+        if len(value) < 3:
+            raise serializers.ValidationError("validation.minLength")
+        if len(value) > 30:
+            raise serializers.ValidationError("validation.maxLength")
+
+        proxy = UserProxy()
+        existing_user = proxy.get_user_by_username(value)
+
+        # Allow if username doesn't exist or belongs to the current user
+        if existing_user and existing_user.id != self.context.get("user").id:
+            raise serializers.ValidationError("auth.register.usernameExists")
+        return value
+
+    def validate_password(self, value: str) -> str:
+        """Validate password strength using Django's validators."""
+        try:
+            validate_password(value)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(list(e.messages))
+        return value
+
+    def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate that passwords match."""
+        if attrs.get("password") != attrs.get("password_confirm"):
+            raise serializers.ValidationError(
+                {"password_confirm": "auth.register.passwordMismatch"}
+            )
+        return attrs
 
     def update(self, instance: Any, validated_data: Dict[str, Any]) -> Any:
         """Not implemented - this serializer is for validation only."""

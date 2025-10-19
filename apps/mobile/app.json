@@ -27,6 +27,15 @@
     },
     "plugins": [
       "expo-router",
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#5B4BCC",
+          "sounds": []
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -40,6 +49,9 @@
         }
       ]
     ],
+    "extra": {
+      "apiUrl": "http://192.168.11.102:8000"
+    },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

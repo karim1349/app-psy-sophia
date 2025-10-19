@@ -41,7 +41,8 @@ from rest_framework_simplejwt.views import \
 from .models import User
 from .permissions import IsOwnerOrStaff
 from .proxy.user_proxy import UserProxy
-from .serializers import (LoginSerializer, RegisterSerializer, UserSerializer,
+from .serializers import (ConvertGuestSerializer, LoginSerializer,
+                          RegisterSerializer, UserSerializer,
                           UserUpdateSerializer)
 from .throttles import (LoginThrottle, PasswordResetThrottle,
                         ResendVerificationThrottle)
@@ -75,10 +76,14 @@ class UserViewSet(GenericViewSet):
             "request_password_reset",
             "confirm_password_reset",
             "list",  # Allow anyone to see the list is disabled
+            "guest",  # Allow anyone to create a guest session
         ]:
             return [cast(BasePermission, AllowAny())]
         elif self.action in ["retrieve", "update", "partial_update", "deactivate"]:
             return [IsOwnerOrStaff()]
+        elif self.action == "convert":
+            # Convert requires authentication (guest or full)
+            return [IsAuthenticated()]
         return [IsAuthenticated()]
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -414,3 +419,101 @@ class UserViewSet(GenericViewSet):
         return Response(
             {"detail": "Password changed successfully."}, status=status.HTTP_200_OK
         )
+
+    @action(detail=False, methods=["post"], permission_classes=[AllowAny])
+    def guest(self, request: Request) -> Response:
+        """
+        Create a guest user and return tokens.
+
+        Guest users are temporary users that can be converted to full accounts later.
+        They don't require email or password.
+
+        Returns:
+            - access: JWT access token
+            - refresh: JWT refresh token
+            - user: User data with is_guest=True
+        """
+        # Create guest user with unique generated email/username
+        import uuid
+        guest_id = uuid.uuid4().hex[:12]
+
+        user = User.objects.create(
+            email=None,
+            username=None,
+            is_guest=True,
+            is_active=True,  # Guests are active by default
+        )
+
+        # Generate tokens
+        tokens = self.user_proxy.generate_tokens(user)
+
+        # Serialize user data
+        user_data = UserSerializer(user).data
+
+        result = {
+            "user": user_data,
+            "refresh": tokens["refresh"],
+            "access": tokens["access"],
+            "message": "Guest session created successfully.",
+        }
+
+        client_type = request.headers.get("X-Client-Type", "").lower()
+        return self._handle_cookie_response(
+            result, client_type, status.HTTP_201_CREATED
+        )
+
+    @action(detail=False, methods=["post"], permission_classes=[IsAuthenticated])
+    def convert(self, request: Request) -> Response:
+        """
+        Convert a guest user to a full account.
+
+        Requires:
+            - email: Email address for the account
+            - username: Username for the account
+            - password: Password for the account
+
+        Preserves all data (children, screeners, etc.) associated with the guest user.
+
+        Returns:
+            - access: New JWT access token
+            - refresh: New JWT refresh token
+            - user: Updated user data with is_guest=False
+        """
+        user = cast(User, request.user)
+
+        # Verify user is a guest
+        if not user.is_guest:
+            return Response(
+                {"non_field_errors": ["User is already a full account."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validate and convert
+        serializer = ConvertGuestSerializer(data=request.data, context={"user": user})
+        serializer.is_valid(raise_exception=True)
+
+        # Update user
+        user.email = serializer.validated_data["email"]
+        user.username = serializer.validated_data["username"]
+        user.set_password(serializer.validated_data["password"])
+        user.is_guest = False
+        user.save()
+
+        # Generate verification token
+        user.generate_verification_token()
+
+        # Generate new tokens
+        tokens = self.user_proxy.generate_tokens(user)
+
+        # Serialize user data
+        user_data = UserSerializer(user).data
+
+        result = {
+            "user": user_data,
+            "refresh": tokens["refresh"],
+            "access": tokens["access"],
+            "message": "Account converted successfully. Please verify your email.",
+        }
+
+        client_type = request.headers.get("X-Client-Type", "").lower()
+        return self._handle_cookie_response(result, client_type)

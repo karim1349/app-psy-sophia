@@ -35,6 +35,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(
         _("email address"),
         unique=True,
+        null=True,
+        blank=True,
         db_index=True,
         error_messages={
             "unique": _("A user with that email already exists."),
@@ -45,8 +47,10 @@ class User(AbstractBaseUser, PermissionsMixin):
         _("username"),
         max_length=30,
         unique=True,
+        null=True,
+        blank=True,
         db_index=True,
-        help_text=_("Required. 3-30 characters."),
+        help_text=_("Required for full accounts. 3-30 characters."),
         error_messages={
             "unique": _("A user with that username already exists."),
         },
@@ -58,6 +62,16 @@ class User(AbstractBaseUser, PermissionsMixin):
         help_text=_(
             "Designates whether this user should be treated as active. "
             "Users must verify their email before becoming active."
+        ),
+    )
+
+    is_guest = models.BooleanField(
+        _("guest user"),
+        default=False,
+        db_index=True,
+        help_text=_(
+            "Designates whether this is a temporary guest user. "
+            "Guest users can be converted to full accounts later."
         ),
     )
 
@@ -125,6 +139,7 @@ class User(AbstractBaseUser, PermissionsMixin):
             models.Index(fields=["username"]),
             models.Index(fields=["created_at"]),
             models.Index(fields=["email_verification_token"]),
+            models.Index(fields=["is_guest"]),
         ]
 
     def get_full_name(self) -> str:
@@ -231,6 +246,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         return True
 
     def save(self, *args: Any, **kwargs: Any) -> None:
-        # Normalize email to lowercase
-        self.email = self.email.lower()
+        # Normalize email to lowercase (if present)
+        if self.email:
+            self.email = self.email.lower()
         super().save(*args, **kwargs)
