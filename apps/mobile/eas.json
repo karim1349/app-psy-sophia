@@ -12,7 +12,7 @@
     },
     "production": {
       "ios": {
-        "resourceClass": "m-medium"
+        "resourceClass": "m1-medium"
       }
     }
   },
