@@ -27,6 +27,10 @@ drf-spectacular==0.27.0
 # Storage (MinIO)
 minio==7.2.0
 
+# AWS SDK for R2 storage
+boto3==1.40.54
+botocore==1.40.54
+
 # Utilities
 python-dateutil==2.8.2
 django-storages==1.14.6
