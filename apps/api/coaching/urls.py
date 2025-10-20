@@ -10,6 +10,8 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     ChildViewSet,
     DailyCheckinViewSet,
+    ModuleProgressViewSet,
+    ModuleViewSet,
     ScreenerViewSet,
     TargetBehaviorViewSet,
 )
@@ -19,6 +21,8 @@ router.register(r"children", ChildViewSet, basename="child")
 router.register(r"screeners", ScreenerViewSet, basename="screener")
 router.register(r"target-behaviors", TargetBehaviorViewSet, basename="targetbehavior")
 router.register(r"daily-checkins", DailyCheckinViewSet, basename="dailycheckin")
+router.register(r"modules", ModuleViewSet, basename="module")
+router.register(r"modules-progress", ModuleProgressViewSet, basename="moduleprogress")
 
 urlpatterns = [
     path("", include(router.urls)),

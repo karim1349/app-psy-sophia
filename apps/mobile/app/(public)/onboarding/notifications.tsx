@@ -3,15 +3,17 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import { Button } from '../../../src/components/Button';
 import { appStorage } from '../../../src/lib/storage';
+import { useToast } from '@app-psy-sophia/ui';
 
 export default function NotificationsScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const { showToast } = useToast();
 
   const requestPermissionsAndFinish = async () => {
     setLoading(true);
@@ -54,10 +56,11 @@ export default function NotificationsScreen() {
       router.push('/(public)/onboarding/account');
     } catch (error) {
       console.error('Notification setup error:', error);
-      Alert.alert(
-        'Erreur',
-        'Une erreur est survenue. Vous pouvez activer les notifications plus tard.'
-      );
+      showToast({
+        type: 'error',
+        title: 'Erreur',
+        message: 'Une erreur est survenue. Vous pouvez activer les notifications plus tard.',
+      });
 
       // Still continue to account creation
       router.push('/(public)/onboarding/account');
@@ -74,6 +77,7 @@ export default function NotificationsScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
+          <Image source={require('../../../assets/images/logo.png')} style={styles.logo} />
           <Text style={styles.icon}>🔔</Text>
           <Text style={styles.title}>Restez motivé(e)</Text>
           <Text style={styles.subtitle}>
@@ -135,6 +139,12 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginTop: 60,
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    marginBottom: 16,
+    resizeMode: 'contain',
   },
   icon: {
     fontSize: 64,

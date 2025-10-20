@@ -12,14 +12,15 @@ import {
   TouchableOpacity,
   Switch,
   Dimensions,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '../../src/components/Button';
 import { getDashboard, getTargetBehaviors, upsertCheckin, getTodayCheckin } from '../../src/api/onboarding';
+import { getModules } from '../../src/api/modules';
 import { appStorage } from '../../src/lib/storage';
+import { useToast } from '@app-psy-sophia/ui';
 
 const { width } = Dimensions.get('window');
 
@@ -29,6 +30,7 @@ export default function HomeScreen() {
   const [childId, setChildId] = React.useState<number | null>(null);
   const [isLoadingChild, setIsLoadingChild] = React.useState(true);
   const [todayBehaviors, setTodayBehaviors] = React.useState<Record<number, boolean>>({});
+  const { showToast } = useToast();
 
   React.useEffect(() => {
     async function loadChildId() {
@@ -56,43 +58,31 @@ export default function HomeScreen() {
             console.error('❌ Child ID', id, 'does NOT belong to current user');
             console.log('🔄 Clearing stored child ID and restarting onboarding');
             await appStorage.clearAppData();
-            Alert.alert(
-              'Session expirée',
-              'Votre session a expiré. Veuillez recommencer l\'inscription.',
-              [
-                {
-                  text: 'OK',
-                  onPress: () => router.replace('/(public)/onboarding/age'),
-                },
-              ]
-            );
+            showToast({
+              type: 'error',
+              title: 'Session expirée',
+              message: 'Votre session a expiré. Veuillez recommencer l\'inscription.',
+            });
+            router.replace('/(public)/onboarding/age');
           }
         } catch (error) {
           console.error('❌ Error verifying child:', error);
           await appStorage.clearAppData();
-          Alert.alert(
-            'Erreur',
-            'Une erreur est survenue. Veuillez recommencer l\'inscription.',
-            [
-              {
-                text: 'OK',
-                onPress: () => router.replace('/(public)/onboarding/age'),
-              },
-            ]
-          );
+          showToast({
+            type: 'error',
+            title: 'Erreur',
+            message: 'Une erreur est survenue. Veuillez recommencer l\'inscription.',
+          });
+          router.replace('/(public)/onboarding/age');
         }
       } else {
         console.error('❌ NO CHILD ID! User must complete onboarding first.');
-        Alert.alert(
-          'Configuration requise',
-          'Veuillez compléter le processus d\'inscription pour accéder au tableau de bord.',
-          [
-            {
-              text: 'OK',
-              onPress: () => router.replace('/(public)/onboarding/age'),
-            },
-          ]
-        );
+        showToast({
+          type: 'info',
+          title: 'Configuration requise',
+          message: 'Veuillez compléter le processus d\'inscription pour accéder au tableau de bord.',
+        });
+        router.replace('/(public)/onboarding/age');
       }
       setIsLoadingChild(false);
     }
@@ -133,6 +123,16 @@ export default function HomeScreen() {
     enabled: !!childId,
     retry: 2,
   });
+
+  // Fetch modules with progress
+  const { data: modules } = useQuery({
+    queryKey: ['modules', childId],
+    queryFn: () => getModules(childId!),
+    enabled: !!childId,
+    retry: 2,
+  });
+
+  const specialTimeModule = modules?.find((m) => m.key === 'special_time');
 
   // Mutation for updating check-in (must be called before any conditional returns)
   const updateCheckinMutation = useMutation({
@@ -210,19 +210,13 @@ export default function HomeScreen() {
   React.useEffect(() => {
     if (dashboardError && 'status' in dashboardError && (dashboardError as any).status === 404) {
       console.error('❌ Dashboard API error:', dashboardError);
-      Alert.alert(
-        'Erreur',
-        'Enfant introuvable. Veuillez recommencer l\'inscription.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              appStorage.clearAppData();
-              router.replace('/(public)/onboarding/age');
-            },
-          },
-        ]
-      );
+      showToast({
+        type: 'error',
+        title: 'Erreur',
+        message: 'Enfant introuvable. Veuillez recommencer l\'inscription.',
+      });
+      appStorage.clearAppData();
+      router.replace('/(public)/onboarding/age');
     }
   }, [dashboardError]);
 
@@ -277,9 +271,54 @@ export default function HomeScreen() {
             title="En savoir plus"
             variant="outline"
             size="small"
-            onPress={() => {}}
+            onPress={() => router.push('/(authed)/program/special-time')}
           />
         </View>
+
+        {/* Current Module: Special Time */}
+        {specialTimeModule && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>📚 Module en cours</Text>
+            <TouchableOpacity
+              style={styles.moduleCard}
+              onPress={() => router.push('/(authed)/program/special-time')}
+            >
+              <View style={styles.moduleHeader}>
+                <View style={styles.moduleInfo}>
+                  <Text style={styles.moduleTitle}>{specialTimeModule.title}</Text>
+                  {specialTimeModule.state === 'passed' && (
+                    <Text style={styles.moduleBadge}>✓ Complété</Text>
+                  )}
+                </View>
+                <View style={styles.progressRing}>
+                  <Text style={styles.progressRingText}>
+                    {specialTimeModule.counters.sessions_21d}/6
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.moduleStats}>
+                <View style={styles.moduleStat}>
+                  <Text style={styles.moduleStatLabel}>Sessions (21j)</Text>
+                  <Text style={styles.moduleStatValue}>
+                    {specialTimeModule.counters.sessions_21d}
+                  </Text>
+                </View>
+                <View style={styles.moduleStat}>
+                  <Text style={styles.moduleStatLabel}>Appréciées (6 dernières)</Text>
+                  <Text style={styles.moduleStatValue}>
+                    {specialTimeModule.counters.liked_last6}/4
+                  </Text>
+                </View>
+              </View>
+              <Button
+                title="Consigner une session"
+                size="small"
+                variant="outline"
+                onPress={() => router.push('/(authed)/program/special-time')}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Today's Routines */}
         <View style={styles.section}>
@@ -577,5 +616,64 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 32,
     lineHeight: 24,
+  },
+  moduleCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  moduleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  moduleInfo: {
+    flex: 1,
+  },
+  moduleTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  moduleBadge: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#10B981',
+  },
+  progressRing: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 4,
+    borderColor: '#8B7FE8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F3F4F6',
+  },
+  progressRingText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#5B4BCC',
+  },
+  moduleStats: {
+    flexDirection: 'row',
+    gap: 16,
+    marginBottom: 16,
+  },
+  moduleStat: {
+    flex: 1,
+  },
+  moduleStatLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  moduleStatValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
   },
 });

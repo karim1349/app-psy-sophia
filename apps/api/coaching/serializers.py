@@ -7,9 +7,18 @@ Handles validation and serialization for Child, Screener, TargetBehavior, and Da
 from datetime import datetime, timedelta
 from typing import Any, Dict
 
+from django.utils import timezone
 from rest_framework import serializers
 
-from .models import Child, DailyCheckin, Screener, TargetBehavior
+from .models import (
+    Child,
+    DailyCheckin,
+    Module,
+    ModuleProgress,
+    Screener,
+    SpecialTimeSession,
+    TargetBehavior,
+)
 
 
 class ChildSerializer(serializers.ModelSerializer):
@@ -247,6 +256,8 @@ class DashboardSerializer(serializers.Serializer):
         - days: list of dates (YYYY-MM-DD)
         - routine_success: list of completion rates (0-1) per day
         - mood: list of mood values (1-5) per day, null if no check-in
+        - special_time_count: list of session counts per day
+        - enjoy_rate: list of enjoyment rates (0-1) per day
     """
 
     child_id = serializers.IntegerField(required=True)
@@ -265,6 +276,8 @@ class DashboardSerializer(serializers.Serializer):
 
         Example payload: {child_id: 1, range_days: 7}
         """
+        from .models import SpecialTimeSession
+
         child_id = instance.get("child_id")
         range_days = instance.get("range_days", 7)
 
@@ -280,10 +293,21 @@ class DashboardSerializer(serializers.Serializer):
             child=child, date__gte=start_date, date__lte=today
         ).order_by("date")
 
+        # Get all Special Time sessions in range
+        start_datetime = datetime.combine(start_date, datetime.min.time())
+        end_datetime = datetime.combine(today, datetime.max.time())
+        sessions = SpecialTimeSession.objects.filter(
+            child=child,
+            datetime__gte=start_datetime,
+            datetime__lte=end_datetime,
+        )
+
         # Build data structures
         days = []
         routine_success = []
         mood = []
+        special_time_count = []
+        enjoy_rate = []
 
         for i in range(range_days):
             current_date = start_date + timedelta(days=i)
@@ -307,7 +331,26 @@ class DashboardSerializer(serializers.Serializer):
                 routine_success.append(None)
                 mood.append(None)
 
-        return {"days": days, "routine_success": routine_success, "mood": mood}
+            # Count Special Time sessions for this day
+            day_sessions = [
+                s for s in sessions if s.datetime.date() == current_date
+            ]
+            special_time_count.append(len(day_sessions))
+
+            # Calculate enjoyment rate for this day
+            if day_sessions:
+                enjoyed_count = sum(1 for s in day_sessions if s.child_enjoyed)
+                enjoy_rate.append(round(enjoyed_count / len(day_sessions), 2))
+            else:
+                enjoy_rate.append(None)
+
+        return {
+            "days": days,
+            "routine_success": routine_success,
+            "mood": mood,
+            "special_time_count": special_time_count,
+            "enjoy_rate": enjoy_rate,
+        }
 
     def create(self, validated_data: Dict[str, Any]) -> Any:
         """Not implemented - this is a read-only serializer."""
@@ -316,3 +359,107 @@ class DashboardSerializer(serializers.Serializer):
     def update(self, instance: Any, validated_data: Dict[str, Any]) -> Any:
         """Not implemented - this is a read-only serializer."""
         raise NotImplementedError()
+
+
+class ModuleSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Module model.
+    """
+
+    class Meta:
+        model = Module
+        fields = [
+            "id",
+            "key",
+            "title",
+            "order_index",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class ModuleProgressSerializer(serializers.ModelSerializer):
+    """
+    Serializer for ModuleProgress model.
+
+    Includes module details for convenience.
+    """
+
+    module_key = serializers.CharField(source="module.key", read_only=True)
+    module_title = serializers.CharField(source="module.title", read_only=True)
+
+    class Meta:
+        model = ModuleProgress
+        fields = [
+            "id",
+            "child",
+            "module",
+            "module_key",
+            "module_title",
+            "state",
+            "counters",
+            "passed_at",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "module_key", "module_title", "created_at", "updated_at"]
+
+
+class SpecialTimeSessionSerializer(serializers.ModelSerializer):
+    """
+    Serializer for SpecialTimeSession model.
+
+    Auto-sets datetime to now if not provided.
+    """
+
+    datetime = serializers.DateTimeField(required=False)
+
+    class Meta:
+        model = SpecialTimeSession
+        fields = [
+            "id",
+            "child",
+            "datetime",
+            "duration_min",
+            "activity",
+            "child_enjoyed",
+            "notes",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate_duration_min(self, value: int) -> int:
+        """Validate duration is between 5 and 60 minutes."""
+        if value < 5 or value > 60:
+            raise serializers.ValidationError(
+                "Duration must be between 5 and 60 minutes."
+            )
+        return value
+
+    def create(self, validated_data: Dict[str, Any]) -> SpecialTimeSession:
+        """
+        Create session and set datetime to now if not provided.
+        """
+        if "datetime" not in validated_data or validated_data["datetime"] is None:
+            validated_data["datetime"] = timezone.now()
+
+        return super().create(validated_data)
+
+
+class ModuleWithProgressSerializer(serializers.Serializer):
+    """
+    Serializer combining Module data with child's progress.
+
+    Used for GET /modules/ endpoint.
+    """
+
+    id = serializers.IntegerField(source="module.id")
+    key = serializers.CharField(source="module.key")
+    title = serializers.CharField(source="module.title")
+    order_index = serializers.IntegerField(source="module.order_index")
+    state = serializers.CharField()
+    counters = serializers.JSONField()
+    passed_at = serializers.DateTimeField()

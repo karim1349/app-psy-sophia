@@ -6,6 +6,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  Image,
 } from 'react-native';
 import { Button, FormField, TextField, useTheme } from '@app-psy-sophia/ui';
 import { useForm, Controller } from 'react-hook-form';
@@ -66,6 +67,7 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
+          <Image source={require('../../assets/images/logo.png')} style={styles.logo} />
           <Text style={styles.title}>Welcome back</Text>
           <Text style={styles.subtitle}>Login to your account to continue</Text>
         </View>
@@ -147,6 +149,13 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   },
   header: {
     marginBottom: 32,
+    alignItems: 'center',
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    marginBottom: 24,
+    resizeMode: 'contain',
   },
   title: {
     fontSize: 32,

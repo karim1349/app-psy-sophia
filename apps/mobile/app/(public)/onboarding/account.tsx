@@ -10,14 +10,15 @@ import {
   SafeAreaView,
   ScrollView,
   TextInput,
-  Alert,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from '../../../src/components/Button';
 import { convertGuest } from '../../../src/api/auth';
 import { appStorage } from '../../../src/lib/storage';
+import { useToast } from '@app-psy-sophia/ui';
 
 export default function AccountScreen() {
   const router = useRouter();
@@ -25,6 +26,7 @@ export default function AccountScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
+  const { showToast } = useToast();
 
   const convertMutation = useMutation({
     mutationFn: () =>
@@ -47,43 +49,56 @@ export default function AccountScreen() {
         error.data?.password?.[0] ||
         error.data?.detail ||
         'Une erreur est survenue';
-      Alert.alert('Erreur', errorMessage);
+      showToast({
+        type: 'error',
+        title: 'Erreur',
+        message: errorMessage,
+      });
     },
   });
 
   const handleSkip = async () => {
-    Alert.alert(
-      'Continuer sans compte',
-      'Vous pouvez créer un compte plus tard depuis les paramètres. Vos données seront préservées.',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Continuer',
-          onPress: async () => {
-            await appStorage.setOnboardingDone(true);
-            router.replace('/(authed)/home');
-          },
-        },
-      ]
-    );
+    showToast({
+      type: 'info',
+      title: 'Continuer sans compte',
+      message: 'Vous pouvez créer un compte plus tard depuis les paramètres.',
+    });
+    await appStorage.setOnboardingDone(true);
+    router.replace('/(authed)/home');
   };
 
   const handleSubmit = () => {
     // Validation
     if (!email.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer votre email');
+      showToast({
+        type: 'error',
+        title: 'Erreur',
+        message: 'Veuillez entrer votre email',
+      });
       return;
     }
     if (!username.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer un nom d\'utilisateur');
+      showToast({
+        type: 'error',
+        title: 'Erreur',
+        message: 'Veuillez entrer un nom d\'utilisateur',
+      });
       return;
     }
     if (password.length < 8) {
-      Alert.alert('Erreur', 'Le mot de passe doit contenir au moins 8 caractères');
+      showToast({
+        type: 'error',
+        title: 'Erreur',
+        message: 'Le mot de passe doit contenir au moins 8 caractères',
+      });
       return;
     }
     if (password !== passwordConfirm) {
-      Alert.alert('Erreur', 'Les mots de passe ne correspondent pas');
+      showToast({
+        type: 'error',
+        title: 'Erreur',
+        message: 'Les mots de passe ne correspondent pas',
+      });
       return;
     }
 
@@ -94,6 +109,7 @@ export default function AccountScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.content}>
         <View style={styles.header}>
+          <Image source={require('../../../assets/images/logo.png')} style={styles.logo} />
           <Text style={styles.title}>Créez votre compte</Text>
           <Text style={styles.subtitle}>
             Sécurisez vos données et accédez à votre compte depuis n'importe quel appareil
@@ -192,6 +208,13 @@ const styles = StyleSheet.create({
   header: {
     marginTop: 20,
     marginBottom: 32,
+    alignItems: 'center',
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    marginBottom: 24,
+    resizeMode: 'contain',
   },
   title: {
     fontSize: 28,

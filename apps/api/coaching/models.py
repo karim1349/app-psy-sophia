@@ -260,3 +260,199 @@ class DailyCheckin(models.Model):
 
     def __str__(self) -> str:
         return f"Check-in for {self.child} on {self.date} (mood: {self.mood})"
+
+
+class Module(models.Model):
+    """
+    A coaching module (e.g., Special Time, Effective Commands).
+
+    Modules have unlock rules and are completed in sequence.
+    """
+
+    key = models.CharField(
+        _("key"),
+        max_length=50,
+        unique=True,
+        help_text=_("Unique identifier for the module (e.g., 'special_time')"),
+    )
+
+    title = models.CharField(
+        _("title"),
+        max_length=100,
+        help_text=_("Display title of the module"),
+    )
+
+    order_index = models.IntegerField(
+        _("order index"),
+        default=0,
+        help_text=_("Order in which modules are presented"),
+    )
+
+    is_active = models.BooleanField(
+        _("is active"),
+        default=True,
+        help_text=_("Whether this module is available to users"),
+    )
+
+    created_at = models.DateTimeField(
+        _("created at"),
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        _("updated at"),
+        auto_now=True,
+    )
+
+    class Meta:
+        verbose_name = _("module")
+        verbose_name_plural = _("modules")
+        ordering = ["order_index", "created_at"]
+        indexes = [
+            models.Index(fields=["key"]),
+            models.Index(fields=["order_index"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.title} ({self.key})"
+
+
+class ModuleProgress(models.Model):
+    """
+    Tracks a child's progress through a module.
+
+    State transitions: locked → active → passed
+    """
+
+    STATE_CHOICES = [
+        ("locked", _("Locked - prerequisites not met")),
+        ("active", _("Active - currently working on this module")),
+        ("passed", _("Passed - module completed successfully")),
+    ]
+
+    child = models.ForeignKey(
+        Child,
+        on_delete=models.CASCADE,
+        related_name="module_progress",
+        verbose_name=_("child"),
+    )
+
+    module = models.ForeignKey(
+        Module,
+        on_delete=models.CASCADE,
+        related_name="child_progress",
+        verbose_name=_("module"),
+    )
+
+    state = models.CharField(
+        _("state"),
+        max_length=10,
+        choices=STATE_CHOICES,
+        default="active",
+        help_text=_("Current state of this module for this child"),
+    )
+
+    counters = models.JSONField(
+        _("counters"),
+        default=dict,
+        help_text=_(
+            "Module-specific counters (e.g., sessions_21d, liked_last6, goal_per_week)"
+        ),
+    )
+
+    passed_at = models.DateTimeField(
+        _("passed at"),
+        null=True,
+        blank=True,
+        help_text=_("When the module was completed"),
+    )
+
+    created_at = models.DateTimeField(
+        _("created at"),
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        _("updated at"),
+        auto_now=True,
+    )
+
+    class Meta:
+        verbose_name = _("module progress")
+        verbose_name_plural = _("module progress")
+        unique_together = [["child", "module"]]
+        ordering = ["module__order_index", "-created_at"]
+        indexes = [
+            models.Index(fields=["child", "state"]),
+            models.Index(fields=["module"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.child} - {self.module.title} ({self.state})"
+
+
+class SpecialTimeSession(models.Model):
+    """
+    A session of Special Time (Moment Spécial) logged by the parent.
+
+    Special Time is 10-20 minutes of child-led, 1-on-1 play time.
+    """
+
+    child = models.ForeignKey(
+        Child,
+        on_delete=models.CASCADE,
+        related_name="special_time_sessions",
+        verbose_name=_("child"),
+    )
+
+    datetime = models.DateTimeField(
+        _("datetime"),
+        help_text=_("When the session occurred (auto now if not provided)"),
+    )
+
+    duration_min = models.IntegerField(
+        _("duration (minutes)"),
+        validators=[MinValueValidator(5), MaxValueValidator(60)],
+        help_text=_("Duration of the session in minutes (5-60)"),
+    )
+
+    activity = models.CharField(
+        _("activity"),
+        max_length=200,
+        blank=True,
+        help_text=_("What activity the child chose (e.g., 'Lego', 'Drawing')"),
+    )
+
+    child_enjoyed = models.BooleanField(
+        _("child enjoyed"),
+        help_text=_("Whether the child appeared to enjoy the session"),
+    )
+
+    notes = models.TextField(
+        _("notes"),
+        blank=True,
+        help_text=_("Optional notes about the session"),
+    )
+
+    created_at = models.DateTimeField(
+        _("created at"),
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        _("updated at"),
+        auto_now=True,
+    )
+
+    class Meta:
+        verbose_name = _("special time session")
+        verbose_name_plural = _("special time sessions")
+        ordering = ["-datetime"]
+        indexes = [
+            models.Index(fields=["child", "datetime"]),
+            models.Index(fields=["datetime"]),
+        ]
+
+    def __str__(self) -> str:
+        enjoyed = "✓" if self.child_enjoyed else "✗"
+        return f"Special Time for {self.child} on {self.datetime.date()} ({self.duration_min}min) {enjoyed}"

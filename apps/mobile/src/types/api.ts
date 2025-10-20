@@ -67,6 +67,8 @@ export interface DashboardData {
   days: string[];
   routine_success: (number | null)[];
   mood: (number | null)[];
+  special_time_count: number[];
+  enjoy_rate: (number | null)[];
 }
 
 export interface ConvertGuestRequest {
@@ -74,4 +76,74 @@ export interface ConvertGuestRequest {
   username: string;
   password: string;
   password_confirm: string;
+}
+
+export type ModuleState = 'locked' | 'active' | 'passed';
+
+export interface Module {
+  id: number;
+  key: string;
+  title: string;
+  order_index: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ModuleProgress {
+  id: number;
+  child: number;
+  module: number;
+  module_key: string;
+  module_title: string;
+  state: ModuleState;
+  counters: {
+    sessions_21d?: number;
+    liked_last6?: number;
+    goal_per_week?: number;
+    [key: string]: any;
+  };
+  passed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ModuleWithProgress {
+  id: number;
+  key: string;
+  title: string;
+  order_index: number;
+  state: ModuleState;
+  counters: {
+    sessions_21d: number;
+    liked_last6: number;
+    goal_per_week: number;
+  };
+  passed_at: string | null;
+}
+
+export interface SpecialTimeSession {
+  id: number;
+  child: number;
+  datetime: string;
+  duration_min: number;
+  activity: string;
+  child_enjoyed: boolean;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateSessionRequest {
+  child: number;
+  datetime?: string;
+  duration_min: number;
+  activity?: string;
+  child_enjoyed: boolean;
+  notes?: string;
+}
+
+export interface CreateSessionResponse {
+  session: SpecialTimeSession;
+  progress: ModuleProgress;
 }

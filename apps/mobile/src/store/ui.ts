@@ -4,6 +4,16 @@
 
 import { create } from 'zustand';
 
+export type ToastType = 'success' | 'error' | 'info' | 'warning';
+
+export interface Toast {
+  id: string;
+  type: ToastType;
+  title?: string;
+  message: string;
+  duration?: number;
+}
+
 interface UIState {
   // Modal states
   isCheckinModalOpen: boolean;
@@ -18,7 +28,13 @@ interface UIState {
   openToolsSheet: () => void;
   closeToolsSheet: () => void;
 
-  // Toast/Error state
+  // Toast state
+  toasts: Toast[];
+  showToast: (type: ToastType, message: string, title?: string, duration?: number) => void;
+  removeToast: (id: string) => void;
+  clearToasts: () => void;
+
+  // Deprecated (use showToast instead)
   error: string | null;
   setError: (error: string | null) => void;
   clearError: () => void;
@@ -30,6 +46,7 @@ export const useUIStore = create<UIState>((set) => ({
   isCommandPaletteOpen: false,
   isToolsSheetOpen: false,
   error: null,
+  toasts: [],
 
   // Modal actions
   openCheckinModal: () => set({ isCheckinModalOpen: true }),
@@ -39,7 +56,33 @@ export const useUIStore = create<UIState>((set) => ({
   openToolsSheet: () => set({ isToolsSheetOpen: true }),
   closeToolsSheet: () => set({ isToolsSheetOpen: false }),
 
-  // Error actions
+  // Toast actions
+  showToast: (type, message, title, duration = 3000) => {
+    const id = `toast-${Date.now()}-${Math.random()}`;
+    const newToast: Toast = { id, type, message, title, duration };
+
+    set((state) => ({
+      toasts: [...state.toasts, newToast],
+    }));
+
+    // Auto-dismiss after duration
+    if (duration > 0) {
+      setTimeout(() => {
+        set((state) => ({
+          toasts: state.toasts.filter((t) => t.id !== id),
+        }));
+      }, duration);
+    }
+  },
+
+  removeToast: (id) =>
+    set((state) => ({
+      toasts: state.toasts.filter((t) => t.id !== id),
+    })),
+
+  clearToasts: () => set({ toasts: [] }),
+
+  // Deprecated error actions
   setError: (error) => set({ error }),
   clearError: () => set({ error: null }),
 }));

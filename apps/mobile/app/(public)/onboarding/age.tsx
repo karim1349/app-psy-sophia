@@ -3,7 +3,7 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from '../../../src/components/Button';
@@ -57,6 +57,7 @@ export default function AgeScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
+          <Image source={require('../../../assets/images/logo.png')} style={styles.logo} />
           <Text style={styles.title}>Quel âge a votre enfant ?</Text>
           <Text style={styles.subtitle}>
             Choisissez le niveau scolaire correspondant
@@ -120,6 +121,13 @@ const styles = StyleSheet.create({
   header: {
     marginTop: 40,
     marginBottom: 32,
+    alignItems: 'center',
+  },
+  logo: {
+    width: 120,
+    height: 120,
+    marginBottom: 24,
+    resizeMode: 'contain',
   },
   title: {
     fontSize: 28,

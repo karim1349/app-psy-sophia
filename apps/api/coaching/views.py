@@ -11,13 +11,21 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from .models import Child, DailyCheckin, Screener, TargetBehavior
+from datetime import datetime, timedelta
+from django.db.models import Q
+from django.utils import timezone
+
+from .models import Child, DailyCheckin, Module, ModuleProgress, Screener, SpecialTimeSession, TargetBehavior
 from .permissions import IsChildOwner, IsChildRelatedOwner
 from .serializers import (
     ChildSerializer,
     DailyCheckinSerializer,
     DashboardSerializer,
+    ModuleProgressSerializer,
+    ModuleSerializer,
+    ModuleWithProgressSerializer,
     ScreenerSerializer,
+    SpecialTimeSessionSerializer,
     TargetBehaviorSerializer,
 )
 
@@ -257,4 +265,288 @@ class DailyCheckinViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         """Return only check-ins for children belonging to the authenticated user."""
-        return DailyCheckin.objects.filter(child__parent=self.request.user)
+        queryset = DailyCheckin.objects.filter(child__parent=self.request.user)
+
+        # Allow filtering by date
+        date_param = self.request.query_params.get("date")
+        if date_param:
+            queryset = queryset.filter(date=date_param)
+
+        return queryset
+
+
+class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for modules and progress tracking.
+
+    GET /modules/?child_id={id} - List all modules with progress for a child.
+    GET /modules/{id}/ - Retrieve a specific module.
+
+    Custom actions:
+    - POST /modules/special-time/sessions/ - Log a Special Time session
+    - GET /modules/special-time/sessions/?child_id={id}&range=21d - List sessions
+    - POST /modules/special-time/recompute/ - Recompute progress (QA/testing)
+    - PATCH /modules/progress/{id}/goal/ - Update goal_per_week
+    """
+
+    serializer_class = ModuleSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """Return all active modules."""
+        return Module.objects.filter(is_active=True)
+
+    def list(self, request: Request, *args, **kwargs) -> Response:
+        """
+        List all modules with progress for a specific child.
+
+        GET /modules/?child_id={id}
+
+        Returns modules with embedded progress data.
+        """
+        child_id = request.query_params.get("child_id")
+        if not child_id:
+            return Response(
+                {"error": "child_id query parameter is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Verify child belongs to current user
+        try:
+            child = Child.objects.get(id=child_id, parent=request.user)
+        except Child.DoesNotExist:
+            return Response(
+                {"error": "Child not found or access denied."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Get all active modules
+        modules = Module.objects.filter(is_active=True).order_by("order_index")
+
+        # Get or create progress for each module
+        results = []
+        for module in modules:
+            progress, created = ModuleProgress.objects.get_or_create(
+                child=child,
+                module=module,
+                defaults={
+                    "state": "active",
+                    "counters": {"sessions_21d": 0, "liked_last6": 0, "goal_per_week": 5},
+                },
+            )
+
+            # Recompute counters for special_time module
+            if module.key == "special_time":
+                progress = self._recompute_special_time_progress(child, progress)
+
+            results.append(
+                {
+                    "module": module,
+                    "state": progress.state,
+                    "counters": progress.counters,
+                    "passed_at": progress.passed_at,
+                }
+            )
+
+        serializer = ModuleWithProgressSerializer(results, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["post", "get"], url_path="special-time/sessions")
+    def special_time_sessions(self, request: Request) -> Response:
+        """
+        Log or list Special Time sessions.
+
+        POST /modules/special-time/sessions/
+        Body: {child, datetime?, duration_min, activity?, child_enjoyed, notes?}
+
+        GET /modules/special-time/sessions/?child_id={id}&range=21d
+        """
+        if request.method == "POST":
+            # Log a session
+            child_id = request.data.get("child")
+            try:
+                child = Child.objects.get(id=child_id, parent=request.user)
+            except Child.DoesNotExist:
+                return Response(
+                    {"error": "Child not found or access denied."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            # Create session
+            serializer = SpecialTimeSessionSerializer(data=request.data, context={"request": request})
+            serializer.is_valid(raise_exception=True)
+            session = serializer.save()
+
+            # Get or create progress
+            module = Module.objects.get(key="special_time")
+            progress, created = ModuleProgress.objects.get_or_create(
+                child=child,
+                module=module,
+                defaults={
+                    "state": "active",
+                    "counters": {"sessions_21d": 0, "liked_last6": 0, "goal_per_week": 5},
+                },
+            )
+
+            # Recompute progress and check unlock rules
+            progress = self._recompute_special_time_progress(child, progress)
+
+            return Response(
+                {
+                    "session": SpecialTimeSessionSerializer(session).data,
+                    "progress": ModuleProgressSerializer(progress).data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        else:  # GET
+            # List sessions
+            child_id = request.query_params.get("child_id")
+            if not child_id:
+                return Response(
+                    {"error": "child_id query parameter is required."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Verify child belongs to current user
+            try:
+                child = Child.objects.get(id=child_id, parent=request.user)
+            except Child.DoesNotExist:
+                return Response(
+                    {"error": "Child not found or access denied."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            # Get range parameter
+            range_param = request.query_params.get("range", "21d")
+            sessions = SpecialTimeSession.objects.filter(child=child)
+
+            if range_param != "all":
+                # Parse range (e.g., "21d" -> 21 days)
+                days = int(range_param.replace("d", ""))
+                cutoff_date = timezone.now() - timedelta(days=days)
+                sessions = sessions.filter(datetime__gte=cutoff_date)
+
+            sessions = sessions.order_by("-datetime")
+
+            serializer = SpecialTimeSessionSerializer(sessions, many=True)
+            return Response({"results": serializer.data}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["post"], url_path="special-time/recompute")
+    def recompute_special_time(self, request: Request) -> Response:
+        """
+        Recompute Special Time progress for a child (QA/testing).
+
+        POST /modules/special-time/recompute/
+        Body: {child}
+        """
+        child_id = request.data.get("child")
+        try:
+            child = Child.objects.get(id=child_id, parent=request.user)
+        except Child.DoesNotExist:
+            return Response(
+                {"error": "Child not found or access denied."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        module = Module.objects.get(key="special_time")
+        progress, created = ModuleProgress.objects.get_or_create(
+            child=child,
+            module=module,
+            defaults={
+                "state": "active",
+                "counters": {"sessions_21d": 0, "liked_last6": 0, "goal_per_week": 5},
+            },
+        )
+
+        progress = self._recompute_special_time_progress(child, progress)
+
+        return Response(
+            ModuleProgressSerializer(progress).data,
+            status=status.HTTP_200_OK,
+        )
+
+    def _recompute_special_time_progress(self, child: Child, progress: ModuleProgress) -> ModuleProgress:
+        """
+        Recompute Special Time progress counters and check unlock rules.
+
+        Rules:
+        - sessions_21d: count sessions in last 21 days
+        - liked_last6: count child_enjoyed=True among most recent 6 sessions
+        - PASS if: sessions_21d >= 6 AND liked_last6 >= 4
+        """
+        # Get sessions in last 21 days
+        cutoff_21d = timezone.now() - timedelta(days=21)
+        sessions_21d = SpecialTimeSession.objects.filter(
+            child=child, datetime__gte=cutoff_21d
+        ).count()
+
+        # Get last 6 sessions (regardless of date)
+        last_6_sessions = SpecialTimeSession.objects.filter(child=child).order_by("-datetime")[:6]
+        liked_last6 = sum(1 for s in last_6_sessions if s.child_enjoyed)
+
+        # Update counters
+        counters = progress.counters or {}
+        counters["sessions_21d"] = sessions_21d
+        counters["liked_last6"] = liked_last6
+        if "goal_per_week" not in counters:
+            counters["goal_per_week"] = 5
+
+        progress.counters = counters
+
+        # Check unlock rules
+        if sessions_21d >= 6 and liked_last6 >= 4:
+            if progress.state != "passed":
+                progress.state = "passed"
+                progress.passed_at = timezone.now()
+        else:
+            # Reset to active if was passed but no longer meets criteria
+            if progress.state == "passed":
+                progress.state = "active"
+                progress.passed_at = None
+
+        progress.save()
+        return progress
+
+
+class ModuleProgressViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing module progress.
+
+    GET /modules-progress/ - List progress for all modules for user's children.
+    PATCH /modules-progress/{id}/goal/ - Update goal_per_week.
+    """
+
+    serializer_class = ModuleProgressSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """Return only module progress for children belonging to the authenticated user."""
+        return ModuleProgress.objects.filter(child__parent=self.request.user)
+
+    @action(detail=True, methods=["patch"], url_path="goal")
+    def update_goal(self, request: Request, pk: int = None) -> Response:
+        """
+        Update goal_per_week for a module progress.
+
+        PATCH /modules-progress/{id}/goal/
+        Body: {goal_per_week: 5}
+        """
+        progress = self.get_object()
+
+        goal_per_week = request.data.get("goal_per_week")
+        if not isinstance(goal_per_week, int) or goal_per_week < 1 or goal_per_week > 7:
+            return Response(
+                {"error": "goal_per_week must be an integer between 1 and 7."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        counters = progress.counters or {}
+        counters["goal_per_week"] = goal_per_week
+        progress.counters = counters
+        progress.save()
+
+        return Response(
+            ModuleProgressSerializer(progress).data,
+            status=status.HTTP_200_OK,
+        )

@@ -3,7 +3,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   Linking,
 } from 'react-native';
 import { useState } from 'react';
@@ -11,7 +10,7 @@ import { useDeal, useDealComments, useVoteDeal } from '@app-psy-sophia/queries';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { config } from '@/constants/config';
 import { useI18nNamespace } from '@app-psy-sophia/i18n';
-import { useTheme } from '@app-psy-sophia/ui';
+import { useTheme, useToast } from '@app-psy-sophia/ui';
 import { StackScreen } from '@/components/stack-screen';
 
 export default function DealDetailScreen() {
@@ -19,6 +18,7 @@ export default function DealDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [refreshing, setRefreshing] = useState(false);
   const theme = useTheme();
+  const { showToast } = useToast();
   
   // i18n hooks
   const { t: tDealDetail } = useI18nNamespace('dealDetail');
@@ -58,7 +58,11 @@ export default function DealDetailScreen() {
         voteType,
       });
     } catch (error: any) {
-      Alert.alert('Error', error?.message || 'Failed to vote');
+      showToast({
+        type: 'error',
+        title: 'Error',
+        message: error?.message || 'Failed to vote',
+      });
     }
   };
 
@@ -70,10 +74,18 @@ export default function DealDetailScreen() {
       if (supported) {
         await Linking.openURL(deal.url);
       } else {
-        Alert.alert('Error', 'Cannot open this URL');
+        showToast({
+          type: 'error',
+          title: 'Error',
+          message: 'Cannot open this URL',
+        });
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to open deal URL');
+      showToast({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to open deal URL',
+      });
     }
   };
 
