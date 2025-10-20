@@ -5,7 +5,7 @@
 import Constants from 'expo-constants';
 import { tokenStorage } from '../lib/storage';
 
-const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:8000';
+const API_URL = Constants.expoConfig?.extra?.apiUrl || 'https://app-psy-sophia.onrender.com';
 
 export class APIError extends Error {
   constructor(
@@ -44,7 +44,7 @@ export async function apiFetch<T = any>(
     }
   }
 
-  const url = endpoint.startsWith('http') ? endpoint : `${API_URL}${endpoint}`;
+  const url = endpoint.startsWith('http') ? endpoint : `${API_URL}/api${endpoint}`;
 
   // Log API calls in development
   console.log(`📡 API ${fetchConfig.method || 'GET'} ${url}`);

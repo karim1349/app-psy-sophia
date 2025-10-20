@@ -4,7 +4,7 @@
 
 export const config = {
   // API Configuration
-  baseURL: process.env.EXPO_PUBLIC_API_BASE || 'http://localhost:8000/api',
+  baseURL: process.env.EXPO_PUBLIC_API_BASE || 'https://app-psy-sophia.onrender.com/api',
   
   // Environment
   isDevelopment: __DEV__,

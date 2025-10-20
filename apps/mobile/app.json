@@ -55,7 +55,7 @@
       ]
     ],
     "extra": {
-      "apiUrl": "http://192.168.11.102:8000",
+      "apiUrl": "https://app-psy-sophia.onrender.com",
       "router": {},
       "eas": {
         "projectId": "044c3c77-0bb3-413c-a141-5cc1f60598a3"
