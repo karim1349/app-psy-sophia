@@ -209,7 +209,14 @@ app/
 
 ---
 
-## 11) Glossary (for the agent)
+## 11) Development Guidelines
+
+### Git & Version Control
+- **NEVER commit changes automatically** - Always ask the user for permission before making any git commits
+- Let the user control when and how changes are committed to version control
+- Show what changes were made and ask for approval before committing
+
+## 12) Glossary (for the agent)
 
 - **NBA:** Next Best Action on Home.  
 - **Special Time / Moment spécial:** 10–20 min 1-to-1 child-led activity.  
