@@ -3,6 +3,7 @@
 
 # Production server
 gunicorn==21.2.0
+daphne==4.0.0
 
 # Error tracking & monitoring
 sentry-sdk==1.39.1
