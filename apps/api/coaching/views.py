@@ -15,7 +15,15 @@ from datetime import datetime, timedelta
 from django.db.models import Q
 from django.utils import timezone
 
-from .models import Child, DailyCheckin, Module, ModuleProgress, Screener, SpecialTimeSession, TargetBehavior
+from .models import (
+    Child,
+    DailyCheckin,
+    Module,
+    ModuleProgress,
+    Screener,
+    SpecialTimeSession,
+    TargetBehavior,
+)
 from .permissions import IsChildOwner, IsChildRelatedOwner
 from .serializers import (
     ChildSerializer,
@@ -28,6 +36,7 @@ from .serializers import (
     SpecialTimeSessionSerializer,
     TargetBehaviorSerializer,
 )
+from .unlock_engine import check_and_unlock_next_module
 
 
 class ChildViewSet(viewsets.ModelViewSet):
@@ -122,13 +131,13 @@ class ChildViewSet(viewsets.ModelViewSet):
             )
 
         # Validate count (max 3 total active behaviors)
-        existing_count = TargetBehavior.objects.filter(
-            child=child, active=True
-        ).count()
+        existing_count = TargetBehavior.objects.filter(child=child, active=True).count()
 
         if existing_count + len(behaviors_data) > 3:
             return Response(
-                {"behaviors": "A child can have a maximum of 3 active target behaviors."},
+                {
+                    "behaviors": "A child can have a maximum of 3 active target behaviors."
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -304,7 +313,15 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
 
         Returns modules with embedded progress data.
         """
+        import logging
+
+        logger = logging.getLogger(__name__)
+
         child_id = request.query_params.get("child_id")
+        logger.info(
+            f"🔍 Modules API called - child_id={child_id}, user={request.user.id}, is_guest={request.user.is_guest}"
+        )
+
         if not child_id:
             return Response(
                 {"error": "child_id query parameter is required."},
@@ -314,7 +331,9 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
         # Verify child belongs to current user
         try:
             child = Child.objects.get(id=child_id, parent=request.user)
+            logger.info(f"✅ Child found: {child.id}, parent={child.parent.id}")
         except Child.DoesNotExist:
+            logger.error(f"❌ Child {child_id} not found for user {request.user.id}")
             return Response(
                 {"error": "Child not found or access denied."},
                 status=status.HTTP_404_NOT_FOUND,
@@ -322,16 +341,22 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
 
         # Get all active modules
         modules = Module.objects.filter(is_active=True).order_by("order_index")
+        logger.info(f"📦 Found {modules.count()} active modules")
 
         # Get or create progress for each module
         results = []
         for module in modules:
+            logger.info(f"  Processing module: {module.key}")
             progress, created = ModuleProgress.objects.get_or_create(
                 child=child,
                 module=module,
                 defaults={
                     "state": "active",
-                    "counters": {"sessions_21d": 0, "liked_last6": 0, "goal_per_week": 5},
+                    "counters": {
+                        "sessions_21d": 0,
+                        "liked_last6": 0,
+                        "goal_per_week": 5,
+                    },
                 },
             )
 
@@ -348,7 +373,9 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
                 }
             )
 
+        logger.info(f"📊 Built results list with {len(results)} items")
         serializer = ModuleWithProgressSerializer(results, many=True)
+        logger.info(f"📤 Serializer data: {serializer.data}")
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["post", "get"], url_path="special-time/sessions")
@@ -373,7 +400,9 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
                 )
 
             # Create session
-            serializer = SpecialTimeSessionSerializer(data=request.data, context={"request": request})
+            serializer = SpecialTimeSessionSerializer(
+                data=request.data, context={"request": request}
+            )
             serializer.is_valid(raise_exception=True)
             session = serializer.save()
 
@@ -384,7 +413,11 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
                 module=module,
                 defaults={
                     "state": "active",
-                    "counters": {"sessions_21d": 0, "liked_last6": 0, "goal_per_week": 5},
+                    "counters": {
+                        "sessions_21d": 0,
+                        "liked_last6": 0,
+                        "goal_per_week": 5,
+                    },
                 },
             )
 
@@ -466,7 +499,9 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
             status=status.HTTP_200_OK,
         )
 
-    def _recompute_special_time_progress(self, child: Child, progress: ModuleProgress) -> ModuleProgress:
+    def _recompute_special_time_progress(
+        self, child: Child, progress: ModuleProgress
+    ) -> ModuleProgress:
         """
         Recompute Special Time progress counters and check unlock rules.
 
@@ -482,7 +517,9 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
         ).count()
 
         # Get last 6 sessions (regardless of date)
-        last_6_sessions = SpecialTimeSession.objects.filter(child=child).order_by("-datetime")[:6]
+        last_6_sessions = SpecialTimeSession.objects.filter(child=child).order_by(
+            "-datetime"
+        )[:6]
         liked_last6 = sum(1 for s in last_6_sessions if s.child_enjoyed)
 
         # Update counters
@@ -499,10 +536,15 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
             if progress.state != "passed":
                 progress.state = "passed"
                 progress.passed_at = timezone.now()
+                progress.save()
+
+                # Unlock next module
+                print(f"🎉 Module '{progress.module.title}' completed for {child}")
+                check_and_unlock_next_module(child, progress.module)
         else:
-            # Reset to active if was passed but no longer meets criteria
+            # Reset to unlocked if was passed but no longer meets criteria
             if progress.state == "passed":
-                progress.state = "active"
+                progress.state = "unlocked"
                 progress.passed_at = None
 
         progress.save()

@@ -6,12 +6,11 @@ Includes validators for registration, login, and password reset flows.
 
 from typing import Any, Dict
 
-from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from .models import User
 from .proxy.user_proxy import UserProxy
+from .utils import validate_password_with_i18n
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -106,11 +105,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         return value
 
     def validate_password(self, value: str) -> str:
-        """Validate password strength using Django's validators."""
-        try:
-            validate_password(value)
-        except DjangoValidationError as e:
-            raise serializers.ValidationError(list(e.messages))
+        """Validate password strength using Django's validators with i18n keys."""
+        validate_password_with_i18n(value)
         return value
 
     def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
@@ -253,11 +249,8 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     )
 
     def validate_password(self, value: str) -> str:
-        """Validate password strength using Django's validators."""
-        try:
-            validate_password(value)
-        except DjangoValidationError as e:
-            raise serializers.ValidationError(list(e.messages))
+        """Validate password strength using Django's validators with i18n keys."""
+        validate_password_with_i18n(value)
         return value
 
     def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
@@ -347,9 +340,7 @@ class ConvertGuestSerializer(serializers.Serializer):
     """
 
     email = serializers.EmailField(required=True)
-    username = serializers.CharField(
-        required=True, min_length=3, max_length=30
-    )
+    username = serializers.CharField(required=True, min_length=3, max_length=30)
     password = serializers.CharField(
         write_only=True, required=True, style={"input_type": "password"}
     )
@@ -364,7 +355,8 @@ class ConvertGuestSerializer(serializers.Serializer):
         existing_user = proxy.get_user_by_email(normalized_email)
 
         # Allow if email doesn't exist or belongs to the current user
-        if existing_user and existing_user.id != self.context.get("user").id:
+        current_user = self.context.get("user")
+        if existing_user and current_user and existing_user.id != current_user.id:
             raise serializers.ValidationError("auth.register.emailExists")
         return normalized_email
 
@@ -379,16 +371,14 @@ class ConvertGuestSerializer(serializers.Serializer):
         existing_user = proxy.get_user_by_username(value)
 
         # Allow if username doesn't exist or belongs to the current user
-        if existing_user and existing_user.id != self.context.get("user").id:
+        current_user = self.context.get("user")
+        if existing_user and current_user and existing_user.id != current_user.id:
             raise serializers.ValidationError("auth.register.usernameExists")
         return value
 
     def validate_password(self, value: str) -> str:
-        """Validate password strength using Django's validators."""
-        try:
-            validate_password(value)
-        except DjangoValidationError as e:
-            raise serializers.ValidationError(list(e.messages))
+        """Validate password strength using Django's validators with i18n keys."""
+        validate_password_with_i18n(value)
         return value
 
     def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:

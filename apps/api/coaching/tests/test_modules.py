@@ -28,9 +28,7 @@ class TestSpecialTimeUnlockRules:
         """Set up test fixtures."""
         self.client = APIClient()
         self.user = User.objects.create_user(
-            username="parent",
-            email="parent@test.com",
-            password="testpass123"
+            username="parent", email="parent@test.com", password="testpass123"
         )
         self.client.force_authenticate(user=self.user)
 
@@ -248,9 +246,7 @@ class TestSpecialTimeUnlockRules:
     def test_permissions_block_other_users(self):
         """Test that users can't access other users' children."""
         other_user = User.objects.create_user(
-            username="other",
-            email="other@test.com",
-            password="testpass123"
+            username="other", email="other@test.com", password="testpass123"
         )
         other_client = APIClient()
         other_client.force_authenticate(user=other_user)
@@ -333,7 +329,9 @@ class TestSpecialTimeUnlockRules:
 
         # Verify datetime was set (should be recent)
         assert session_data["datetime"] is not None
-        session_datetime = timezone.datetime.fromisoformat(session_data["datetime"].replace('Z', '+00:00'))
+        session_datetime = timezone.datetime.fromisoformat(
+            session_data["datetime"].replace("Z", "+00:00")
+        )
         now = timezone.now()
         time_diff = abs((now - session_datetime).total_seconds())
         assert time_diff < 5  # Should be within 5 seconds of now

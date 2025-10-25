@@ -143,12 +143,12 @@ class User(AbstractBaseUser, PermissionsMixin):
         ]
 
     def get_full_name(self) -> str:
-        """Return the username as the full name."""
-        return self.username
+        """Return the username as the full name. Returns 'Guest User' for guest accounts."""
+        return self.username if self.username else "Guest User"
 
     def get_short_name(self) -> str:
-        """Return the username as the short name."""
-        return self.username
+        """Return the username as the short name. Returns 'Guest' for guest accounts."""
+        return self.username if self.username else "Guest"
 
     @property
     def account_age(self) -> timedelta:

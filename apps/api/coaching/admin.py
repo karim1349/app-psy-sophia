@@ -13,7 +13,14 @@ from .models import (
 
 @admin.register(Child)
 class ChildAdmin(admin.ModelAdmin):
-    list_display = ["id", "first_name", "parent", "schooling_stage", "diagnosed_adhd", "created_at"]
+    list_display = [
+        "id",
+        "first_name",
+        "parent",
+        "schooling_stage",
+        "diagnosed_adhd",
+        "created_at",
+    ]
     list_filter = ["schooling_stage", "diagnosed_adhd", "created_at"]
     search_fields = ["first_name", "parent__email"]
     readonly_fields = ["created_at", "updated_at"]
@@ -61,7 +68,14 @@ class ModuleProgressAdmin(admin.ModelAdmin):
 
 @admin.register(SpecialTimeSession)
 class SpecialTimeSessionAdmin(admin.ModelAdmin):
-    list_display = ["id", "child", "datetime", "duration_min", "child_enjoyed", "created_at"]
+    list_display = [
+        "id",
+        "child",
+        "datetime",
+        "duration_min",
+        "child_enjoyed",
+        "created_at",
+    ]
     list_filter = ["child_enjoyed", "datetime", "created_at"]
     search_fields = ["child__first_name", "activity"]
     readonly_fields = ["created_at", "updated_at"]

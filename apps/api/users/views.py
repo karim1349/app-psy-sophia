@@ -27,25 +27,27 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from rest_framework import serializers, status
 from rest_framework.decorators import action
-from rest_framework.permissions import (AllowAny, BasePermission,
-                                        IsAuthenticated)
+from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import \
-    TokenRefreshView as SimpleJWTRefreshView
+from rest_framework_simplejwt.views import TokenRefreshView as SimpleJWTRefreshView
 
 
 from .models import User
 from .permissions import IsOwnerOrStaff
 from .proxy.user_proxy import UserProxy
-from .serializers import (ConvertGuestSerializer, LoginSerializer,
-                          RegisterSerializer, UserSerializer,
-                          UserUpdateSerializer)
-from .throttles import (LoginThrottle, PasswordResetThrottle,
-                        ResendVerificationThrottle)
+from .serializers import (
+    ConvertGuestSerializer,
+    LoginSerializer,
+    RegisterSerializer,
+    UserSerializer,
+    UserUpdateSerializer,
+)
+from .throttles import LoginThrottle, PasswordResetThrottle, ResendVerificationThrottle
+from .utils import validate_password_with_i18n
 
 
 class UserViewSet(GenericViewSet):
@@ -391,11 +393,8 @@ class UserViewSet(GenericViewSet):
                 return value
 
             def validate_new_password(self, value: str) -> str:
-                """Validate new password strength."""
-                try:
-                    validate_password(value)
-                except ValidationError as e:
-                    raise serializers.ValidationError(list(e.messages))
+                """Validate new password strength with i18n keys."""
+                validate_password_with_i18n(value)
                 return value
 
             def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
@@ -435,6 +434,7 @@ class UserViewSet(GenericViewSet):
         """
         # Create guest user with unique generated email/username
         import uuid
+
         guest_id = uuid.uuid4().hex[:12]
 
         user = User.objects.create(

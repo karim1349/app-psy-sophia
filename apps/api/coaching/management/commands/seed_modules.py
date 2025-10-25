@@ -21,42 +21,50 @@ class Command(BaseCommand):
         special_time, created = Module.objects.get_or_create(
             key="special_time",
             defaults={
-                "title": "Moment Spécial (Special Time)",
+                "title": "Moment Spécial",
                 "order_index": 1,
                 "is_active": True,
+                "completion_rules": {"sessions_21d": 6, "liked_last6": 4},
             },
         )
 
-        if created:
+        if not created:
+            # Update existing module with completion rules
+            special_time.completion_rules = {"sessions_21d": 6, "liked_last6": 4}
+            special_time.save()
+            self.stdout.write(
+                self.style.WARNING(f"⚠️  Updated module: {special_time.title}")
+            )
+        else:
             self.stdout.write(
                 self.style.SUCCESS(f"✅ Created module: {special_time.title}")
             )
-        else:
-            self.stdout.write(
-                self.style.WARNING(f"⚠️  Module already exists: {special_time.title}")
-            )
 
-        # Create Effective Commands module (skeleton)
+        # Create Effective Commands module
         effective_commands, created = Module.objects.get_or_create(
             key="effective_commands",
             defaults={
-                "title": "Ordres Efficaces (Effective Commands)",
+                "title": "Ordres Efficaces",
                 "order_index": 2,
-                "is_active": False,  # Not yet implemented
+                "is_active": True,
+                "completion_rules": {"objectives_count": 3, "days_per_objective": 5},
             },
         )
 
-        if created:
+        if not created:
+            # Update existing module
+            effective_commands.is_active = True
+            effective_commands.completion_rules = {
+                "objectives_count": 3,
+                "days_per_objective": 5,
+            }
+            effective_commands.save()
             self.stdout.write(
-                self.style.SUCCESS(
-                    f"✅ Created module: {effective_commands.title} (inactive)"
-                )
+                self.style.WARNING(f"⚠️  Updated module: {effective_commands.title}")
             )
         else:
             self.stdout.write(
-                self.style.WARNING(
-                    f"⚠️  Module already exists: {effective_commands.title}"
-                )
+                self.style.SUCCESS(f"✅ Created module: {effective_commands.title}")
             )
 
         self.stdout.write(self.style.SUCCESS("\n✅ Module seeding complete!"))

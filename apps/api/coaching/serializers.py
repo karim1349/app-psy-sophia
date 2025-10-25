@@ -41,9 +41,16 @@ class ChildSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at", "updated_at"]
 
     def create(self, validated_data: Dict[str, Any]) -> Child:
-        """Create child with parent set to the current user."""
+        """Create child with parent set to the current user and initialize module progress."""
         validated_data["parent"] = self.context["request"].user
-        return super().create(validated_data)
+        child = super().create(validated_data)
+
+        # Initialize module progress for the new child
+        from .unlock_engine import initialize_module_progress
+
+        initialize_module_progress(child)
+
+        return child
 
 
 class ScreenerSerializer(serializers.ModelSerializer):
@@ -332,9 +339,7 @@ class DashboardSerializer(serializers.Serializer):
                 mood.append(None)
 
             # Count Special Time sessions for this day
-            day_sessions = [
-                s for s in sessions if s.datetime.date() == current_date
-            ]
+            day_sessions = [s for s in sessions if s.datetime.date() == current_date]
             special_time_count.append(len(day_sessions))
 
             # Calculate enjoyment rate for this day
@@ -404,7 +409,13 @@ class ModuleProgressSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "module_key", "module_title", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "module_key",
+            "module_title",
+            "created_at",
+            "updated_at",
+        ]
 
 
 class SpecialTimeSessionSerializer(serializers.ModelSerializer):

@@ -32,7 +32,10 @@ class IsChildRelatedOwner(permissions.BasePermission):
     """
 
     def has_object_permission(
-        self, request: Request, view: View, obj: Screener | TargetBehavior | DailyCheckin
+        self,
+        request: Request,
+        view: View,
+        obj: Screener | TargetBehavior | DailyCheckin,
     ) -> bool:
         """Check if user owns the child related to this object."""
         return obj.child.parent == request.user

@@ -18,17 +18,20 @@ from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 
 from .models import MediaFile
-from .serializers import (ConfirmUploadSerializer,
-                          CreateUploadRequestSerializer,
-                          CreateUploadResponseSerializer, MediaFileSerializer)
+from .serializers import (
+    ConfirmUploadSerializer,
+    CreateUploadRequestSerializer,
+    CreateUploadResponseSerializer,
+    MediaFileSerializer,
+)
 from .utils.images import cf_image_url_from_key, origin_url_from_key
 
 # MIME type whitelist for uploads
 ALLOWED_MIME_TYPES = {
-    'image/jpeg',
-    'image/png',
-    'image/webp',
-    'image/avif',
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/avif",
 }
 
 # Max file size: 10MB
@@ -37,7 +40,8 @@ MAX_FILE_SIZE_BYTES = 10_000_000
 
 class MediaUploadThrottle(UserRateThrottle):
     """Custom throttle for media upload endpoints."""
-    rate = '10/hour'
+
+    rate = "10/hour"
 
 
 def get_s3_client() -> boto3.client:
@@ -48,10 +52,10 @@ def get_s3_client() -> boto3.client:
         Configured boto3 S3 client
     """
     return boto3.client(
-        's3',
+        "s3",
         endpoint_url=settings.AWS_S3_ENDPOINT_URL,
-        aws_access_key_id=getattr(settings, 'AWS_ACCESS_KEY_ID', None),
-        aws_secret_access_key=getattr(settings, 'AWS_SECRET_ACCESS_KEY', None),
+        aws_access_key_id=getattr(settings, "AWS_ACCESS_KEY_ID", None),
+        aws_secret_access_key=getattr(settings, "AWS_SECRET_ACCESS_KEY", None),
         region_name=settings.AWS_S3_REGION_NAME,
     )
 
@@ -85,19 +89,19 @@ class R2CreateUploadView(APIView):
         serializer = CreateUploadRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        filename = serializer.validated_data['filename']
-        content_type = serializer.validated_data['content_type']
+        filename = serializer.validated_data["filename"]
+        content_type = serializer.validated_data["content_type"]
 
         # Validate MIME type
         if content_type not in ALLOWED_MIME_TYPES:
             allowed = ", ".join(ALLOWED_MIME_TYPES)
             return Response(
-                {'error': f'Content type not allowed. Allowed types: {allowed}'},
+                {"error": f"Content type not allowed. Allowed types: {allowed}"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Build object key: users/<user_id>/<timestamp>_<filename>
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         key = f"users/{request.user.id}/{timestamp}_{filename}"
 
         try:
@@ -108,11 +112,11 @@ class R2CreateUploadView(APIView):
                 Bucket=settings.AWS_STORAGE_BUCKET_NAME,
                 Key=key,
                 Fields={
-                    'Content-Type': content_type,
+                    "Content-Type": content_type,
                 },
                 Conditions=[
-                    {'Content-Type': content_type},
-                    ['content-length-range', 0, MAX_FILE_SIZE_BYTES],
+                    {"Content-Type": content_type},
+                    ["content-length-range", 0, MAX_FILE_SIZE_BYTES],
                 ],
                 ExpiresIn=600,  # 10 minutes
             )
@@ -120,15 +124,15 @@ class R2CreateUploadView(APIView):
             # Build response URLs
             origin = origin_url_from_key(key)
             cf_url = None
-            if content_type.startswith('image/'):
-                cf_url = cf_image_url_from_key(key, width=800, fit='cover', fmt='auto')
+            if content_type.startswith("image/"):
+                cf_url = cf_image_url_from_key(key, width=800, fit="cover", fmt="auto")
 
             response_data = {
-                'key': key,
-                'upload_url': presigned_post['url'],
-                'upload_fields': presigned_post['fields'],
-                'origin_url': origin,
-                'cf_image_url': cf_url,
+                "key": key,
+                "upload_url": presigned_post["url"],
+                "upload_fields": presigned_post["fields"],
+                "origin_url": origin,
+                "cf_image_url": cf_url,
             }
 
             response_serializer = CreateUploadResponseSerializer(data=response_data)
@@ -138,7 +142,7 @@ class R2CreateUploadView(APIView):
 
         except ClientError as e:
             return Response(
-                {'error': f'Failed to generate upload URL: {str(e)}'},
+                {"error": f"Failed to generate upload URL: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -168,13 +172,13 @@ class ConfirmUploadView(APIView):
         serializer = ConfirmUploadSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        key = serializer.validated_data['key']
-        mime_type = serializer.validated_data['mime_type']
+        key = serializer.validated_data["key"]
+        mime_type = serializer.validated_data["mime_type"]
 
         # Validate MIME type
         if mime_type not in ALLOWED_MIME_TYPES:
             return Response(
-                {'error': 'Invalid MIME type'},
+                {"error": "Invalid MIME type"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -187,24 +191,24 @@ class ConfirmUploadView(APIView):
                 Key=key,
             )
 
-            content_length = head_response.get('ContentLength', 0)
-            actual_content_type = head_response.get('ContentType', mime_type)
+            content_length = head_response.get("ContentLength", 0)
+            actual_content_type = head_response.get("ContentType", mime_type)
 
             # Verify content type matches
             if actual_content_type not in ALLOWED_MIME_TYPES:
                 return Response(
-                    {'error': 'Uploaded file MIME type does not match allowed types'},
+                    {"error": "Uploaded file MIME type does not match allowed types"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
             # Determine kind
-            kind = 'image' if mime_type.startswith('image/') else 'file'
+            kind = "image" if mime_type.startswith("image/") else "file"
 
             # Optional: probe image dimensions (requires Pillow)
             width: Optional[int] = None
             height: Optional[int] = None
 
-            if kind == 'image':
+            if kind == "image":
                 try:
                     from PIL import Image
 
@@ -212,9 +216,9 @@ class ConfirmUploadView(APIView):
                     response = s3_client.get_object(
                         Bucket=settings.AWS_STORAGE_BUCKET_NAME,
                         Key=key,
-                        Range='bytes=0-50000',  # First 50KB should be enough
+                        Range="bytes=0-50000",  # First 50KB should be enough
                     )
-                    img_data = response['Body'].read()
+                    img_data = response["Body"].read()
                     img = Image.open(io.BytesIO(img_data))
                     width, height = img.size
                 except (ImportError, Exception):
@@ -225,14 +229,14 @@ class ConfirmUploadView(APIView):
             media_file, created = MediaFile.objects.update_or_create(
                 key=key,
                 defaults={
-                    'owner': request.user,
-                    'kind': kind,
-                    'visibility': 'public',
-                    'mime_type': actual_content_type,
-                    'size_bytes': content_length,
-                    'width': width,
-                    'height': height,
-                    'uploaded_at': timezone.now(),
+                    "owner": request.user,
+                    "kind": kind,
+                    "visibility": "public",
+                    "mime_type": actual_content_type,
+                    "size_bytes": content_length,
+                    "width": width,
+                    "height": height,
+                    "uploaded_at": timezone.now(),
                 },
             )
 
@@ -245,12 +249,12 @@ class ConfirmUploadView(APIView):
 
         except s3_client.exceptions.NoSuchKey:
             return Response(
-                {'error': 'File not found in storage'},
+                {"error": "File not found in storage"},
                 status=status.HTTP_404_NOT_FOUND,
             )
         except ClientError as e:
             return Response(
-                {'error': f'Failed to verify upload: {str(e)}'},
+                {"error": f"Failed to verify upload: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 

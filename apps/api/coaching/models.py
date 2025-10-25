@@ -288,6 +288,15 @@ class Module(models.Model):
         help_text=_("Order in which modules are presented"),
     )
 
+    completion_rules = models.JSONField(
+        _("completion rules"),
+        default=dict,
+        blank=True,
+        help_text=_(
+            "Criteria to mark module as passed (e.g., {'sessions_21d': 6, 'liked_last6': 4})"
+        ),
+    )
+
     is_active = models.BooleanField(
         _("is active"),
         default=True,
@@ -321,12 +330,12 @@ class ModuleProgress(models.Model):
     """
     Tracks a child's progress through a module.
 
-    State transitions: locked → active → passed
+    State transitions: locked → unlocked → passed
     """
 
     STATE_CHOICES = [
         ("locked", _("Locked - prerequisites not met")),
-        ("active", _("Active - currently working on this module")),
+        ("unlocked", _("Unlocked - available to start")),
         ("passed", _("Passed - module completed successfully")),
     ]
 
@@ -348,7 +357,7 @@ class ModuleProgress(models.Model):
         _("state"),
         max_length=10,
         choices=STATE_CHOICES,
-        default="active",
+        default="locked",
         help_text=_("Current state of this module for this child"),
     )
 
