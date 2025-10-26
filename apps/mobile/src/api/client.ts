@@ -3,23 +3,19 @@
  */
 
 import Constants from 'expo-constants';
+import { HttpError } from '@app-psy-sophia/api-client';
+import { config } from '../config/environment';
 import { tokenStorage } from '../lib/storage';
 
-const API_URL = Constants.expoConfig?.extra?.apiUrl || 'https://app-psy-sophia.onrender.com';
+// Use environment-based API URL
+const API_URL = config.apiUrl;
 
-export class APIError extends Error {
-  constructor(
-    message: string,
-    public status: number,
-    public data?: any
-  ) {
-    super(message);
-    this.name = 'APIError';
-  }
-}
+// Re-export HttpError for convenience
+export { HttpError } from '@app-psy-sophia/api-client';
 
 interface RequestConfig extends RequestInit {
   skipAuth?: boolean;
+  debug?: boolean;
 }
 
 /**
@@ -44,10 +40,12 @@ export async function apiFetch<T = any>(
     }
   }
 
-  const url = endpoint.startsWith('http') ? endpoint : `${API_URL}/api${endpoint}`;
+  const url = endpoint.startsWith('http') ? endpoint : `${API_URL}${endpoint}`;
 
   // Log API calls in development
-  console.log(`📡 API ${fetchConfig.method || 'GET'} ${url}`);
+  if (config.debug) {
+    console.log(`📡 API ${fetchConfig.method || 'GET'} ${url}`);
+  }
 
   const response = await fetch(url, {
     ...fetchConfig,
@@ -56,11 +54,17 @@ export async function apiFetch<T = any>(
 
   // Handle 401 Unauthorized - try to refresh token
   if (response.status === 401 && !skipAuth) {
-    const refreshed = await refreshAccessToken();
-    if (refreshed) {
-      // Retry request with new token
-      return apiFetch(endpoint, config);
+    // Only attempt refresh if we have a refresh token
+    const refreshToken = await tokenStorage.getRefreshToken();
+    if (refreshToken) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        // Retry request with new token
+        return apiFetch(endpoint, config);
+      }
     }
+    // If no refresh token or refresh failed, clear tokens to force re-auth
+    await tokenStorage.clearTokens();
   }
 
   // Parse response
@@ -72,14 +76,28 @@ export async function apiFetch<T = any>(
     data = await response.text();
   }
 
+  console.log(`📥 Response status ${response.status} for ${url}`);
+  if (contentType?.includes('application/json') && config.debug) {
+    console.log(`📥 Response data:`, JSON.stringify(data, null, 2));
+  }
+
   // Handle errors
   if (!response.ok) {
     console.error(`❌ API Error ${response.status}: ${url}`);
     console.error('Response:', data);
-    throw new APIError(
+
+    // Extract error code from response (Django REST framework format)
+    const errorCode = data?.code || (data?.detail?.includes('token') ? 'token_not_valid' : undefined);
+
+    // DRF returns validation errors directly in the response body
+    // For 400/422, the entire data object IS the errors structure (e.g., {non_field_errors: [...], email: [...]})
+    const errors = (response.status === 400 || response.status === 422) && typeof data === 'object' ? data : data?.errors;
+
+    throw new HttpError(
       data?.message || data?.detail || 'Request failed',
       response.status,
-      data
+      errors,
+      errorCode
     );
   }
 

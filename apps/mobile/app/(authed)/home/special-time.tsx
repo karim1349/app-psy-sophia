@@ -25,13 +25,11 @@ import {
 } from '../../../src/api/modules';
 import { appStorage } from '../../../src/lib/storage';
 import { Button } from '../../../src/components/Button';
-import { useToast } from '@app-psy-sophia/ui';
 
 export default function SpecialTimeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [childId, setChildId] = React.useState<number | null>(null);
-  const { showToast } = useToast();
 
   // Form state
   const [durationMin, setDurationMin] = useState('15');
@@ -43,6 +41,17 @@ export default function SpecialTimeScreen() {
   // Load child ID
   React.useEffect(() => {
     async function loadChildId() {
+      // Ensure we have auth tokens before loading
+      const { isAuthenticated } = await import('../../../src/api/auth');
+      const hasAuth = await isAuthenticated();
+
+      if (!hasAuth) {
+        console.error('❌ No auth token. Redirecting to onboarding.');
+        await appStorage.clearAppData();
+        router.replace('/(public)/onboarding/age');
+        return;
+      }
+
       const id = await appStorage.getChildId();
       setChildId(id);
     }
@@ -50,19 +59,45 @@ export default function SpecialTimeScreen() {
   }, []);
 
   // Fetch modules and progress
-  const { data: modules } = useQuery({
+  const { data: modules, isLoading: isLoadingModules, error: modulesError } = useQuery({
     queryKey: ['modules', childId],
-    queryFn: () => getModules(childId!),
+    queryFn: () => {
+      console.log('🔄 Fetching modules for child:', childId);
+      return getModules(childId!);
+    },
     enabled: !!childId,
+    retry: 2,
   });
+
+  React.useEffect(() => {
+    console.log('🔍 Query state - isLoading:', isLoadingModules, 'childId:', childId, 'enabled:', !!childId);
+    if (modulesError) {
+      console.error('❌ Error fetching modules:', modulesError);
+    }
+    if (modules !== undefined) {
+      console.log('📦 Modules received:', modules);
+      console.log('📦 Module count:', modules.length);
+      console.log('📦 Module keys:', modules.map(m => m.key));
+      console.log('📦 Full module data:', JSON.stringify(modules, null, 2));
+    }
+  }, [modules, modulesError, isLoadingModules, childId]);
 
   const specialTimeModule = modules?.find((m) => m.key === 'special_time');
 
+  React.useEffect(() => {
+    if (specialTimeModule) {
+      console.log('✅ Special Time module found:', specialTimeModule);
+    } else if (modules && modules.length > 0) {
+      console.log('❌ Special Time module NOT found in:', modules);
+    }
+  }, [specialTimeModule, modules]);
+
   // Fetch sessions
-  const { data: sessionsData } = useQuery({
+  const { data: sessionsData, isLoading: isLoadingSessions } = useQuery({
     queryKey: ['special-time-sessions', childId],
     queryFn: () => getSpecialTimeSessions(childId!, '21d'),
     enabled: !!childId,
+    retry: 2,
   });
 
   const sessions = sessionsData?.results || [];
@@ -80,19 +115,11 @@ export default function SpecialTimeScreen() {
       setNotes('');
       setDurationMin('15');
       setChildEnjoyed(true);
-
-      showToast({
-        type: 'success',
-        title: 'Session enregistrée',
-        message: 'Votre Moment Spécial a bien été enregistré !',
-      });
     },
-    onError: (error: any) => {
-      showToast({
-        type: 'error',
-        title: 'Erreur',
-        message: error.message || 'Impossible de sauvegarder la session.',
-      });
+    // Success and error handling done globally by QueryClient
+    meta: {
+      showSuccessToast: true,
+      action: 'special-time-session-created',
     },
   });
 
@@ -104,33 +131,18 @@ export default function SpecialTimeScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['modules'] });
-      showToast({
-        type: 'success',
-        title: 'Objectif mis à jour',
-        message: `Votre objectif est maintenant de ${goalPerWeek} sessions par semaine.`,
-      });
+    },
+    // Success and error handling done globally by QueryClient
+    meta: {
+      showSuccessToast: true,
+      action: 'module-goal-updated',
     },
   });
 
   const handleSubmit = () => {
-    if (!childId) {
-      showToast({
-        type: 'error',
-        title: 'Erreur',
-        message: 'Aucun enfant sélectionné.',
-      });
-      return;
-    }
+    if (!childId) return;
 
     const duration = parseInt(durationMin, 10);
-    if (isNaN(duration) || duration < 5 || duration > 60) {
-      showToast({
-        type: 'error',
-        title: 'Erreur',
-        message: 'La durée doit être entre 5 et 60 minutes.',
-      });
-      return;
-    }
 
     createSessionMutation.mutate({
       child: childId,
@@ -142,22 +154,30 @@ export default function SpecialTimeScreen() {
   };
 
   const handleUpdateGoal = () => {
-    if (goalPerWeek < 1 || goalPerWeek > 7) {
-      showToast({
-        type: 'error',
-        title: 'Erreur',
-        message: 'L\'objectif doit être entre 1 et 7 sessions par semaine.',
-      });
-      return;
-    }
+    // Backend will handle validation
     updateGoalMutation.mutate(goalPerWeek);
   };
 
-  if (!childId || !specialTimeModule) {
+  // Show loading while child ID is being loaded or queries are running
+  if (!childId || isLoadingModules) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loading}>
           <Text>Chargement...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // If module not found after loading, show error
+  if (!specialTimeModule) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loading}>
+          <Text style={styles.errorText}>Module introuvable</Text>
+          <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
+            <Text style={styles.backText}>← Retour</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -376,6 +396,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#EF4444',
+    fontWeight: '600',
   },
   header: {
     padding: 24,

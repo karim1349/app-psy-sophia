@@ -1,5 +1,5 @@
 /**
- * Age/Schooling stage selection screen
+ * TDAH symptom screening screen
  */
 
 import React, { useState } from 'react';
@@ -8,49 +8,43 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from '../../../src/components/Button';
-import { createChild } from '../../../src/api/onboarding';
-import { appStorage } from '../../../src/lib/storage';
-import type { SchoolingStage } from '../../../src/types/api';
+import { updateChild } from '../../../src/api/onboarding';
+import type { DiagnosedADHD } from '../../../src/types/api';
 
-const STAGES: { value: SchoolingStage; label: string; description: string }[] = [
+const TDAH_OPTIONS: { value: DiagnosedADHD; label: string; description: string }[] = [
   {
-    value: 'preK',
-    label: 'Préscolaire (0-6 ans)',
-    description: 'Maternelle ou avant',
+    value: 'yes',
+    label: 'Oui',
+    description: 'Mon enfant présente des symptômes de TDAH',
   },
   {
-    value: '6-13',
-    label: 'Primaire/Collège (6-13 ans)',
-    description: 'Élémentaire et collège',
-  },
-  {
-    value: '13-18',
-    label: 'Secondaire (13-18 ans)',
-    description: 'Lycée',
+    value: 'no',
+    label: 'Non',
+    description: 'Mon enfant ne présente pas de symptômes de TDAH',
   },
 ];
 
-export default function AgeScreen() {
+export default function TDAHScreen() {
   const router = useRouter();
-  const [selectedStage, setSelectedStage] = useState<SchoolingStage | null>(null);
+  const [selectedOption, setSelectedOption] = useState<DiagnosedADHD | null>(null);
 
-  const createChildMutation = useMutation({
-    mutationFn: (stage: SchoolingStage) =>
-      createChild({
-        schooling_stage: stage,
-        diagnosed_adhd: 'unknown',
-      }),
-    onSuccess: async (data) => {
-      // Store child ID
-      await appStorage.setChildId(data.id);
-      // Navigate to TDAH screen
-      router.push('/(public)/onboarding/tdah');
+  const updateChildMutation = useMutation({
+    mutationFn: (diagnosedAdhd: DiagnosedADHD) => updateChild({ diagnosed_adhd: diagnosedAdhd }),
+    onSuccess: async (_, diagnosedAdhd) => {
+      // Navigate based on selection
+      if (diagnosedAdhd === 'yes') {
+        // If TDAH symptoms present, show features
+        router.push('/(public)/onboarding/features');
+      } else {
+        // If no TDAH symptoms, go to screener
+        router.push('/(public)/onboarding/screener');
+      }
     },
   });
 
   const handleNext = () => {
-    if (selectedStage) {
-      createChildMutation.mutate(selectedStage);
+    if (selectedOption) {
+      updateChildMutation.mutate(selectedOption);
     }
   };
 
@@ -59,38 +53,38 @@ export default function AgeScreen() {
       <View style={styles.content}>
         <View style={styles.header}>
           <Image source={require('../../../assets/images/logo.png')} style={styles.logo} />
-          <Text style={styles.title}>Quel âge a votre enfant ?</Text>
+          <Text style={styles.title}>Symptômes de TDAH</Text>
           <Text style={styles.subtitle}>
-            Choisissez le niveau scolaire correspondant
+            Votre enfant présente-t-il des symptômes de TDAH ?
           </Text>
         </View>
 
         <View style={styles.options}>
-          {STAGES.map((stage) => (
+          {TDAH_OPTIONS.map((option) => (
             <TouchableOpacity
-              key={stage.value}
+              key={option.value}
               style={[
                 styles.option,
-                selectedStage === stage.value && styles.optionSelected,
+                selectedOption === option.value && styles.optionSelected,
               ]}
-              onPress={() => setSelectedStage(stage.value)}
+              onPress={() => setSelectedOption(option.value)}
               activeOpacity={0.7}
             >
               <Text
                 style={[
                   styles.optionLabel,
-                  selectedStage === stage.value && styles.optionLabelSelected,
+                  selectedOption === option.value && styles.optionLabelSelected,
                 ]}
               >
-                {stage.label}
+                {option.label}
               </Text>
               <Text
                 style={[
                   styles.optionDescription,
-                  selectedStage === stage.value && styles.optionDescriptionSelected,
+                  selectedOption === option.value && styles.optionDescriptionSelected,
                 ]}
               >
-                {stage.description}
+                {option.description}
               </Text>
             </TouchableOpacity>
           ))}
@@ -100,8 +94,8 @@ export default function AgeScreen() {
           <Button
             title="Suivant"
             onPress={handleNext}
-            disabled={!selectedStage}
-            loading={createChildMutation.isPending}
+            disabled={!selectedOption}
+            loading={updateChildMutation.isPending}
             size="large"
           />
         </View>
@@ -139,6 +133,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: '#6B7280',
+    textAlign: 'center',
   },
   options: {
     flex: 1,

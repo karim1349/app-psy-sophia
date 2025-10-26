@@ -3,17 +3,16 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Image } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import { Button } from '../../../src/components/Button';
 import { appStorage } from '../../../src/lib/storage';
-import { useToast } from '@app-psy-sophia/ui';
 
 export default function NotificationsScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const { showToast } = useToast();
 
   const requestPermissionsAndFinish = async () => {
     setLoading(true);
@@ -56,11 +55,6 @@ export default function NotificationsScreen() {
       router.push('/(public)/onboarding/account');
     } catch (error) {
       console.error('Notification setup error:', error);
-      showToast({
-        type: 'error',
-        title: 'Erreur',
-        message: 'Une erreur est survenue. Vous pouvez activer les notifications plus tard.',
-      });
 
       // Still continue to account creation
       router.push('/(public)/onboarding/account');

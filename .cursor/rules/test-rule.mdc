@@ -1,0 +1,6 @@
+---
+alwaysApply: true
+---
+* Always check for Context7 documentation
+
+* Always set text translations in i18n and avoid hard coding text directly in components. 

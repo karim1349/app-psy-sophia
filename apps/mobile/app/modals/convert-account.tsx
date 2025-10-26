@@ -1,5 +1,6 @@
 /**
- * Account creation screen - Convert guest to full account
+ * Guest account conversion screen
+ * Preserves all existing child data using the convertGuest API
  */
 
 import React, { useEffect } from 'react';
@@ -12,12 +13,12 @@ import {
   Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { isGuestUser } from '../../../src/api/auth';
-import { appStorage } from '../../../src/lib/storage';
+import { isGuestUser } from '../../src/api/auth';
+import { appStorage } from '../../src/lib/storage';
 import { useI18n } from '@app-psy-sophia/i18n';
-import { GuestConversionForm } from '../../../src/components/GuestConversionForm';
+import { GuestConversionForm } from '../../src/components/GuestConversionForm';
 
-export default function AccountScreen() {
+export default function ConvertAccountScreen() {
   const router = useRouter();
   const { t } = useI18n();
 
@@ -31,6 +32,13 @@ export default function AccountScreen() {
         console.log('✅ User is already a full account, redirecting to home');
         await appStorage.setOnboardingDone(true);
         router.replace('/(authed)/home');
+      } else if (isGuest === null) {
+        // Not authenticated, redirect to login
+        console.log('❌ User not authenticated, redirecting to login');
+        router.replace('/(public)/login');
+      } else {
+        // User is a guest, show conversion form
+        console.log('👤 User is a guest, showing conversion form');
       }
     }
 
@@ -43,16 +51,15 @@ export default function AccountScreen() {
     router.replace('/(authed)/home');
   };
 
-  const handleSkip = async () => {
-    await appStorage.setOnboardingDone(true);
-    router.replace('/(authed)/home');
+  const handleCancel = () => {
+    router.back();
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.content}>
         <View style={styles.header}>
-          <Image source={require('../../../assets/images/logo.png')} style={styles.logo} />
+          <Image source={require('../../assets/images/logo.png')} style={styles.logo} />
           <Text style={styles.title}>{t('auth.register.title')}</Text>
           <Text style={styles.subtitle}>
             {t('auth.register.subtitle')}
@@ -61,9 +68,9 @@ export default function AccountScreen() {
 
         <GuestConversionForm
           onSuccess={handleConversionSuccess}
-          onCancel={handleSkip}
-          showSkipButton={true}
-          showLoginPrompt={true}
+          onCancel={handleCancel}
+          showSkipButton={false}
+          showLoginPrompt={false}
           showInfoBox={true}
         />
       </ScrollView>

@@ -78,7 +78,7 @@ export interface ConvertGuestRequest {
   password_confirm: string;
 }
 
-export type ModuleState = 'locked' | 'active' | 'passed';
+export type ModuleState = 'locked' | 'unlocked' | 'passed';
 
 export interface Module {
   id: number;

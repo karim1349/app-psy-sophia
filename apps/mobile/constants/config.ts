@@ -1,13 +1,18 @@
 /**
  * App configuration constants
+ * 
+ * @deprecated Use src/config/environment.ts instead
+ * This file is kept for backward compatibility
  */
 
+import { config as envConfig } from '../src/config/environment';
+
 export const config = {
-  // API Configuration
-  baseURL: process.env.EXPO_PUBLIC_API_BASE || 'https://app-psy-sophia.onrender.com/api',
+  // API Configuration - now uses environment-based config
+  baseURL: envConfig.apiUrl,
   
   // Environment
-  isDevelopment: __DEV__,
+  isDevelopment: envConfig.isDevelopment,
   
   // App Settings
   defaultPageSize: 20,

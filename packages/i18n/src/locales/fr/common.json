@@ -23,7 +23,8 @@
       "registerButton": "Créer un compte",
       "registering": "Création du compte...",
       "hasAccount": "Vous avez déjà un compte ?",
-      "signIn": "Se connecter"
+      "signIn": "Se connecter",
+      "accountInfo": "Vos données de suivi sont automatiquement sauvegardées. La création d'un compte permet d'y accéder depuis n'importe quel appareil."
     },
     "forgotPassword": {
       "title": "Mot de passe oublié ?",
@@ -60,6 +61,8 @@
     }
   },
   "common": {
+    "back": "Retour",
+    "skip": "Continuer sans compte"
   },
   "validation": {
     "required": "Ce champ est requis",

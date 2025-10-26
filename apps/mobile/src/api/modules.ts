@@ -15,7 +15,12 @@ import type {
  * Get all modules with progress for a child
  */
 export async function getModules(childId: number): Promise<ModuleWithProgress[]> {
-  return apiFetch<ModuleWithProgress[]>(`/api/modules/?child_id=${childId}`);
+  console.log('📡 getModules called with childId:', childId);
+  const url = `/api/modules/?child_id=${childId}`;
+  console.log('📡 Full URL:', url);
+  const result = await apiFetch<ModuleWithProgress[]>(url);
+  console.log('📡 getModules response:', result);
+  return result;
 }
 
 /**

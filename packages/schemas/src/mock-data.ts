@@ -21,6 +21,7 @@ export const mockUsers: User[] = [
     username: 'ahmed_m',
     created_at: '2024-01-15T10:30:00Z',
     is_active: true,
+    is_guest: false,
   },
   {
     id: 2,
@@ -28,6 +29,7 @@ export const mockUsers: User[] = [
     username: 'fatima_a',
     created_at: '2024-01-20T14:15:00Z',
     is_active: true,
+    is_guest: false,
   },
   {
     id: 3,
@@ -35,5 +37,6 @@ export const mockUsers: User[] = [
     username: 'youssef_k',
     created_at: '2024-02-01T09:45:00Z',
     is_active: true,
+    is_guest: false,
   },
 ];

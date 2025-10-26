@@ -20,6 +20,7 @@ export interface User {
   username: string;
   created_at: Timestamp;
   is_active: boolean;
+  is_guest: boolean;
 }
 
 export interface UserProfile extends User {

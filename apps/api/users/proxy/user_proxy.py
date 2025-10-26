@@ -12,6 +12,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet
 from rest_framework_simplejwt.tokens import RefreshToken
+from ..jwt_serializers import CustomRefreshToken
 
 from ..models import User
 
@@ -104,7 +105,7 @@ class UserProxy:
 
     def generate_tokens(self, user: User) -> Dict[str, str]:
         """Generate authentication tokens for a user."""
-        refresh = RefreshToken.for_user(user)
+        refresh = CustomRefreshToken.for_user(user)
 
         return {
             "refresh": str(refresh),

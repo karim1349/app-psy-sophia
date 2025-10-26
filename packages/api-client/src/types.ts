@@ -7,6 +7,8 @@ export interface User {
   email: string;
   username: string;
   created_at: string;
+  is_active: boolean;
+  is_guest: boolean;
 }
 
 export interface AuthResponse {

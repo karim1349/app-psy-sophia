@@ -18,5 +18,9 @@
     "python.testing.pytestArgs": [
         "apps/api"
     ],
-    "python.testing.cwd": "${workspaceFolder}/apps/api"
+    "python.testing.cwd": "${workspaceFolder}/apps/api",
+    "cursorpyright.analysis.autoImportCompletions": true,
+    "cursorpyright.analysis.extraPaths": [
+        "./apps/api"
+    ]
 }

@@ -85,3 +85,30 @@ export async function isAuthenticated(): Promise<boolean> {
   const accessToken = await tokenStorage.getAccessToken();
   return !!accessToken;
 }
+
+/**
+ * Check if the current user is a guest
+ * Returns null if not authenticated, undefined if is_guest field is missing from token
+ */
+export async function isGuestUser(): Promise<boolean | null | undefined> {
+  const accessToken = await tokenStorage.getAccessToken();
+
+  if (!accessToken) {
+    return null;
+  }
+
+  try {
+    // Decode JWT payload
+    const payload = JSON.parse(atob(accessToken.split('.')[1]));
+    
+    // Check if is_guest field exists in token
+    if (payload.is_guest === undefined) {
+      return undefined; // Field missing from token
+    }
+    
+    return payload.is_guest === true;
+  } catch (error) {
+    console.error('Failed to decode token:', error);
+    return null;
+  }
+}

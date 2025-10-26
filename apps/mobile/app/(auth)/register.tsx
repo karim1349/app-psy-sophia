@@ -13,11 +13,13 @@ import { RegisterSchema, type RegisterInput } from '@app-psy-sophia/schemas';
 import { useRegister } from '@app-psy-sophia/queries';
 import { useRouter } from 'expo-router';
 import { Button, FormField, TextField, useTheme } from '@app-psy-sophia/ui';
+import { useI18n } from '@app-psy-sophia/i18n';
 import { config } from '@/constants/config';
 
 export default function RegisterScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const { t } = useI18n();
   const register_mutation = useRegister({
     env: 'native',
     baseURL: config.baseURL,
@@ -51,8 +53,8 @@ export default function RegisterScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Create account</Text>
-          <Text style={styles.subtitle}>Sign up to start</Text>
+          <Text style={styles.title}>{t('auth.register.title')}</Text>
+          <Text style={styles.subtitle}>{t('auth.register.subtitle')}</Text>
         </View>
 
         <View style={styles.form}>
@@ -60,7 +62,7 @@ export default function RegisterScreen() {
             control={control}
             name="username"
             render={({ field: { onChange, onBlur, value } }) => (
-              <FormField label="Username" error={errors.username?.message}>
+              <FormField label={t('auth.register.username')} error={errors.username?.message}>
                 <TextField
                   value={value}
                   onChangeText={onChange}
@@ -76,7 +78,7 @@ export default function RegisterScreen() {
             control={control}
             name="email"
             render={({ field: { onChange, onBlur, value } }) => (
-              <FormField label="Email" error={errors.email?.message}>
+              <FormField label={t('auth.register.email')} error={errors.email?.message}>
                 <TextField
                   value={value}
                   onChangeText={onChange}
@@ -93,7 +95,7 @@ export default function RegisterScreen() {
             control={control}
             name="password"
             render={({ field: { onChange, onBlur, value } }) => (
-              <FormField label="Password" error={errors.password?.message} hint="Must be at least 8 characters">
+              <FormField label={t('auth.register.password')} error={errors.password?.message} hint={t('auth.register.passwordHint')}>
                 <TextField
                   value={value}
                   onChangeText={onChange}
@@ -110,7 +112,7 @@ export default function RegisterScreen() {
             control={control}
             name="passwordConfirm"
             render={({ field: { onChange, onBlur, value } }) => (
-              <FormField label="Confirm Password" error={errors.passwordConfirm?.message}>
+              <FormField label={t('auth.register.passwordConfirm')} error={errors.passwordConfirm?.message}>
                 <TextField
                   value={value}
                   onChangeText={onChange}
@@ -125,7 +127,7 @@ export default function RegisterScreen() {
 
 
           <Button
-            title="Sign up"
+            title={t('auth.register.registerButton')}
             onPress={handleSubmit(onSubmit)}
             loading={register_mutation.isPending}
             disabled={register_mutation.isPending}
@@ -134,9 +136,9 @@ export default function RegisterScreen() {
           />
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
+            <Text style={styles.footerText}>{t('auth.register.hasAccount')} </Text>
             <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
-              <Text style={styles.footerLink}>Login</Text>
+              <Text style={styles.footerLink}>{t('auth.register.signIn')}</Text>
             </TouchableOpacity>
           </View>
         </View>

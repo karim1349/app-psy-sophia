@@ -12,6 +12,7 @@ export interface User {
   username: string;
   created_at: Timestamp;
   is_active: boolean;
+  is_guest: boolean;
 }
 
 // Authentication request/response interfaces

@@ -6,13 +6,14 @@ import 'react-native-reanimated';
 import { useColorScheme, View, ActivityIndicator, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useThemeStore } from '@app-psy-sophia/state';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { I18nProvider } from '@/components/providers/I18nProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { ToastProvider, ToastContainer } from '@app-psy-sophia/ui';
 import { useEffect, useState } from 'react';
-import { ensureGuestSession } from '../src/api/auth';
+import { ensureGuestSession, isGuestUser } from '../src/api/auth';
 import { appStorage } from '../src/lib/storage';
 
 export const unstable_settings = {
@@ -33,6 +34,9 @@ export default function RootLayout() {
         // Ensure guest session exists
         await ensureGuestSession();
 
+        // Check if user is a guest or full account
+        const isGuest = await isGuestUser();
+
         // Check if onboarding is done
         const onboardingDone = await appStorage.getOnboardingDone();
 
@@ -40,11 +44,21 @@ export default function RootLayout() {
         const inPublic = segments[0] === '(public)';
         const inAuthed = segments[0] === '(authed)';
 
-        if (!onboardingDone && !inPublic) {
-          // Not onboarded, go to onboarding
+        console.log('🔐 Bootstrap - isGuest:', isGuest, 'onboardingDone:', onboardingDone);
+
+        // If user is a full account (not a guest), skip onboarding entirely
+        if (isGuest === false) {
+          console.log('✅ User is a full account, going to home');
+          if (!inAuthed) {
+            router.replace('/(authed)/home');
+          }
+        } else if (!onboardingDone && !inPublic) {
+          // Guest user without onboarding, go to onboarding
+          console.log('📝 Guest user without onboarding, going to onboarding');
           router.replace('/(public)/onboarding/age');
         } else if (onboardingDone && !inAuthed) {
-          // Onboarded, go to home
+          // Onboarded guest, go to home
+          console.log('✅ Onboarded guest, going to home');
           router.replace('/(authed)/home');
         }
       } catch (error) {
@@ -66,44 +80,46 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <BottomSheetModalProvider>
-        <I18nProvider>
-          <ThemeProvider>
-            <ToastProvider>
-              <QueryProvider>
-                <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                  <Stack screenOptions={{ headerTransparent: true, headerTitle: '', navigationBarHidden: true}}>
-                    <Stack.Screen name="(public)" options={{ headerShown: false }} />
-                    <Stack.Screen name="(authed)" options={{ headerShown: false }} />
-                    <Stack.Screen
-                      name="modals/checkin"
-                      options={{
-                        presentation: 'modal',
-                        headerShown: true,
-                        title: 'Daily Check-in',
-                        headerTransparent: false,
-                      }}
-                    />
-                    <Stack.Screen
-                      name="modals/command"
-                      options={{
-                        presentation: 'modal',
-                        headerShown: true,
-                        title: 'Quick Actions',
-                        headerTransparent: false,
-                      }}
-                    />
-                  </Stack>
-                  <StatusBar style="auto" />
-                  <ToastContainer />
-                </NavigationThemeProvider>
-              </QueryProvider>
-            </ToastProvider>
-          </ThemeProvider>
-        </I18nProvider>
-      </BottomSheetModalProvider>
-    </GestureHandlerRootView>
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <BottomSheetModalProvider>
+          <I18nProvider>
+            <ThemeProvider>
+              <ToastProvider>
+                <QueryProvider>
+                  <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                    <Stack screenOptions={{ headerTransparent: true, headerTitle: '', navigationBarHidden: true}}>
+                      <Stack.Screen name="(public)" options={{ headerShown: false }} />
+                      <Stack.Screen name="(authed)" options={{ headerShown: false }} />
+                      <Stack.Screen
+                        name="modals/checkin"
+                        options={{
+                          presentation: 'modal',
+                          headerShown: false,
+                          title: 'Daily Check-in',
+                          headerTransparent: false,
+                        }}
+                      />
+                      <Stack.Screen
+                        name="modals/command"
+                        options={{
+                          presentation: 'modal',
+                          headerShown: true,
+                          title: 'Quick Actions',
+                          headerTransparent: false,
+                        }}
+                      />
+                    </Stack>
+                    <StatusBar style="auto" />
+                    <ToastContainer />
+                  </NavigationThemeProvider>
+                </QueryProvider>
+              </ToastProvider>
+            </ThemeProvider>
+          </I18nProvider>
+        </BottomSheetModalProvider>
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }
 

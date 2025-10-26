@@ -3,6 +3,7 @@
  */
 
 import { apiFetch } from './client';
+import { appStorage } from '../lib/storage';
 import type {
   Child,
   Screener,
@@ -32,6 +33,23 @@ export async function createChild(data: {
  */
 export async function getChildren(): Promise<{ results: Child[] }> {
   return apiFetch<{ results: Child[] }>('/api/children/');
+}
+
+/**
+ * Update a child
+ */
+export async function updateChild(data: {
+  diagnosed_adhd: DiagnosedADHD;
+}): Promise<Child> {
+  const childId = await appStorage.getChildId();
+  if (!childId) {
+    throw new Error('No child ID found');
+  }
+  
+  return apiFetch<Child>(`/api/children/${childId}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
 }
 
 /**

@@ -23,7 +23,7 @@ import arSearch from './locales/ar/search.json';
 export const supportedLanguages = ['en', 'fr', 'ar'] as const;
 export type SupportedLanguage = typeof supportedLanguages[number];
 
-export const defaultLanguage: SupportedLanguage = 'en';
+export const defaultLanguage: SupportedLanguage = 'fr';
 
 export const resources = {
   en: {

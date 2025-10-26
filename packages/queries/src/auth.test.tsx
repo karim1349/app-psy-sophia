@@ -80,6 +80,8 @@ const mockUser: User = {
   email: 'test@example.com',
   username: 'testuser',
   created_at: '2025-01-01T00:00:00Z',
+  is_active: true,
+  is_guest: false,
 };
 
 const mockAuthResponse: AuthResponse = {

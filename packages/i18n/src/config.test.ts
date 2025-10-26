@@ -6,6 +6,6 @@ describe('i18n config', () => {
   });
 
   it('should have correct default language', () => {
-    expect(defaultLanguage).toBe('en');
+    expect(defaultLanguage).toBe('fr');
   });
 });

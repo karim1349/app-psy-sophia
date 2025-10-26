@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import React from 'react';
 import { createHttp } from '@app-psy-sophia/api-client';
 import type {
   AuthResponse,
@@ -237,21 +238,43 @@ export function usePasswordReset(config: UseAuthConfig) {
 export function useMeQuery(config: UseAuthConfig) {
   const { env, baseURL } = config;
   const sessionStore = getSessionStore(env);
+  const [hasToken, setHasToken] = React.useState(false);
+  const [cachedToken, setCachedToken] = React.useState<string | null>(null);
+
+  // Check token availability for native and cache it
+  React.useEffect(() => {
+    if (env === 'native') {
+      const checkToken = async () => {
+        // Dynamic import for mobile app storage
+        const { tokenStorage } = await import('../../../apps/mobile/src/lib/storage');
+        const token = await tokenStorage.getAccessToken();
+        setHasToken(!!token);
+        setCachedToken(token);
+      };
+      checkToken();
+    } else {
+      setHasToken(!!sessionStore.getState().accessToken);
+    }
+  }, [env, sessionStore]);
 
   return useQuery({
     queryKey: queryKeys.me(),
     queryFn: async (): Promise<User> => {
-      const state = sessionStore.getState();
       let getAccessToken: (() => string | null) | undefined;
 
       if (env === 'native') {
+        // Use cached token for native
+        getAccessToken = () => cachedToken;
+      } else {
+        // Web: use sessionStore
+        const state = sessionStore.getState();
         getAccessToken = state.getAccessToken;
       }
 
       const http = createHttp({ env, baseURL, getAccessToken });
-      return http.get<User>('/users/me/');
+      return http.get<User>('/api/auth/users/me/');
     },
-    enabled: env === 'web' || !!sessionStore.getState().accessToken,
+    enabled: env === 'web' || hasToken,
     // Remove custom retry logic, use default from QueryClient
     // The global error handler will trigger refresh on token_not_valid
   });

@@ -7,7 +7,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TextInput,
 } from 'react-native';
@@ -17,6 +16,7 @@ import Slider from '@react-native-community/slider';
 import { Button } from '../../src/components/Button';
 import { upsertCheckin } from '../../src/api/onboarding';
 import { appStorage } from '../../src/lib/storage';
+import { ToastContainer } from '../../src/components/Toast';
 
 const MOOD_LABELS = [
   '😞 Très difficile',
@@ -57,10 +57,10 @@ export default function CheckinModal() {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <ScrollView style={styles.content}>
         <View style={styles.section}>
-          <Text style={styles.title}>Comment s'est passée la journée ?</Text>
+          <Text style={styles.title}>Comment s&apos;est passée la journée ?</Text>
 
           <View style={styles.moodSection}>
             <Text style={styles.label}>Humeur générale</Text>
@@ -115,7 +115,10 @@ export default function CheckinModal() {
           />
         </View>
       </ScrollView>
-    </SafeAreaView>
+      
+      {/* Toast container for modal */}
+      <ToastContainer />
+    </View>
   );
 }
 

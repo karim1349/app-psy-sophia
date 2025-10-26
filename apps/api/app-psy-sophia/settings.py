@@ -29,8 +29,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     "localhost",
-    "127.0.0.1",
     "192.168.11.102",
+    "192.168.1.223",
     "testserver",
     "app-psy-sophia.onrender.com",
 ]
@@ -229,6 +229,7 @@ SIMPLE_JWT = {
     "USER_ID_CLAIM": "user_id",
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
     "TOKEN_TYPE_CLAIM": "token_type",
+    "TOKEN_OBTAIN_SERIALIZER": "users.jwt_serializers.CustomTokenObtainPairSerializer",
 }
 
 # CORS Settings
@@ -269,6 +270,6 @@ PASSWORD_RESET_TIMEOUT = 3600  # 1 hour in seconds
 SPECTACULAR_SETTINGS = {
     "TITLE": "app-psy-sophia API",
     "DESCRIPTION": "Mental health API for app-psy-sophia",
-    "VERSION": "1.0.0",
+    "VERSION": "192.168.11.102",
     "SERVE_INCLUDE_SCHEMA": False,
 }

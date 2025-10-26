@@ -1,7 +1,23 @@
 {
   "auth": {
+    "register": {
+      "title": "Create account",
+      "subtitle": "Sign up to start",
+      "username": "Username",
+      "email": "Email",
+      "password": "Password",
+      "passwordConfirm": "Confirm Password",
+      "passwordHint": "Must be at least 8 characters",
+      "registerButton": "Sign up",
+      "registering": "Creating account...",
+      "hasAccount": "Already have an account?",
+      "signIn": "Login",
+      "accountInfo": "Your tracking data is automatically saved. Creating an account allows you to access it from any device."
+    }
   },
   "common": {
+    "back": "Back",
+    "skip": "Continue without account"
   },
   "validation": {
   }

@@ -7,20 +7,19 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   Switch,
   Dimensions,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Button } from '../../src/components/Button';
-import { getDashboard, getTargetBehaviors, upsertCheckin, getTodayCheckin } from '../../src/api/onboarding';
-import { getModules } from '../../src/api/modules';
-import { appStorage } from '../../src/lib/storage';
-import { useToast } from '@app-psy-sophia/ui';
+import { Button } from '../../../src/components/Button';
+import { getDashboard, getTargetBehaviors, upsertCheckin, getTodayCheckin } from '../../../src/api/onboarding';
+import { getModules } from '../../../src/api/modules';
+import { appStorage } from '../../../src/lib/storage';
 
 const { width } = Dimensions.get('window');
 
@@ -30,11 +29,23 @@ export default function HomeScreen() {
   const [childId, setChildId] = React.useState<number | null>(null);
   const [isLoadingChild, setIsLoadingChild] = React.useState(true);
   const [todayBehaviors, setTodayBehaviors] = React.useState<Record<number, boolean>>({});
-  const { showToast } = useToast();
 
   React.useEffect(() => {
     async function loadChildId() {
       console.log('=== DASHBOARD DEBUG ===');
+
+      // Ensure we have auth tokens before making API calls
+      const { isAuthenticated } = await import('../../../src/api/auth');
+      const hasAuth = await isAuthenticated();
+
+      if (!hasAuth) {
+        console.error('❌ No auth token found. Cannot load dashboard.');
+        await appStorage.clearAppData();
+        router.replace('/(public)/onboarding/age');
+        setIsLoadingChild(false);
+        return;
+      }
+
       const id = await appStorage.getChildId();
       console.log('Child ID from storage:', id);
 
@@ -42,7 +53,7 @@ export default function HomeScreen() {
         // Verify the child belongs to the current user
         try {
           console.log('🔍 Verifying child ownership...');
-          const { getChildren } = await import('../../src/api/onboarding');
+          const { getChildren } = await import('../../../src/api/onboarding');
           const childrenResponse = await getChildren();
           const userChildren = childrenResponse.results;
 
@@ -58,30 +69,15 @@ export default function HomeScreen() {
             console.error('❌ Child ID', id, 'does NOT belong to current user');
             console.log('🔄 Clearing stored child ID and restarting onboarding');
             await appStorage.clearAppData();
-            showToast({
-              type: 'error',
-              title: 'Session expirée',
-              message: 'Votre session a expiré. Veuillez recommencer l\'inscription.',
-            });
             router.replace('/(public)/onboarding/age');
           }
         } catch (error) {
           console.error('❌ Error verifying child:', error);
           await appStorage.clearAppData();
-          showToast({
-            type: 'error',
-            title: 'Erreur',
-            message: 'Une erreur est survenue. Veuillez recommencer l\'inscription.',
-          });
           router.replace('/(public)/onboarding/age');
         }
       } else {
         console.error('❌ NO CHILD ID! User must complete onboarding first.');
-        showToast({
-          type: 'info',
-          title: 'Configuration requise',
-          message: 'Veuillez compléter le processus d\'inscription pour accéder au tableau de bord.',
-        });
         router.replace('/(public)/onboarding/age');
       }
       setIsLoadingChild(false);
@@ -210,11 +206,6 @@ export default function HomeScreen() {
   React.useEffect(() => {
     if (dashboardError && 'status' in dashboardError && (dashboardError as any).status === 404) {
       console.error('❌ Dashboard API error:', dashboardError);
-      showToast({
-        type: 'error',
-        title: 'Erreur',
-        message: 'Enfant introuvable. Veuillez recommencer l\'inscription.',
-      });
       appStorage.clearAppData();
       router.replace('/(public)/onboarding/age');
     }
@@ -256,9 +247,11 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.greeting}>Bonjour ! 👋</Text>
-          <TouchableOpacity style={styles.childBadge}>
-            <Text style={styles.childBadgeText}>Mon enfant</Text>
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            <TouchableOpacity style={styles.childBadge}>
+              <Text style={styles.childBadgeText}>Mon enfant</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Next Best Action */}
@@ -271,7 +264,7 @@ export default function HomeScreen() {
             title="En savoir plus"
             variant="outline"
             size="small"
-            onPress={() => router.push('/(authed)/program/special-time')}
+            onPress={() => router.push('/(authed)/home/special-time')}
           />
         </View>
 
@@ -281,7 +274,7 @@ export default function HomeScreen() {
             <Text style={styles.sectionTitle}>📚 Module en cours</Text>
             <TouchableOpacity
               style={styles.moduleCard}
-              onPress={() => router.push('/(authed)/program/special-time')}
+              onPress={() => router.push('/(authed)/home/special-time')}
             >
               <View style={styles.moduleHeader}>
                 <View style={styles.moduleInfo}>
@@ -314,114 +307,69 @@ export default function HomeScreen() {
                 title="Consigner une session"
                 size="small"
                 variant="outline"
-                onPress={() => router.push('/(authed)/program/special-time')}
+                onPress={() => router.push('/(authed)/home/special-time')}
               />
             </TouchableOpacity>
           </View>
         )}
 
-        {/* Today's Routines */}
+        {/* All Modules */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Les 3 routines du jour</Text>
-          <Text style={styles.sectionHint}>
-            Cochez les comportements réalisés par votre enfant aujourd'hui
-          </Text>
+          <Text style={styles.sectionTitle}>📚 Tous les modules</Text>
+          {modules && modules.length > 0 ? (
+            modules.map((module, index) => {
+              const isLocked = module.state === 'locked';
+              const previousModule = index > 0 ? modules[index - 1] : null;
 
-          {behaviors.length === 0 ? (
-            <Text style={styles.emptyText}>
-              Aucune routine configurée. Complétez l'onboarding.
-            </Text>
-          ) : (
-            <>
-              {behaviors.map((behavior) => (
-                <View key={behavior.id} style={styles.routineCard}>
-                  <View style={styles.routineLeft}>
-                    <Text style={styles.routineName}>{behavior.name}</Text>
-                    {todayBehaviors[behavior.id] && (
-                      <Text style={styles.routineDone}>✓ Fait</Text>
+              return (
+                <TouchableOpacity
+                  key={module.id}
+                  style={[
+                    styles.moduleListCard,
+                    isLocked && styles.moduleListCardLocked
+                  ]}
+                  onPress={() => {
+                    if (isLocked) {
+                      // Module is locked, do nothing
+                      return;
+                    }
+
+                    if (module.key === 'special_time') {
+                      router.push('/(authed)/home/special-time');
+                    }
+                    // Other modules will be implemented later
+                  }}
+                >
+                  <View style={styles.moduleListInfo}>
+                    <Text style={[
+                      styles.moduleListTitle,
+                      isLocked && styles.moduleListTitleLocked
+                    ]}>
+                      {module.title}
+                    </Text>
+                    <Text style={styles.moduleListState}>
+                      {module.state === 'locked' && '🔒 Verrouillé'}
+                      {module.state === 'unlocked' && '🔓 Disponible'}
+                      {module.state === 'passed' && '✅ Complété'}
+                    </Text>
+                    {isLocked && previousModule && (
+                      <Text style={styles.unlockHint}>
+                        Complétez "{previousModule.title}" d'abord
+                      </Text>
                     )}
                   </View>
-                  <Switch
-                    value={todayBehaviors[behavior.id] || false}
-                    onValueChange={(value) =>
-                      updateCheckinMutation.mutate({
-                        behaviorId: behavior.id,
-                        done: value,
-                      })
-                    }
-                    trackColor={{ false: '#E5E7EB', true: '#8B7FE8' }}
-                    thumbColor="#FFFFFF"
-                    disabled={updateCheckinMutation.isPending}
-                  />
-                </View>
-              ))}
-
-              {/* Show encouragement when all behaviors done */}
-              {behaviors.length > 0 &&
-                behaviors.every((b) => todayBehaviors[b.id]) && (
-                  <View style={styles.successBanner}>
-                    <Text style={styles.successIcon}>🎉</Text>
-                    <Text style={styles.successText}>
-                      Bravo ! Toutes les routines sont réalisées aujourd'hui !
-                    </Text>
-                  </View>
-                )}
-            </>
+                  <Text style={[
+                    styles.moduleListArrow,
+                    isLocked && styles.moduleListArrowLocked
+                  ]}>
+                    →
+                  </Text>
+                </TouchableOpacity>
+              );
+            })
+          ) : (
+            <Text style={styles.emptyText}>Aucun module disponible</Text>
           )}
-        </View>
-
-        {/* Chart */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Progression (7 jours)</Text>
-          <View style={styles.chartCard}>
-            {chartData.length > 0 ? (
-              <View style={styles.chartPlaceholder}>
-                <Text style={styles.chartPlaceholderText}>
-                  📊 Graphique de progression
-                </Text>
-                <Text style={styles.chartPlaceholderSubtext}>
-                  Données collectées : {chartData.length} jours
-                </Text>
-                <View style={styles.chartStats}>
-                  <View style={styles.statItem}>
-                    <Text style={styles.statValue}>
-                      {Math.round(
-                        chartData.reduce((sum: number, d: { x: number; y: number }) => sum + d.y, 0) /
-                          chartData.length
-                      )}
-                      %
-                    </Text>
-                    <Text style={styles.statLabel}>Moyenne</Text>
-                  </View>
-                  <View style={styles.statItem}>
-                    <Text style={styles.statValue}>
-                      {Math.max(...chartData.map((d: { x: number; y: number }) => d.y))}%
-                    </Text>
-                    <Text style={styles.statLabel}>Meilleur</Text>
-                  </View>
-                </View>
-              </View>
-            ) : (
-              <Text style={styles.emptyText}>
-                Les données apparaîtront après vos premiers check-ins
-              </Text>
-            )}
-          </View>
-        </View>
-
-        {/* Quick Actions */}
-        <View style={styles.actions}>
-          <Button
-            title="Check-in quotidien"
-            onPress={() => router.push('/modals/checkin')}
-            size="large"
-          />
-          <Button
-            title="Outils"
-            variant="outline"
-            onPress={() => {}}
-            size="large"
-          />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -442,6 +390,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 24,
     paddingTop: 12,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  settingsButton: {
+    padding: 4,
+  },
+  settingsIcon: {
+    fontSize: 24,
   },
   greeting: {
     fontSize: 24,
@@ -578,10 +537,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     padding: 20,
   },
-  actions: {
-    padding: 24,
-    gap: 12,
-  },
   loading: {
     flex: 1,
     alignItems: 'center',
@@ -675,5 +630,47 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#1F2937',
+  },
+  moduleListCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  moduleListInfo: {
+    flex: 1,
+    gap: 4,
+  },
+  moduleListTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  moduleListState: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  moduleListArrow: {
+    fontSize: 18,
+    color: '#9CA3AF',
+  },
+  moduleListCardLocked: {
+    opacity: 0.6,
+    backgroundColor: '#F3F4F6',
+  },
+  moduleListTitleLocked: {
+    color: '#9CA3AF',
+  },
+  moduleListArrowLocked: {
+    color: '#D1D5DB',
+  },
+  unlockHint: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    fontStyle: 'italic',
+    marginTop: 2,
   },
 });
