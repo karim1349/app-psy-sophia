@@ -18,6 +18,8 @@ from django.utils import timezone
 from .models import (
     Child,
     DailyCheckin,
+    EffectiveCommandLog,
+    EffectiveCommandObjective,
     Module,
     ModuleProgress,
     Screener,
@@ -29,6 +31,8 @@ from .serializers import (
     ChildSerializer,
     DailyCheckinSerializer,
     DashboardSerializer,
+    EffectiveCommandLogSerializer,
+    EffectiveCommandObjectiveSerializer,
     ModuleProgressSerializer,
     ModuleSerializer,
     ModuleWithProgressSerializer,
@@ -360,13 +364,16 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
                 },
             )
 
-            # Recompute counters for special_time module
+            # Recompute counters for specific modules
             if module.key == "special_time":
                 progress = self._recompute_special_time_progress(child, progress)
+            elif module.key == "effective_commands":
+                progress = self._recompute_effective_commands_progress(child, progress)
 
             results.append(
                 {
                     "module": module,
+                    "progress_id": progress.id,
                     "state": progress.state,
                     "counters": progress.counters,
                     "passed_at": progress.passed_at,
@@ -499,6 +506,221 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
             status=status.HTTP_200_OK,
         )
 
+    @action(detail=False, methods=["post", "get"], url_path="effective-commands/objectives")
+    def effective_commands_objectives(self, request: Request) -> Response:
+        """
+        Create or list objectives for Effective Commands module.
+
+        POST /modules/effective-commands/objectives/
+        Body: {child, labels: ["Aller se brosser les dents", ...]}
+
+        GET /modules/effective-commands/objectives/?child_id={id}
+        """
+        if request.method == "POST":
+            # Create objectives
+            child_id = request.data.get("child")
+            labels = request.data.get("labels", [])
+
+            if not child_id:
+                return Response(
+                    {"error": "child field is required."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if not isinstance(labels, list) or len(labels) == 0:
+                return Response(
+                    {"error": "labels must be a non-empty list of strings."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            try:
+                child = Child.objects.get(id=child_id, parent=request.user)
+            except Child.DoesNotExist:
+                return Response(
+                    {"error": "Child not found or access denied."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            # Create objectives
+            created_objectives = []
+            for label in labels:
+                objective = EffectiveCommandObjective.objects.create(
+                    child=child, label=label, is_active=True
+                )
+                created_objectives.append(objective)
+
+            serializer = EffectiveCommandObjectiveSerializer(created_objectives, many=True)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        else:  # GET
+            # List objectives
+            child_id = request.query_params.get("child_id")
+            if not child_id:
+                return Response(
+                    {"error": "child_id query parameter is required."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            try:
+                child = Child.objects.get(id=child_id, parent=request.user)
+            except Child.DoesNotExist:
+                return Response(
+                    {"error": "Child not found or access denied."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            objectives = EffectiveCommandObjective.objects.filter(
+                child=child, is_active=True
+            ).order_by("-created_at")
+
+            serializer = EffectiveCommandObjectiveSerializer(objectives, many=True)
+            return Response({"results": serializer.data}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["post", "get"], url_path="effective-commands/logs")
+    def effective_commands_logs(self, request: Request) -> Response:
+        """
+        Log or list Effective Commands logs.
+
+        POST /modules/effective-commands/logs/
+        Body: {child, objective, date, gave_effective_command, child_completed?, repetitions_count?, failure_reason?, notes?}
+
+        GET /modules/effective-commands/logs/?child_id={id}&objective_id={id}&range=30d
+        """
+        if request.method == "POST":
+            # Log an entry
+            child_id = request.data.get("child")
+            try:
+                child = Child.objects.get(id=child_id, parent=request.user)
+            except Child.DoesNotExist:
+                return Response(
+                    {"error": "Child not found or access denied."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            # Validate objective ownership
+            objective_id = request.data.get("objective")
+            try:
+                objective = EffectiveCommandObjective.objects.get(
+                    id=objective_id, child=child
+                )
+            except EffectiveCommandObjective.DoesNotExist:
+                return Response(
+                    {"error": "Objective not found or access denied."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            # Create or update log (upsert by child + objective + date)
+            date = request.data.get("date")
+            log_data = {
+                "gave_effective_command": request.data.get("gave_effective_command"),
+                "child_completed": request.data.get("child_completed"),
+                "repetitions_count": request.data.get("repetitions_count"),
+                "failure_reason": request.data.get("failure_reason"),
+                "notes": request.data.get("notes", ""),
+            }
+
+            log, created = EffectiveCommandLog.objects.update_or_create(
+                child=child, objective=objective, date=date, defaults=log_data
+            )
+
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"{'Created' if created else 'Updated'} log for objective {objective.label} on {date}")
+            logger.info(f"  gave_effective_command={log.gave_effective_command}, child_completed={log.child_completed}")
+
+            # Get or create progress
+            module = Module.objects.get(key="effective_commands")
+            progress, created_progress = ModuleProgress.objects.get_or_create(
+                child=child,
+                module=module,
+                defaults={
+                    "state": "unlocked",
+                    "counters": {"objectives_with_5plus_days": [], "initial_repetition_average": 5},
+                },
+            )
+
+            # Recompute progress and check unlock rules
+            progress = self._recompute_effective_commands_progress(child, progress)
+
+            return Response(
+                {
+                    "log": EffectiveCommandLogSerializer(log).data,
+                    "progress": ModuleProgressSerializer(progress).data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        else:  # GET
+            # List logs
+            child_id = request.query_params.get("child_id")
+            if not child_id:
+                return Response(
+                    {"error": "child_id query parameter is required."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            try:
+                child = Child.objects.get(id=child_id, parent=request.user)
+            except Child.DoesNotExist:
+                return Response(
+                    {"error": "Child not found or access denied."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            logs = EffectiveCommandLog.objects.filter(child=child)
+
+            # Filter by objective if provided
+            objective_id = request.query_params.get("objective_id")
+            if objective_id:
+                logs = logs.filter(objective_id=objective_id)
+
+            # Filter by date range if provided
+            range_param = request.query_params.get("range", "30d")
+            if range_param != "all":
+                days = int(range_param.replace("d", ""))
+                # To get exactly N days including today, go back N-1 days
+                cutoff_date = timezone.now().date() - timedelta(days=days - 1)
+                logs = logs.filter(date__gte=cutoff_date)
+
+            logs = logs.order_by("-date")
+
+            serializer = EffectiveCommandLogSerializer(logs, many=True)
+            return Response({"results": serializer.data}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["post"], url_path="effective-commands/recompute")
+    def recompute_effective_commands(self, request: Request) -> Response:
+        """
+        Recompute Effective Commands progress for a child (QA/testing).
+
+        POST /modules/effective-commands/recompute/
+        Body: {child}
+        """
+        child_id = request.data.get("child")
+        try:
+            child = Child.objects.get(id=child_id, parent=request.user)
+        except Child.DoesNotExist:
+            return Response(
+                {"error": "Child not found or access denied."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        module = Module.objects.get(key="effective_commands")
+        progress, created = ModuleProgress.objects.get_or_create(
+            child=child,
+            module=module,
+            defaults={
+                "state": "unlocked",
+                "counters": {"objectives_with_5plus_days": [], "initial_repetition_average": 5},
+            },
+        )
+
+        progress = self._recompute_effective_commands_progress(child, progress)
+
+        return Response(
+            ModuleProgressSerializer(progress).data,
+            status=status.HTTP_200_OK,
+        )
+
     def _recompute_special_time_progress(
         self, child: Child, progress: ModuleProgress
     ) -> ModuleProgress:
@@ -550,6 +772,82 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
         progress.save()
         return progress
 
+    def _recompute_effective_commands_progress(
+        self, child: Child, progress: ModuleProgress
+    ) -> ModuleProgress:
+        """
+        Recompute Effective Commands progress counters and check unlock rules.
+
+        Rules:
+        - For each objective, count "satisfying days" where:
+          - gave_effective_command = True AND
+          - (child_completed = 'first_try' OR
+             (child_completed = 'not_directly' AND repetitions_count < initial_repetition_average))
+        - Track objectives with >= 5 satisfying days
+        - PASS if: >= 3 objectives have >= 5 satisfying days each
+        """
+        from django.db.models import Count, Q
+
+        # Get all active objectives for this child
+        objectives = EffectiveCommandObjective.objects.filter(
+            child=child, is_active=True
+        )
+
+        # Get initial repetition average from counters (default to 5 if not set)
+        counters = progress.counters or {}
+        initial_avg = counters.get("initial_repetition_average", 5)
+
+        # Track which objectives have >= 5 satisfying days
+        objectives_with_5plus_days = []
+
+        for objective in objectives:
+            # Count satisfying days for this objective
+            satisfying_logs = EffectiveCommandLog.objects.filter(
+                objective=objective,
+                gave_effective_command=True,
+            ).filter(
+                Q(child_completed="first_try")
+                | (
+                    Q(child_completed="not_directly")
+                    & Q(repetitions_count__lt=initial_avg)
+                )
+            )
+
+            satisfying_count = satisfying_logs.count()
+
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"Objective '{objective.label}': {satisfying_count} satisfying days (threshold: {initial_avg})")
+
+            if satisfying_count >= 5:
+                objectives_with_5plus_days.append(objective.id)
+
+        # Update counters
+        counters["objectives_with_5plus_days"] = objectives_with_5plus_days
+        counters["initial_repetition_average"] = initial_avg
+        progress.counters = counters
+
+        # Check unlock rules: >= 3 objectives with >= 5 satisfying days
+        if len(objectives_with_5plus_days) >= 3:
+            if progress.state != "passed":
+                progress.state = "passed"
+                progress.passed_at = timezone.now()
+                progress.save()
+
+                # Unlock next module
+                print(
+                    f"🎉 Module '{progress.module.title}' completed for {child}"
+                )
+                check_and_unlock_next_module(child, progress.module)
+        else:
+            # Reset to unlocked if was passed but no longer meets criteria
+            if progress.state == "passed":
+                progress.state = "unlocked"
+                progress.passed_at = None
+
+        progress.save()
+        return progress
+
 
 class ModuleProgressViewSet(viewsets.ModelViewSet):
     """
@@ -585,6 +883,33 @@ class ModuleProgressViewSet(viewsets.ModelViewSet):
 
         counters = progress.counters or {}
         counters["goal_per_week"] = goal_per_week
+        progress.counters = counters
+        progress.save()
+
+        return Response(
+            ModuleProgressSerializer(progress).data,
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=["patch"], url_path="initial-repetitions")
+    def update_initial_repetitions(self, request: Request, pk: int = None) -> Response:
+        """
+        Update initial_repetition_average for Effective Commands module.
+
+        PATCH /modules-progress/{id}/initial-repetitions/
+        Body: {initial_repetition_average: 5}
+        """
+        progress = self.get_object()
+
+        initial_avg = request.data.get("initial_repetition_average")
+        if not isinstance(initial_avg, int) or initial_avg < 1:
+            return Response(
+                {"error": "initial_repetition_average must be a positive integer."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        counters = progress.counters or {}
+        counters["initial_repetition_average"] = initial_avg
         progress.counters = counters
         progress.save()
 

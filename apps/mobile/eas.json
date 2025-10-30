@@ -12,14 +12,16 @@
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_ENVIRONMENT": "development",
-        "EXPO_PUBLIC_DEBUG": "true"
+        "EXPO_PUBLIC_DEBUG": "true",
+        "EXPO_PUBLIC_API_URL": "http://192.168.1.223:8000"
       }
     },
     "preview": {
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_ENVIRONMENT": "staging",
-        "EXPO_PUBLIC_DEBUG": "true"
+        "EXPO_PUBLIC_DEBUG": "true",
+        "EXPO_PUBLIC_API_URL": "https://app-psy-sophia.onrender.com"
       }
     },
     "production": {
@@ -30,7 +32,8 @@
       },
       "env": {
         "EXPO_PUBLIC_ENVIRONMENT": "production",
-        "EXPO_PUBLIC_DEBUG": "false"
+        "EXPO_PUBLIC_DEBUG": "false",
+        "EXPO_PUBLIC_API_URL": "https://app-psy-sophia.onrender.com"
       }
     }
   },

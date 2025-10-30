@@ -13,6 +13,8 @@ from rest_framework import serializers
 from .models import (
     Child,
     DailyCheckin,
+    EffectiveCommandLog,
+    EffectiveCommandObjective,
     Module,
     ModuleProgress,
     Screener,
@@ -468,9 +470,108 @@ class ModuleWithProgressSerializer(serializers.Serializer):
     """
 
     id = serializers.IntegerField(source="module.id")
+    progress_id = serializers.IntegerField()
     key = serializers.CharField(source="module.key")
     title = serializers.CharField(source="module.title")
     order_index = serializers.IntegerField(source="module.order_index")
     state = serializers.CharField()
     counters = serializers.JSONField()
     passed_at = serializers.DateTimeField()
+
+
+class EffectiveCommandObjectiveSerializer(serializers.ModelSerializer):
+    """
+    Serializer for EffectiveCommandObjective model.
+
+    Represents a command the parent wants to improve.
+    """
+
+    class Meta:
+        model = EffectiveCommandObjective
+        fields = [
+            "id",
+            "child",
+            "label",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class EffectiveCommandLogSerializer(serializers.ModelSerializer):
+    """
+    Serializer for EffectiveCommandLog model.
+
+    Handles daily log entries for effective command tracking.
+    """
+
+    class Meta:
+        model = EffectiveCommandLog
+        fields = [
+            "id",
+            "child",
+            "objective",
+            "date",
+            "gave_effective_command",
+            "child_completed",
+            "repetitions_count",
+            "failure_reason",
+            "notes",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Validate log entry data.
+
+        Rules:
+        - If gave_effective_command is False, child_completed must be null
+        - If child_completed is 'not_directly', repetitions_count is required
+        - If child_completed is 'not_completed', failure_reason is required
+        """
+        gave_effective = attrs.get("gave_effective_command")
+        child_completed = attrs.get("child_completed")
+        repetitions = attrs.get("repetitions_count")
+        failure_reason = attrs.get("failure_reason")
+
+        if not gave_effective:
+            # If didn't give effective command, no completion data should be provided
+            if child_completed is not None:
+                raise serializers.ValidationError(
+                    "child_completed must be null if gave_effective_command is False"
+                )
+            if repetitions is not None:
+                raise serializers.ValidationError(
+                    "repetitions_count must be null if gave_effective_command is False"
+                )
+            if failure_reason is not None:
+                raise serializers.ValidationError(
+                    "failure_reason must be null if gave_effective_command is False"
+                )
+        else:
+            # If gave effective command, child_completed is required
+            if child_completed is None:
+                raise serializers.ValidationError(
+                    "child_completed is required if gave_effective_command is True"
+                )
+
+            # Validate based on completion type
+            if child_completed == "not_directly":
+                if repetitions is None:
+                    raise serializers.ValidationError(
+                        "repetitions_count is required when child_completed is 'not_directly'"
+                    )
+                if repetitions < 1:
+                    raise serializers.ValidationError(
+                        "repetitions_count must be at least 1"
+                    )
+            elif child_completed == "not_completed":
+                if not failure_reason:
+                    raise serializers.ValidationError(
+                        "failure_reason is required when child_completed is 'not_completed'"
+                    )
+
+        return attrs

@@ -110,6 +110,7 @@ export interface ModuleProgress {
 
 export interface ModuleWithProgress {
   id: number;
+  progress_id: number;
   key: string;
   title: string;
   order_index: number;
@@ -146,4 +147,52 @@ export interface CreateSessionRequest {
 export interface CreateSessionResponse {
   session: SpecialTimeSession;
   progress: ModuleProgress;
+}
+
+// Effective Commands types
+export type ChildCompletionType = 'first_try' | 'not_directly' | 'not_completed';
+export type FailureReason = 'distractions' | 'no_contact' | 'no_repeat' | 'unsure_command' | 'too_complex';
+
+export interface EffectiveCommandObjective {
+  id: number;
+  child: number;
+  label: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EffectiveCommandLog {
+  id: number;
+  child: number;
+  objective: number;
+  date: string;
+  gave_effective_command: boolean;
+  child_completed: ChildCompletionType | null;
+  repetitions_count: number | null;
+  failure_reason: FailureReason | null;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateLogRequest {
+  child: number;
+  objective: number;
+  date: string;
+  gave_effective_command: boolean;
+  child_completed?: ChildCompletionType | null;
+  repetitions_count?: number | null;
+  failure_reason?: FailureReason | null;
+  notes?: string;
+}
+
+export interface CreateLogResponse {
+  log: EffectiveCommandLog;
+  progress: ModuleProgress;
+}
+
+export interface CreateObjectivesRequest {
+  child: number;
+  labels: string[];
 }

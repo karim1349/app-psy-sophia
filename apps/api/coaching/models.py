@@ -465,3 +465,158 @@ class SpecialTimeSession(models.Model):
     def __str__(self) -> str:
         enjoyed = "✓" if self.child_enjoyed else "✗"
         return f"Special Time for {self.child} on {self.datetime.date()} ({self.duration_min}min) {enjoyed}"
+
+
+class EffectiveCommandObjective(models.Model):
+    """
+    An objective for the Effective Commands module.
+
+    Represents a specific command the parent wants to improve
+    (e.g., 'Aller se brosser les dents', 'Se mettre en pyjama').
+    """
+
+    child = models.ForeignKey(
+        Child,
+        on_delete=models.CASCADE,
+        related_name="effective_command_objectives",
+        verbose_name=_("child"),
+    )
+
+    label = models.CharField(
+        _("label"),
+        max_length=100,
+        help_text=_("Description of the command (e.g., 'Aller se brosser les dents')"),
+    )
+
+    is_active = models.BooleanField(
+        _("is active"),
+        default=True,
+        help_text=_("Whether this objective is currently being tracked"),
+    )
+
+    created_at = models.DateTimeField(
+        _("created at"),
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        _("updated at"),
+        auto_now=True,
+    )
+
+    class Meta:
+        verbose_name = _("effective command objective")
+        verbose_name_plural = _("effective command objectives")
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["child"]),
+            models.Index(fields=["is_active"]),
+        ]
+
+    def __str__(self) -> str:
+        status = "active" if self.is_active else "inactive"
+        return f"{self.label} for {self.child} ({status})"
+
+
+class EffectiveCommandLog(models.Model):
+    """
+    Daily log entry for tracking effective command usage.
+
+    Records whether parent gave an effective command and the outcome.
+    Unique per child, objective, and date.
+    """
+
+    COMPLETION_CHOICES = [
+        ("first_try", _("Yes, first try")),
+        ("not_directly", _("Yes but not directly")),
+        ("not_completed", _("No, they didn't do it")),
+    ]
+
+    FAILURE_REASON_CHOICES = [
+        ("distractions", _("There were distractions around")),
+        ("no_contact", _("Contact (visual and touch) was not made")),
+        ("no_repeat", _("I didn't ask the child to repeat the command")),
+        ("unsure_command", _("I wasn't sure of my command")),
+        ("too_complex", _("The command was too complex")),
+    ]
+
+    child = models.ForeignKey(
+        Child,
+        on_delete=models.CASCADE,
+        related_name="effective_command_logs",
+        verbose_name=_("child"),
+    )
+
+    objective = models.ForeignKey(
+        EffectiveCommandObjective,
+        on_delete=models.CASCADE,
+        related_name="logs",
+        verbose_name=_("objective"),
+    )
+
+    date = models.DateField(
+        _("date"),
+        help_text=_("Date of this log entry"),
+    )
+
+    gave_effective_command = models.BooleanField(
+        _("gave effective command"),
+        help_text=_("Whether the parent gave an effective command"),
+    )
+
+    child_completed = models.CharField(
+        _("child completed"),
+        max_length=20,
+        choices=COMPLETION_CHOICES,
+        null=True,
+        blank=True,
+        help_text=_("How the child responded (if gave_effective_command is True)"),
+    )
+
+    repetitions_count = models.IntegerField(
+        _("repetitions count"),
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1)],
+        help_text=_("Number of times the command was repeated (for 'not_directly')"),
+    )
+
+    failure_reason = models.CharField(
+        _("failure reason"),
+        max_length=20,
+        choices=FAILURE_REASON_CHOICES,
+        null=True,
+        blank=True,
+        help_text=_("Reason the child didn't complete (for 'not_completed')"),
+    )
+
+    notes = models.TextField(
+        _("notes"),
+        blank=True,
+        help_text=_("Optional notes about this log entry"),
+    )
+
+    created_at = models.DateTimeField(
+        _("created at"),
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        _("updated at"),
+        auto_now=True,
+    )
+
+    class Meta:
+        verbose_name = _("effective command log")
+        verbose_name_plural = _("effective command logs")
+        unique_together = [["child", "objective", "date"]]
+        ordering = ["-date"]
+        indexes = [
+            models.Index(fields=["child", "date"]),
+            models.Index(fields=["objective", "date"]),
+            models.Index(fields=["date"]),
+        ]
+
+    def __str__(self) -> str:
+        gave = "✓" if self.gave_effective_command else "✗"
+        return f"Log for {self.objective.label} on {self.date} ({gave})"

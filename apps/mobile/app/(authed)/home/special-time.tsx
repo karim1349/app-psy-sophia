@@ -127,7 +127,7 @@ export default function SpecialTimeScreen() {
   const updateGoalMutation = useMutation({
     mutationFn: (goal: number) => {
       if (!specialTimeModule) throw new Error('Module not found');
-      return updateModuleGoal(specialTimeModule.id, goal);
+      return updateModuleGoal(specialTimeModule.progress_id, goal);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['modules'] });

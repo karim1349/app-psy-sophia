@@ -336,6 +336,8 @@ export default function HomeScreen() {
 
                     if (module.key === 'special_time') {
                       router.push('/(authed)/home/special-time');
+                    } else if (module.key === 'effective_commands') {
+                      router.push('/(authed)/home/effective-commands');
                     }
                     // Other modules will be implemented later
                   }}
