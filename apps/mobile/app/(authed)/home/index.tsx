@@ -338,6 +338,10 @@ export default function HomeScreen() {
                       router.push('/(authed)/home/special-time');
                     } else if (module.key === 'effective_commands') {
                       router.push('/(authed)/home/effective-commands');
+                    } else if (module.key === 'anger_management') {
+                      router.push('/(authed)/home/anger-management');
+                    } else if (module.key === 'timeout') {
+                      router.push('/(authed)/home/timeout');
                     }
                     // Other modules will be implemented later
                   }}

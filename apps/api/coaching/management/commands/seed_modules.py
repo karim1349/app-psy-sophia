@@ -67,4 +67,52 @@ class Command(BaseCommand):
                 self.style.SUCCESS(f"✅ Created module: {effective_commands.title}")
             )
 
+        # Create Anger Management module
+        anger_management, created = Module.objects.get_or_create(
+            key="anger_management",
+            defaults={
+                "title": "Gestion de la colère",
+                "order_index": 3,
+                "is_active": True,
+                "completion_rules": {"successful_crises": 1},
+            },
+        )
+
+        if not created:
+            # Update existing module
+            anger_management.is_active = True
+            anger_management.completion_rules = {"successful_crises": 1}
+            anger_management.save()
+            self.stdout.write(
+                self.style.WARNING(f"⚠️  Updated module: {anger_management.title}")
+            )
+        else:
+            self.stdout.write(
+                self.style.SUCCESS(f"✅ Created module: {anger_management.title}")
+            )
+
+        # Create Time Out module
+        timeout, created = Module.objects.get_or_create(
+            key="timeout",
+            defaults={
+                "title": "Time Out",
+                "order_index": 4,
+                "is_active": True,
+                "completion_rules": {"successful_timeouts": 1},
+            },
+        )
+
+        if not created:
+            # Update existing module
+            timeout.is_active = True
+            timeout.completion_rules = {"successful_timeouts": 1}
+            timeout.save()
+            self.stdout.write(
+                self.style.WARNING(f"⚠️  Updated module: {timeout.title}")
+            )
+        else:
+            self.stdout.write(
+                self.style.SUCCESS(f"✅ Created module: {timeout.title}")
+            )
+
         self.stdout.write(self.style.SUCCESS("\n✅ Module seeding complete!"))

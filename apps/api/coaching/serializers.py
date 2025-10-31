@@ -11,6 +11,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from .models import (
+    AngerCrisisLog,
     Child,
     DailyCheckin,
     EffectiveCommandLog,
@@ -20,6 +21,7 @@ from .models import (
     Screener,
     SpecialTimeSession,
     TargetBehavior,
+    TimeOutLog,
 )
 
 
@@ -573,5 +575,106 @@ class EffectiveCommandLogSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError(
                         "failure_reason is required when child_completed is 'not_completed'"
                     )
+
+        return attrs
+
+
+class AngerCrisisLogSerializer(serializers.ModelSerializer):
+    """
+    Serializer for AngerCrisisLog model.
+
+    Handles logging of anger crisis management attempts.
+    """
+
+    class Meta:
+        model = AngerCrisisLog
+        fields = [
+            "id",
+            "child",
+            "date",
+            "time",
+            "intervention_stage",
+            "techniques_used",
+            "was_successful",
+            "notes",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate_techniques_used(self, value: list) -> list:
+        """Validate that techniques_used is a list of valid technique keys."""
+        if not isinstance(value, list):
+            raise serializers.ValidationError("techniques_used must be a list.")
+
+        # Get valid technique keys from model choices
+        valid_techniques = [choice[0] for choice in AngerCrisisLog.TECHNIQUE_CHOICES]
+
+        for technique in value:
+            if technique not in valid_techniques:
+                raise serializers.ValidationError(
+                    f"Invalid technique: {technique}. Must be one of {valid_techniques}"
+                )
+
+        return value
+
+
+class TimeOutLogSerializer(serializers.ModelSerializer):
+    """
+    Serializer for TimeOutLog model.
+
+    Handles logging of time-out attempts with conditional validation.
+    """
+
+    class Meta:
+        model = TimeOutLog
+        fields = [
+            "id",
+            "child",
+            "date",
+            "needed_timeout",
+            "was_successful",
+            "failure_reason",
+            "notes",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Validate time-out log entry data.
+
+        Rules:
+        - If needed_timeout is False, was_successful and failure_reason must be null
+        - If needed_timeout is True, was_successful is required
+        - If was_successful is False, failure_reason is required
+        """
+        needed_timeout = attrs.get("needed_timeout")
+        was_successful = attrs.get("was_successful")
+        failure_reason = attrs.get("failure_reason")
+
+        if not needed_timeout:
+            # If didn't need timeout, other fields should be null
+            if was_successful is not None:
+                raise serializers.ValidationError(
+                    "was_successful must be null if needed_timeout is False"
+                )
+            if failure_reason is not None:
+                raise serializers.ValidationError(
+                    "failure_reason must be null if needed_timeout is False"
+                )
+        else:
+            # If needed timeout, was_successful is required
+            if was_successful is None:
+                raise serializers.ValidationError(
+                    "was_successful is required if needed_timeout is True"
+                )
+
+            # If unsuccessful, failure_reason is required
+            if was_successful is False and not failure_reason:
+                raise serializers.ValidationError(
+                    "failure_reason is required when was_successful is False"
+                )
 
         return attrs

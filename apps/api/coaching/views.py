@@ -16,6 +16,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from .models import (
+    AngerCrisisLog,
     Child,
     DailyCheckin,
     EffectiveCommandLog,
@@ -25,9 +26,11 @@ from .models import (
     Screener,
     SpecialTimeSession,
     TargetBehavior,
+    TimeOutLog,
 )
 from .permissions import IsChildOwner, IsChildRelatedOwner
 from .serializers import (
+    AngerCrisisLogSerializer,
     ChildSerializer,
     DailyCheckinSerializer,
     DashboardSerializer,
@@ -39,6 +42,7 @@ from .serializers import (
     ScreenerSerializer,
     SpecialTimeSessionSerializer,
     TargetBehaviorSerializer,
+    TimeOutLogSerializer,
 )
 from .unlock_engine import check_and_unlock_next_module
 
@@ -838,6 +842,425 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
                 print(
                     f"🎉 Module '{progress.module.title}' completed for {child}"
                 )
+                check_and_unlock_next_module(child, progress.module)
+        else:
+            # Reset to unlocked if was passed but no longer meets criteria
+            if progress.state == "passed":
+                progress.state = "unlocked"
+                progress.passed_at = None
+
+        progress.save()
+        return progress
+
+    @action(detail=False, methods=["post"], url_path="anger-management/initial-frequency")
+    def anger_management_initial_frequency(self, request: Request) -> Response:
+        """
+        Set initial anger crisis frequency for a child.
+
+        POST /modules/anger-management/initial-frequency/
+        Body: {child_id, frequency}
+
+        Frequency options: daily, weekly_multiple, weekly_once, monthly_multiple, monthly_once
+        """
+        child_id = request.data.get("child_id")
+        frequency = request.data.get("frequency")
+
+        # Validate frequency
+        valid_frequencies = [
+            "daily",
+            "weekly_multiple",
+            "weekly_once",
+            "monthly_multiple",
+            "monthly_once",
+        ]
+        if frequency not in valid_frequencies:
+            return Response(
+                {"error": f"Invalid frequency. Must be one of: {valid_frequencies}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Get child
+        try:
+            child = Child.objects.get(id=child_id, parent=request.user)
+        except Child.DoesNotExist:
+            return Response(
+                {"error": "Child not found or access denied."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Get anger management module
+        module = Module.objects.get(key="anger_management")
+
+        # Get or create progress
+        progress, created = ModuleProgress.objects.get_or_create(
+            child=child,
+            module=module,
+            defaults={
+                "state": "unlocked",
+                "counters": {
+                    "initial_frequency": frequency,
+                    "successful_crises_count": 0,
+                },
+            },
+        )
+
+        # Update frequency if already exists
+        if not created:
+            counters = progress.counters or {}
+            counters["initial_frequency"] = frequency
+            progress.counters = counters
+            progress.save()
+
+        return Response(
+            ModuleProgressSerializer(progress).data, status=status.HTTP_200_OK
+        )
+
+    @action(detail=False, methods=["post", "get"], url_path="anger-management/logs")
+    def anger_management_logs(self, request: Request) -> Response:
+        """
+        Log or list anger crisis entries.
+
+        POST /modules/anger-management/logs/
+        Body: {child, date, time?, intervention_stage, techniques_used, was_successful, notes?}
+
+        GET /modules/anger-management/logs/?child_id={id}&range=30d
+        """
+        if request.method == "POST":
+            # Create log
+            child_id = request.data.get("child")
+            try:
+                child = Child.objects.get(id=child_id, parent=request.user)
+            except Child.DoesNotExist:
+                return Response(
+                    {"error": "Child not found or access denied."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            # Validate and create log
+            serializer = AngerCrisisLogSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            log = serializer.save()
+
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.info(
+                f"Created anger crisis log for {child.first_name or 'Child'} on {log.date}"
+            )
+            logger.info(
+                f"  Intervention: {log.intervention_stage}, Success: {log.was_successful}"
+            )
+
+            # Get or create progress
+            module = Module.objects.get(key="anger_management")
+            progress, _ = ModuleProgress.objects.get_or_create(
+                child=child,
+                module=module,
+                defaults={
+                    "state": "unlocked",
+                    "counters": {"successful_crises_count": 0},
+                },
+            )
+
+            # Recompute progress
+            progress = self._recompute_anger_management_progress(child, progress)
+
+            return Response(
+                {
+                    "log": AngerCrisisLogSerializer(log).data,
+                    "progress": ModuleProgressSerializer(progress).data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        else:  # GET
+            child_id = request.query_params.get("child_id")
+            if not child_id:
+                return Response(
+                    {"error": "child_id query parameter is required."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            try:
+                child = Child.objects.get(id=child_id, parent=request.user)
+            except Child.DoesNotExist:
+                return Response(
+                    {"error": "Child not found or access denied."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            # Parse range parameter
+            range_param = request.query_params.get("range", "30d")
+            try:
+                days = int(range_param.replace("d", ""))
+            except ValueError:
+                return Response(
+                    {"error": "Invalid range parameter. Use format like '30d'"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            start_date = timezone.now().date() - timedelta(days=days)
+
+            # Get logs
+            logs = AngerCrisisLog.objects.filter(child=child, date__gte=start_date)
+
+            return Response(
+                {"results": AngerCrisisLogSerializer(logs, many=True).data},
+                status=status.HTTP_200_OK,
+            )
+
+    def _recompute_anger_management_progress(
+        self, child: Child, progress: ModuleProgress
+    ) -> ModuleProgress:
+        """
+        Recompute Anger Management progress counters and check unlock rules.
+
+        Rules:
+        - Count logs where was_successful = True
+        - PASS if: >= 1 successful crisis management
+        """
+        # Count successful crisis management attempts
+        successful_count = AngerCrisisLog.objects.filter(
+            child=child, was_successful=True
+        ).count()
+
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.info(f"Successful crises count for {child}: {successful_count}")
+
+        # Update counters
+        counters = progress.counters or {}
+        counters["successful_crises_count"] = successful_count
+        progress.counters = counters
+
+        # Check unlock rules: >= 1 successful crisis
+        if successful_count >= 1:
+            if progress.state != "passed":
+                progress.state = "passed"
+                progress.passed_at = timezone.now()
+                progress.save()
+
+                print(f"🎉 Module '{progress.module.title}' completed for {child}")
+                check_and_unlock_next_module(child, progress.module)
+        else:
+            # Reset to unlocked if was passed but no longer meets criteria
+            if progress.state == "passed":
+                progress.state = "unlocked"
+                progress.passed_at = None
+
+        progress.save()
+        return progress
+
+    @action(detail=False, methods=["post"], url_path="timeout/goal")
+    def timeout_goal(self, request: Request) -> Response:
+        """
+        Set target duration for time-out.
+
+        POST /modules/timeout/goal/
+        Body: {child_id, target_duration}  # 2, 3, 4, or 5
+        """
+        child_id = request.data.get("child_id")
+        target_duration = request.data.get("target_duration")
+
+        # Convert to int if needed and validate duration
+        try:
+            target_duration = int(target_duration) if target_duration is not None else None
+        except (ValueError, TypeError):
+            target_duration = None
+
+        if target_duration not in [2, 3, 4, 5]:
+            return Response(
+                {"error": "target_duration must be 2, 3, 4, or 5 minutes"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Get child
+        try:
+            child = Child.objects.get(id=child_id, parent=request.user)
+        except Child.DoesNotExist:
+            return Response(
+                {"error": "Child not found or access denied."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Get timeout module
+        module = Module.objects.get(key="timeout")
+
+        # Get or create progress
+        progress, created = ModuleProgress.objects.get_or_create(
+            child=child,
+            module=module,
+            defaults={
+                "state": "unlocked",
+                "counters": {
+                    "target_duration": target_duration,
+                    "successful_timeouts_count": 0,
+                },
+            },
+        )
+
+        # Update duration if already exists
+        if not created:
+            counters = progress.counters or {}
+            counters["target_duration"] = target_duration
+            progress.counters = counters
+            progress.save()
+
+        return Response(
+            ModuleProgressSerializer(progress).data, status=status.HTTP_200_OK
+        )
+
+    @action(detail=False, methods=["post", "get"], url_path="timeout/logs")
+    def timeout_logs(self, request: Request) -> Response:
+        """
+        Log or list time-out entries.
+
+        POST /modules/timeout/logs/
+        Body: {child, date, needed_timeout, was_successful?, failure_reason?, notes?}
+
+        GET /modules/timeout/logs/?child_id={id}&range=30d
+        """
+        if request.method == "POST":
+            # Create log
+            child_id = request.data.get("child")
+            try:
+                child = Child.objects.get(id=child_id, parent=request.user)
+            except Child.DoesNotExist:
+                return Response(
+                    {"error": "Child not found or access denied."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            # Create or update log (upsert by child + date)
+            date = request.data.get("date")
+            log_data = {
+                "needed_timeout": request.data.get("needed_timeout"),
+                "was_successful": request.data.get("was_successful"),
+                "failure_reason": request.data.get("failure_reason"),
+                "notes": request.data.get("notes", ""),
+            }
+
+            # Check if log already exists for validation
+            try:
+                existing_log = TimeOutLog.objects.get(child=child, date=date)
+                # Validate with serializer for update
+                serializer = TimeOutLogSerializer(
+                    existing_log, data={**log_data, "child": child_id, "date": date}
+                )
+            except TimeOutLog.DoesNotExist:
+                # Validate with serializer for creation
+                serializer = TimeOutLogSerializer(
+                    data={**log_data, "child": child_id, "date": date}
+                )
+
+            serializer.is_valid(raise_exception=True)
+
+            log, created = TimeOutLog.objects.update_or_create(
+                child=child, date=date, defaults=log_data
+            )
+
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.info(
+                f"{'Created' if created else 'Updated'} timeout log for {child.first_name or 'Child'} on {date}"
+            )
+            logger.info(
+                f"  Needed: {log.needed_timeout}, Success: {log.was_successful}"
+            )
+
+            # Get or create progress
+            module = Module.objects.get(key="timeout")
+            progress, _ = ModuleProgress.objects.get_or_create(
+                child=child,
+                module=module,
+                defaults={
+                    "state": "unlocked",
+                    "counters": {"successful_timeouts_count": 0},
+                },
+            )
+
+            # Recompute progress
+            progress = self._recompute_timeout_progress(child, progress)
+
+            return Response(
+                {
+                    "log": TimeOutLogSerializer(log).data,
+                    "progress": ModuleProgressSerializer(progress).data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        else:  # GET
+            child_id = request.query_params.get("child_id")
+            if not child_id:
+                return Response(
+                    {"error": "child_id query parameter is required."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            try:
+                child = Child.objects.get(id=child_id, parent=request.user)
+            except Child.DoesNotExist:
+                return Response(
+                    {"error": "Child not found or access denied."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            # Parse range parameter
+            range_param = request.query_params.get("range", "30d")
+            try:
+                days = int(range_param.replace("d", ""))
+            except ValueError:
+                return Response(
+                    {"error": "Invalid range parameter. Use format like '30d'"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            start_date = timezone.now().date() - timedelta(days=days)
+
+            # Get logs
+            logs = TimeOutLog.objects.filter(child=child, date__gte=start_date)
+
+            return Response(
+                {"results": TimeOutLogSerializer(logs, many=True).data},
+                status=status.HTTP_200_OK,
+            )
+
+    def _recompute_timeout_progress(
+        self, child: Child, progress: ModuleProgress
+    ) -> ModuleProgress:
+        """
+        Recompute Time Out progress counters and check unlock rules.
+
+        Rules:
+        - Count logs where needed_timeout = True AND was_successful = True
+        - PASS if: >= 1 successful time-out
+        """
+        # Count successful time-out attempts
+        successful_count = TimeOutLog.objects.filter(
+            child=child, needed_timeout=True, was_successful=True
+        ).count()
+
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.info(f"Successful time-outs count for {child}: {successful_count}")
+
+        # Update counters
+        counters = progress.counters or {}
+        counters["successful_timeouts_count"] = successful_count
+        progress.counters = counters
+
+        # Check unlock rules: >= 1 successful time-out
+        if successful_count >= 1:
+            if progress.state != "passed":
+                progress.state = "passed"
+                progress.passed_at = timezone.now()
+                progress.save()
+
+                print(f"🎉 Module '{progress.module.title}' completed for {child}")
                 check_and_unlock_next_module(child, progress.module)
         else:
             # Reset to unlocked if was passed but no longer meets criteria

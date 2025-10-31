@@ -620,3 +620,183 @@ class EffectiveCommandLog(models.Model):
     def __str__(self) -> str:
         gave = "✓" if self.gave_effective_command else "✗"
         return f"Log for {self.objective.label} on {self.date} ({gave})"
+
+
+class AngerCrisisLog(models.Model):
+    """
+    Log entry for tracking anger crisis management.
+
+    Records when a crisis occurred and how the parent intervened.
+    Used to track progress in the Anger Management module.
+    """
+
+    INTERVENTION_STAGE_CHOICES = [
+        ("before", _("Before the crisis")),
+        ("during", _("During the crisis")),
+        ("after", _("After the crisis")),
+        ("none", _("No intervention")),
+    ]
+
+    TECHNIQUE_CHOICES = [
+        # Before crisis techniques
+        ("observe_signs", _("Observe non-verbal signs")),
+        ("cushion_punch", _("Punch a cushion")),
+        ("sensory_activity", _("Sensory activity")),
+        ("calm_activity", _("Calm activity")),
+        ("discussion", _("Discussion")),
+        # During crisis techniques
+        ("isolate", _("Isolate the child")),
+        ("stay_calm", _("Stay calm")),
+        ("no_escalation", _("Avoid escalation")),
+        # After crisis techniques
+        ("awareness", _("Raise awareness")),
+        ("discuss_alternatives", _("Discuss alternatives")),
+        ("teach_techniques", _("Teach techniques")),
+    ]
+
+    child = models.ForeignKey(
+        Child,
+        on_delete=models.CASCADE,
+        related_name="anger_crisis_logs",
+        verbose_name=_("child"),
+    )
+
+    date = models.DateField(
+        _("date"),
+        help_text=_("Date when the crisis occurred"),
+    )
+
+    time = models.TimeField(
+        _("time"),
+        null=True,
+        blank=True,
+        help_text=_("Optional time when the crisis occurred"),
+    )
+
+    intervention_stage = models.CharField(
+        _("intervention stage"),
+        max_length=20,
+        choices=INTERVENTION_STAGE_CHOICES,
+        help_text=_("At which stage did the parent intervene"),
+    )
+
+    techniques_used = models.JSONField(
+        _("techniques used"),
+        default=list,
+        help_text=_("List of technique keys that were used"),
+    )
+
+    was_successful = models.BooleanField(
+        _("was successful"),
+        help_text=_("Whether the intervention was successful"),
+    )
+
+    notes = models.TextField(
+        _("notes"),
+        blank=True,
+        default="",
+        help_text=_("Optional notes about this crisis"),
+    )
+
+    created_at = models.DateTimeField(
+        _("created at"),
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        _("updated at"),
+        auto_now=True,
+    )
+
+    class Meta:
+        verbose_name = _("anger crisis log")
+        verbose_name_plural = _("anger crisis logs")
+        ordering = ["-date", "-created_at"]
+        indexes = [
+            models.Index(fields=["child", "date"]),
+            models.Index(fields=["child", "was_successful"]),
+        ]
+
+    def __str__(self) -> str:
+        success = "✓" if self.was_successful else "✗"
+        return f"Crisis log for {self.child.first_name or 'Child'} on {self.date} ({success})"
+
+
+class TimeOutLog(models.Model):
+    """
+    Log entry for tracking time-out usage.
+
+    Records daily whether parent needed to use time-out and if it was successful.
+    Used to track progress in the Time Out module.
+    """
+
+    FAILURE_REASON_CHOICES = [
+        ("negotiation", _("Child kept negotiating")),
+        ("time_not_respected", _("Time was not respected")),
+    ]
+
+    child = models.ForeignKey(
+        Child,
+        on_delete=models.CASCADE,
+        related_name="timeout_logs",
+        verbose_name=_("child"),
+    )
+
+    date = models.DateField(
+        _("date"),
+        help_text=_("Date of this log entry"),
+    )
+
+    needed_timeout = models.BooleanField(
+        _("needed timeout"),
+        help_text=_("Did the parent need to use time-out today?"),
+    )
+
+    was_successful = models.BooleanField(
+        _("was successful"),
+        null=True,
+        blank=True,
+        help_text=_("Did the time-out work? (only if needed)"),
+    )
+
+    failure_reason = models.CharField(
+        _("failure reason"),
+        max_length=20,
+        choices=FAILURE_REASON_CHOICES,
+        null=True,
+        blank=True,
+        help_text=_("Why didn't it work? (only if unsuccessful)"),
+    )
+
+    notes = models.TextField(
+        _("notes"),
+        blank=True,
+        default="",
+        help_text=_("Optional notes about this time-out"),
+    )
+
+    created_at = models.DateTimeField(
+        _("created at"),
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        _("updated at"),
+        auto_now=True,
+    )
+
+    class Meta:
+        verbose_name = _("time-out log")
+        verbose_name_plural = _("time-out logs")
+        unique_together = [["child", "date"]]
+        ordering = ["-date"]
+        indexes = [
+            models.Index(fields=["child", "date"]),
+            models.Index(fields=["child", "was_successful"]),
+        ]
+
+    def __str__(self) -> str:
+        if not self.needed_timeout:
+            return f"Time-out log for {self.child.first_name or 'Child'} on {self.date} (not needed)"
+        success = "✓" if self.was_successful else "✗"
+        return f"Time-out log for {self.child.first_name or 'Child'} on {self.date} ({success})"

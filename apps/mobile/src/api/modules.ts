@@ -4,16 +4,24 @@
 
 import { apiFetch } from './client';
 import type {
+  AngerCrisisLog,
+  CreateAngerLogRequest,
+  CreateAngerLogResponse,
   CreateLogRequest,
   CreateLogResponse,
   CreateObjectivesRequest,
   CreateSessionRequest,
   CreateSessionResponse,
+  CreateTimeOutLogRequest,
+  CreateTimeOutLogResponse,
   EffectiveCommandLog,
   EffectiveCommandObjective,
   ModuleProgress,
   ModuleWithProgress,
+  SetAngerFrequencyRequest,
+  SetTimeOutGoalRequest,
   SpecialTimeSession,
+  TimeOutLog,
 } from '../types/api';
 
 /**
@@ -154,4 +162,76 @@ export async function recomputeEffectiveCommands(childId: number): Promise<Modul
     method: 'POST',
     body: JSON.stringify({ child: childId }),
   });
+}
+
+// ========================================
+// Anger Management API
+// ========================================
+
+/**
+ * Set initial anger crisis frequency for a child
+ */
+export async function setAngerFrequency(data: SetAngerFrequencyRequest): Promise<ModuleProgress> {
+  return apiFetch<ModuleProgress>('/api/modules/anger-management/initial-frequency/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Create a new anger crisis log entry
+ */
+export async function createAngerCrisisLog(data: CreateAngerLogRequest): Promise<CreateAngerLogResponse> {
+  return apiFetch<CreateAngerLogResponse>('/api/modules/anger-management/logs/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Get anger crisis logs for a child
+ */
+export async function getAngerCrisisLogs(
+  childId: number,
+  range: string = '30d'
+): Promise<{ results: AngerCrisisLog[] }> {
+  return apiFetch<{ results: AngerCrisisLog[] }>(
+    `/api/modules/anger-management/logs/?child_id=${childId}&range=${range}`
+  );
+}
+
+// ========================================
+// Time Out API
+// ========================================
+
+/**
+ * Set target duration goal for time-out (2, 3, 4, or 5 minutes)
+ */
+export async function setTimeOutGoal(data: SetTimeOutGoalRequest): Promise<ModuleProgress> {
+  return apiFetch<ModuleProgress>('/api/modules/timeout/goal/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Create or update a time-out log entry
+ */
+export async function createTimeOutLog(data: CreateTimeOutLogRequest): Promise<CreateTimeOutLogResponse> {
+  return apiFetch<CreateTimeOutLogResponse>('/api/modules/timeout/logs/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Get time-out logs for a child
+ */
+export async function getTimeOutLogs(
+  childId: number,
+  range: string = '30d'
+): Promise<{ results: TimeOutLog[] }> {
+  return apiFetch<{ results: TimeOutLog[] }>(
+    `/api/modules/timeout/logs/?child_id=${childId}&range=${range}`
+  );
 }

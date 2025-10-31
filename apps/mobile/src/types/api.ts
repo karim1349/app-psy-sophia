@@ -116,9 +116,21 @@ export interface ModuleWithProgress {
   order_index: number;
   state: ModuleState;
   counters: {
-    sessions_21d: number;
-    liked_last6: number;
-    goal_per_week: number;
+    // Special Time counters
+    sessions_21d?: number;
+    liked_last6?: number;
+    goal_per_week?: number;
+    // Effective Commands counters
+    initial_repetition_average?: number;
+    objectives_with_5plus_days?: number[];
+    // Anger Management counters
+    initial_frequency?: string;
+    successful_crises_count?: number;
+    // Time Out counters
+    target_duration?: number;
+    successful_timeouts_count?: number;
+    // Allow any other dynamic counters
+    [key: string]: any;
   };
   passed_at: string | null;
 }
@@ -195,4 +207,84 @@ export interface CreateLogResponse {
 export interface CreateObjectivesRequest {
   child: number;
   labels: string[];
+}
+
+// Anger Management types
+export type AngerFrequency = 'daily' | 'weekly_multiple' | 'weekly_once' | 'monthly_multiple' | 'monthly_once';
+
+export type InterventionStage = 'before' | 'during' | 'after' | 'none';
+
+export type AngerTechnique =
+  // Before crisis techniques
+  | 'observe_signs' | 'cushion_punch' | 'sensory_activity' | 'calm_activity' | 'discussion'
+  // During crisis techniques
+  | 'isolate' | 'stay_calm' | 'no_escalation'
+  // After crisis techniques
+  | 'awareness' | 'discuss_alternatives' | 'teach_techniques';
+
+export interface AngerCrisisLog {
+  id: number;
+  child: number;
+  date: string;
+  time: string | null;
+  intervention_stage: InterventionStage;
+  techniques_used: AngerTechnique[];
+  was_successful: boolean;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateAngerLogRequest {
+  child: number;
+  date: string;
+  time?: string;
+  intervention_stage: InterventionStage;
+  techniques_used: AngerTechnique[];
+  was_successful: boolean;
+  notes?: string;
+}
+
+export interface CreateAngerLogResponse {
+  log: AngerCrisisLog;
+  progress: ModuleProgress;
+}
+
+export interface SetAngerFrequencyRequest {
+  child_id: number;
+  frequency: AngerFrequency;
+}
+
+// Time Out Module Types
+export type TimeOutFailureReason = 'negotiation' | 'time_not_respected';
+
+export interface TimeOutLog {
+  id: number;
+  child: number;
+  date: string; // ISO date
+  needed_timeout: boolean;
+  was_successful: boolean | null;
+  failure_reason: TimeOutFailureReason | null;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateTimeOutLogRequest {
+  child: number;
+  date: string; // ISO date
+  needed_timeout: boolean;
+  was_successful?: boolean | null;
+  failure_reason?: TimeOutFailureReason | null;
+  notes?: string;
+}
+
+export interface CreateTimeOutLogResponse {
+  log: TimeOutLog;
+  progress: ModuleProgress;
+}
+
+export interface SetTimeOutGoalRequest {
+  child_id: number;
+  target_duration: 2 | 3 | 4 | 5; // minutes
 }

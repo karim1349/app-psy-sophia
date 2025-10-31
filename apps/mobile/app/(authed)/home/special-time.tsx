@@ -184,7 +184,7 @@ export default function SpecialTimeScreen() {
   }
 
   const { counters, state, passed_at } = specialTimeModule;
-  const progress = (counters.sessions_21d / 6) * 100;
+  const progress = ((counters.sessions_21d || 0) / 6) * 100;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -337,15 +337,15 @@ export default function SpecialTimeScreen() {
             <Text style={styles.progressLabel}>Critères de réussite</Text>
             <View style={styles.criteriaRow}>
               <Text style={styles.criteriaText}>
-                Sessions (21 jours): <Text style={styles.bold}>{counters.sessions_21d}/6</Text>
+                Sessions (21 jours): <Text style={styles.bold}>{counters.sessions_21d || 0}/6</Text>
               </Text>
-              {counters.sessions_21d >= 6 ? <Text style={styles.checkmark}>✓</Text> : null}
+              {(counters.sessions_21d || 0) >= 6 ? <Text style={styles.checkmark}>✓</Text> : null}
             </View>
             <View style={styles.criteriaRow}>
               <Text style={styles.criteriaText}>
-                Appréciées (6 dernières): <Text style={styles.bold}>{counters.liked_last6}/4</Text>
+                Appréciées (6 dernières): <Text style={styles.bold}>{counters.liked_last6 || 0}/4</Text>
               </Text>
-              {counters.liked_last6 >= 4 ? <Text style={styles.checkmark}>✓</Text> : null}
+              {(counters.liked_last6 || 0) >= 4 ? <Text style={styles.checkmark}>✓</Text> : null}
             </View>
 
             <View style={styles.progressBar}>
