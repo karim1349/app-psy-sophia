@@ -59,10 +59,46 @@ export default function Index() {
           onboardingDone
         );
 
-        // If user is a full account (not a guest), skip onboarding entirely
-        if (isGuest === false) {
-          console.log('✅ User is a full account, redirecting to home');
-          router.replace('/(authed)/home');
+        // If user is a full account (not a guest) OR we can't determine guest status,
+        // fetch their children to restore data
+        if (isGuest === false || isGuest === undefined) {
+          console.log('✅ User might be a full account (isGuest:', isGuest, '), fetching children...');
+
+          try {
+            const { getChildren } = await import('../src/api/onboarding');
+            console.log('📞 Calling GET /api/children/...');
+            const childrenResponse = await getChildren();
+            console.log('📦 Received children response:', childrenResponse);
+            const userChildren = childrenResponse.results;
+
+            console.log('👶 User has', userChildren.length, 'children');
+
+            if (userChildren.length > 0) {
+              // Restore child data
+              const childId = userChildren[0].id;
+              console.log('💾 Setting childId in storage:', childId);
+              await appStorage.setChildId(childId);
+              await appStorage.setOnboardingDone(true);
+              console.log('✅ Successfully restored child ID:', childId);
+              router.replace('/(authed)/home');
+            } else if (isGuest === true) {
+              // Guest with no children - needs onboarding
+              console.log('⚠️ Guest user has NO children, redirecting to onboarding');
+              router.replace('/(public)/onboarding/age');
+            } else {
+              // Full account but no children - needs onboarding
+              console.log('⚠️ Full account has NO children, redirecting to onboarding');
+              router.replace('/(public)/onboarding/age');
+            }
+          } catch (error) {
+            console.error('❌ Error fetching children:', error);
+            // On error, check if this is a known guest
+            if (isGuest === true && !onboardingDone) {
+              router.replace('/(public)/onboarding/age');
+            } else {
+              router.replace('/(authed)/home');
+            }
+          }
         } else if (!onboardingDone) {
           // Guest user without onboarding, go to onboarding
           console.log(

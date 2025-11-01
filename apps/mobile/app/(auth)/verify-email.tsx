@@ -15,6 +15,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Button, FormField, TextField, useTheme } from '@app-psy-sophia/ui';
 import { config } from '@/constants/config';
+import { appStorage } from '../../src/lib/storage';
 
 export default function VerifyEmailScreen() {
   const router = useRouter();
@@ -48,8 +49,43 @@ export default function VerifyEmailScreen() {
 
   const onSubmit = (data: VerifyEmailInput) => {
     verifyEmail.mutate(data, {
-      onSuccess: () => {
-        router.replace('/(authed)/home');
+      onSuccess: async () => {
+        console.log('✅ ========== EMAIL VERIFIED ==========');
+        console.log('📞 About to fetch user children...');
+
+        // Fetch user's children to restore childId
+        try {
+          const { getChildren } = await import('../../src/api/onboarding');
+          console.log('📞 Calling GET /api/children/...');
+          const childrenResponse = await getChildren();
+          console.log('📦 Received children response:', childrenResponse);
+          const userChildren = childrenResponse.results;
+
+          console.log('👶 User has', userChildren.length, 'children');
+
+          if (userChildren.length > 0) {
+            // User has completed onboarding, restore their data
+            const childId = userChildren[0].id;
+            console.log('💾 Setting childId in storage:', childId);
+            await appStorage.setChildId(childId);
+            await appStorage.setOnboardingDone(true);
+            console.log('✅ Successfully restored child ID:', childId);
+            console.log('🚀 Navigating to home...');
+            router.replace('/(authed)/home');
+          } else {
+            // User has no children, needs to complete onboarding
+            console.log('⚠️ User has NO children, redirecting to onboarding');
+            router.replace('/(public)/onboarding/age');
+          }
+        } catch (error) {
+          console.error('❌ ========== ERROR FETCHING CHILDREN ==========');
+          console.error('Error details:', error);
+          console.error('Error message:', error instanceof Error ? error.message : String(error));
+          console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack');
+
+          // Don't navigate - stay on login and show error
+          throw error;
+        }
       },
     });
   };

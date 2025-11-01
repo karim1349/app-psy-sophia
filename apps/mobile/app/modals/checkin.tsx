@@ -2,21 +2,15 @@
  * Daily check-in modal
  */
 
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TextInput,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Slider from '@react-native-community/slider';
-import { Button } from '../../src/components/Button';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { upsertCheckin } from '../../src/api/onboarding';
-import { appStorage } from '../../src/lib/storage';
+import { Button } from '../../src/components/Button';
 import { ToastContainer } from '../../src/components/Toast';
+import { appStorage } from '../../src/lib/storage';
 
 const MOOD_LABELS = [
   '😞 Très difficile',
@@ -60,7 +54,9 @@ export default function CheckinModal() {
     <View style={styles.container}>
       <ScrollView style={styles.content}>
         <View style={styles.section}>
-          <Text style={styles.title}>Comment s&apos;est passée la journée ?</Text>
+          <Text style={styles.title}>
+            Comment s&apos;est passée la journée ?
+          </Text>
 
           <View style={styles.moodSection}>
             <Text style={styles.label}>Humeur générale</Text>
@@ -115,7 +111,7 @@ export default function CheckinModal() {
           />
         </View>
       </ScrollView>
-      
+
       {/* Toast container for modal */}
       <ToastContainer />
     </View>
