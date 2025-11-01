@@ -12,6 +12,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from datetime import datetime, timedelta
+from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 
@@ -19,13 +20,22 @@ from .models import (
     AngerCrisisLog,
     Child,
     DailyCheckin,
+    DailyTaskCompletion,
     EffectiveCommandLog,
     EffectiveCommandObjective,
     Module,
     ModuleProgress,
+    Privilege,
+    PrivilegeRedemption,
+    Routine,
+    RoutineCompletion,
+    Schedule,
+    ScheduleBlock,
     Screener,
     SpecialTimeSession,
     TargetBehavior,
+    Task,
+    TimeManagementChoice,
     TimeOutLog,
 )
 from .permissions import IsChildOwner, IsChildRelatedOwner
@@ -33,15 +43,24 @@ from .serializers import (
     AngerCrisisLogSerializer,
     ChildSerializer,
     DailyCheckinSerializer,
+    DailyTaskCompletionSerializer,
     DashboardSerializer,
     EffectiveCommandLogSerializer,
     EffectiveCommandObjectiveSerializer,
     ModuleProgressSerializer,
     ModuleSerializer,
     ModuleWithProgressSerializer,
+    PrivilegeRedemptionSerializer,
+    PrivilegeSerializer,
+    RoutineCompletionSerializer,
+    RoutineSerializer,
+    ScheduleBlockSerializer,
+    ScheduleSerializer,
     ScreenerSerializer,
     SpecialTimeSessionSerializer,
     TargetBehaviorSerializer,
+    TaskSerializer,
+    TimeManagementChoiceSerializer,
     TimeOutLogSerializer,
 )
 from .unlock_engine import check_and_unlock_next_module
@@ -327,7 +346,8 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
 
         child_id = request.query_params.get("child_id")
         logger.info(
-            f"🔍 Modules API called - child_id={child_id}, user={request.user.id}, is_guest={request.user.is_guest}"
+            f"🔍 Modules API called - child_id={child_id}, "
+            f"user={request.user.id}, is_guest={request.user.is_guest}"
         )
 
         if not child_id:
@@ -510,7 +530,9 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
             status=status.HTTP_200_OK,
         )
 
-    @action(detail=False, methods=["post", "get"], url_path="effective-commands/objectives")
+    @action(
+        detail=False, methods=["post", "get"], url_path="effective-commands/objectives"
+    )
     def effective_commands_objectives(self, request: Request) -> Response:
         """
         Create or list objectives for Effective Commands module.
@@ -553,7 +575,9 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
                 )
                 created_objectives.append(objective)
 
-            serializer = EffectiveCommandObjectiveSerializer(created_objectives, many=True)
+            serializer = EffectiveCommandObjectiveSerializer(
+                created_objectives, many=True
+            )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         else:  # GET
@@ -586,9 +610,11 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
         Log or list Effective Commands logs.
 
         POST /modules/effective-commands/logs/
-        Body: {child, objective, date, gave_effective_command, child_completed?, repetitions_count?, failure_reason?, notes?}
+        Body: {child, objective, date, gave_effective_command,
+               child_completed?, repetitions_count?, failure_reason?, notes?}
 
-        GET /modules/effective-commands/logs/?child_id={id}&objective_id={id}&range=30d
+        GET /modules/effective-commands/logs/?child_id={id}&objective_id={id}
+                                             &range=30d
         """
         if request.method == "POST":
             # Log an entry
@@ -628,9 +654,16 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
             )
 
             import logging
+
             logger = logging.getLogger(__name__)
-            logger.info(f"{'Created' if created else 'Updated'} log for objective {objective.label} on {date}")
-            logger.info(f"  gave_effective_command={log.gave_effective_command}, child_completed={log.child_completed}")
+            logger.info(
+                f"{'Created' if created else 'Updated'} log for objective "
+                f"{objective.label} on {date}"
+            )
+            logger.info(
+                f"  gave_effective_command={log.gave_effective_command}, "
+                f"child_completed={log.child_completed}"
+            )
 
             # Get or create progress
             module = Module.objects.get(key="effective_commands")
@@ -639,7 +672,10 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
                 module=module,
                 defaults={
                     "state": "unlocked",
-                    "counters": {"objectives_with_5plus_days": [], "initial_repetition_average": 5},
+                    "counters": {
+                        "objectives_with_5plus_days": [],
+                        "initial_repetition_average": 5,
+                    },
                 },
             )
 
@@ -714,7 +750,10 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
             module=module,
             defaults={
                 "state": "unlocked",
-                "counters": {"objectives_with_5plus_days": [], "initial_repetition_average": 5},
+                "counters": {
+                    "objectives_with_5plus_days": [],
+                    "initial_repetition_average": 5,
+                },
             },
         )
 
@@ -790,7 +829,7 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
         - Track objectives with >= 5 satisfying days
         - PASS if: >= 3 objectives have >= 5 satisfying days each
         """
-        from django.db.models import Count, Q
+        from django.db.models import Count
 
         # Get all active objectives for this child
         objectives = EffectiveCommandObjective.objects.filter(
@@ -820,8 +859,12 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
             satisfying_count = satisfying_logs.count()
 
             import logging
+
             logger = logging.getLogger(__name__)
-            logger.info(f"Objective '{objective.label}': {satisfying_count} satisfying days (threshold: {initial_avg})")
+            logger.info(
+                f"Objective '{objective.label}': {satisfying_count} "
+                f"satisfying days (threshold: {initial_avg})"
+            )
 
             if satisfying_count >= 5:
                 objectives_with_5plus_days.append(objective.id)
@@ -839,9 +882,7 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
                 progress.save()
 
                 # Unlock next module
-                print(
-                    f"🎉 Module '{progress.module.title}' completed for {child}"
-                )
+                print(f"🎉 Module '{progress.module.title}' completed for {child}")
                 check_and_unlock_next_module(child, progress.module)
         else:
             # Reset to unlocked if was passed but no longer meets criteria
@@ -852,7 +893,9 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
         progress.save()
         return progress
 
-    @action(detail=False, methods=["post"], url_path="anger-management/initial-frequency")
+    @action(
+        detail=False, methods=["post"], url_path="anger-management/initial-frequency"
+    )
     def anger_management_initial_frequency(self, request: Request) -> Response:
         """
         Set initial anger crisis frequency for a child.
@@ -1065,7 +1108,9 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
 
         # Convert to int if needed and validate duration
         try:
-            target_duration = int(target_duration) if target_duration is not None else None
+            target_duration = (
+                int(target_duration) if target_duration is not None else None
+            )
         except (ValueError, TypeError):
             target_duration = None
 
@@ -1164,7 +1209,8 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
 
             logger = logging.getLogger(__name__)
             logger.info(
-                f"{'Created' if created else 'Updated'} timeout log for {child.first_name or 'Child'} on {date}"
+                f"{'Created' if created else 'Updated'} timeout log for "
+                f"{child.first_name or 'Child'} on {date}"
             )
             logger.info(
                 f"  Needed: {log.needed_timeout}, Success: {log.was_successful}"
@@ -1255,6 +1301,886 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
 
         # Check unlock rules: >= 1 successful time-out
         if successful_count >= 1:
+            if progress.state != "passed":
+                progress.state = "passed"
+                progress.passed_at = timezone.now()
+                progress.save()
+
+                print(f"🎉 Module '{progress.module.title}' completed for {child}")
+                check_and_unlock_next_module(child, progress.module)
+        else:
+            # Reset to unlocked if was passed but no longer meets criteria
+            if progress.state == "passed":
+                progress.state = "unlocked"
+                progress.passed_at = None
+
+        progress.save()
+        return progress
+
+    # =============================================================================
+    # Rewards Module Actions
+    # =============================================================================
+
+    @action(detail=False, methods=["post"], url_path="rewards/setup")
+    def rewards_setup(self, request: Request) -> Response:
+        """
+        Initial setup: create tasks and privileges for a child.
+
+        POST /modules/rewards/setup/
+        Body: {
+            child_id: int,
+            tasks: [
+                {title: str, points_reward: int},
+                ...
+            ],
+            privileges: [
+                {title: str, points_cost: int},
+                ...
+            ]
+        }
+        """
+        child_id = request.data.get("child_id")
+        tasks_data = request.data.get("tasks", [])
+        privileges_data = request.data.get("privileges", [])
+
+        # Validate child_id is provided
+        if not child_id:
+            return Response(
+                {"error": "child_id is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validate child access
+        try:
+            child = Child.objects.get(id=child_id, parent=request.user)
+        except Child.DoesNotExist:
+            return Response(
+                {"error": "Child not found or access denied."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Create tasks
+        created_tasks = []
+        for task_data in tasks_data:
+            task_serializer = TaskSerializer(data={**task_data, "child": child_id})
+            task_serializer.is_valid(raise_exception=True)
+            task = task_serializer.save()
+            created_tasks.append(task)
+
+        # Create privileges
+        created_privileges = []
+        for privilege_data in privileges_data:
+            privilege_serializer = PrivilegeSerializer(
+                data={**privilege_data, "child": child_id}
+            )
+            privilege_serializer.is_valid(raise_exception=True)
+            privilege = privilege_serializer.save()
+            created_privileges.append(privilege)
+
+        # Update module progress to mark setup complete
+        rewards_module = Module.objects.get(key="rewards")
+        progress, _ = ModuleProgress.objects.get_or_create(
+            child=child,
+            module=rewards_module,
+            defaults={
+                "state": "unlocked",
+                "counters": {
+                    "setup_complete": True,
+                    "total_tasks_count": len(created_tasks),
+                    "total_privileges_count": len(created_privileges),
+                    "consecutive_days_above_50pct": 0,
+                },
+            },
+        )
+
+        if not progress.counters.get("setup_complete"):
+            counters = progress.counters or {}
+            counters["setup_complete"] = True
+            counters["total_tasks_count"] = len(created_tasks)
+            counters["total_privileges_count"] = len(created_privileges)
+            progress.counters = counters
+            progress.save()
+
+        return Response(
+            {
+                "tasks": TaskSerializer(created_tasks, many=True).data,
+                "privileges": PrivilegeSerializer(created_privileges, many=True).data,
+                "progress": ModuleProgressSerializer(progress).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(detail=False, methods=["get"], url_path="rewards/tasks")
+    def list_rewards_tasks(self, request: Request) -> Response:
+        """List all active tasks for a child."""
+        child_id = request.query_params.get("child_id")
+        if not child_id:
+            return Response(
+                {"error": "child_id query parameter is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            child = Child.objects.get(id=child_id, parent=request.user)
+        except Child.DoesNotExist:
+            return Response(
+                {"error": "Child not found or access denied."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        tasks = Task.objects.filter(child=child, is_active=True)
+        return Response(
+            {"tasks": TaskSerializer(tasks, many=True).data},
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=False, methods=["get"], url_path="rewards/privileges")
+    def list_rewards_privileges(self, request: Request) -> Response:
+        """List all active privileges for a child."""
+        child_id = request.query_params.get("child_id")
+        if not child_id:
+            return Response(
+                {"error": "child_id query parameter is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            child = Child.objects.get(id=child_id, parent=request.user)
+        except Child.DoesNotExist:
+            return Response(
+                {"error": "Child not found or access denied."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        privileges = Privilege.objects.filter(child=child, is_active=True)
+        return Response(
+            {"privileges": PrivilegeSerializer(privileges, many=True).data},
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=False, methods=["post", "get"], url_path="rewards/daily-completion")
+    def rewards_daily_completion(self, request: Request) -> Response:
+        """Log or list daily task completions."""
+        if request.method == "POST":
+            child_id = request.data.get("child_id")
+            date_str = request.data.get("date")
+            completed_task_ids = request.data.get("completed_task_ids", [])
+            notes = request.data.get("notes", "")
+
+            try:
+                child = Child.objects.get(id=child_id, parent=request.user)
+            except Child.DoesNotExist:
+                return Response(
+                    {"error": "Child not found or access denied."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            # Validate task IDs
+            if completed_task_ids:
+                valid_task_ids = Task.objects.filter(
+                    id__in=completed_task_ids, child=child, is_active=True
+                ).values_list("id", flat=True)
+                invalid_ids = set(completed_task_ids) - set(valid_task_ids)
+                if invalid_ids:
+                    return Response(
+                        {"error": f"Invalid task IDs: {invalid_ids}"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+            active_tasks = Task.objects.filter(child=child, is_active=True)
+            total_tasks = active_tasks.count()
+
+            if total_tasks == 0:
+                return Response(
+                    {"error": "No active tasks found for this child."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            completed_count = len(completed_task_ids)
+            completion_rate = (
+                (completed_count / total_tasks) * 100 if total_tasks > 0 else 0
+            )
+
+            completed_tasks = Task.objects.filter(
+                id__in=completed_task_ids, child=child, is_active=True
+            )
+            total_points_earned = sum(task.points_reward for task in completed_tasks)
+
+            completion, created = DailyTaskCompletion.objects.update_or_create(
+                child=child,
+                date=date_str,
+                defaults={
+                    "completed_task_ids": completed_task_ids,
+                    "total_points_earned": total_points_earned,
+                    "completion_rate": completion_rate,
+                    "notes": notes,
+                },
+            )
+
+            rewards_module = Module.objects.get(key="rewards")
+            progress, _ = ModuleProgress.objects.get_or_create(
+                child=child,
+                module=rewards_module,
+                defaults={"state": "unlocked", "counters": {}},
+            )
+
+            progress = self._recompute_rewards_progress(child, progress)
+
+            return Response(
+                {
+                    "completion": DailyTaskCompletionSerializer(completion).data,
+                    "progress": ModuleProgressSerializer(progress).data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        else:  # GET
+            child_id = request.query_params.get("child_id")
+            if not child_id:
+                return Response(
+                    {"error": "child_id query parameter is required."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            try:
+                child = Child.objects.get(id=child_id, parent=request.user)
+            except Child.DoesNotExist:
+                return Response(
+                    {"error": "Child not found or access denied."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            range_param = request.query_params.get("range", "30d")
+            try:
+                days = int(range_param.replace("d", ""))
+            except ValueError:
+                return Response(
+                    {"error": "Invalid range parameter. Use format like '30d'"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            start_date = timezone.now().date() - timedelta(days=days)
+            completions = DailyTaskCompletion.objects.filter(
+                child=child, date__gte=start_date
+            ).order_by("-date")
+
+            return Response(
+                {
+                    "completions": DailyTaskCompletionSerializer(
+                        completions, many=True
+                    ).data
+                },
+                status=status.HTTP_200_OK,
+            )
+
+    @action(detail=False, methods=["post"], url_path="rewards/redeem")
+    def redeem_privilege(self, request: Request) -> Response:
+        """Redeem a privilege (spend points)."""
+        child_id = request.data.get("child_id")
+        privilege_id = request.data.get("privilege_id")
+        notes = request.data.get("notes", "")
+
+        try:
+            child = Child.objects.get(id=child_id, parent=request.user)
+        except Child.DoesNotExist:
+            return Response(
+                {"error": "Child not found or access denied."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            privilege = Privilege.objects.get(
+                id=privilege_id, child=child, is_active=True
+            )
+        except Privilege.DoesNotExist:
+            return Response(
+                {"error": "Privilege not found or not active."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        total_earned = (
+            DailyTaskCompletion.objects.filter(child=child).aggregate(
+                total=models.Sum("total_points_earned")
+            )["total"]
+            or 0
+        )
+
+        total_spent = (
+            PrivilegeRedemption.objects.filter(child=child).aggregate(
+                total=models.Sum("points_spent")
+            )["total"]
+            or 0
+        )
+
+        current_balance = total_earned - total_spent
+
+        if current_balance < privilege.points_cost:
+            return Response(
+                {
+                    "error": "Insufficient points.",
+                    "balance": current_balance,
+                    "required": privilege.points_cost,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        redemption = PrivilegeRedemption.objects.create(
+            child=child,
+            privilege=privilege,
+            privilege_title=privilege.title,
+            points_spent=privilege.points_cost,
+            notes=notes,
+        )
+
+        new_balance = current_balance - privilege.points_cost
+
+        # Update progress counters with new balance
+        rewards_module = Module.objects.get(key="rewards")
+        progress, _ = ModuleProgress.objects.get_or_create(
+            child=child,
+            module=rewards_module,
+            defaults={"state": "unlocked", "counters": {}},
+        )
+        counters = progress.counters or {}
+        counters["points_balance"] = new_balance
+        progress.counters = counters
+        progress.save()
+
+        return Response(
+            {
+                "redemption": PrivilegeRedemptionSerializer(redemption).data,
+                "new_balance": new_balance,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(detail=False, methods=["get"], url_path="rewards/balance")
+    def get_rewards_balance(self, request: Request) -> Response:
+        """Get current points balance for a child."""
+        child_id = request.query_params.get("child_id")
+        if not child_id:
+            return Response(
+                {"error": "child_id query parameter is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            child = Child.objects.get(id=child_id, parent=request.user)
+        except Child.DoesNotExist:
+            return Response(
+                {"error": "Child not found or access denied."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        total_earned = (
+            DailyTaskCompletion.objects.filter(child=child).aggregate(
+                total=models.Sum("total_points_earned")
+            )["total"]
+            or 0
+        )
+
+        total_spent = (
+            PrivilegeRedemption.objects.filter(child=child).aggregate(
+                total=models.Sum("points_spent")
+            )["total"]
+            or 0
+        )
+
+        balance = total_earned - total_spent
+
+        return Response(
+            {
+                "balance": balance,
+                "total_earned": total_earned,
+                "total_spent": total_spent,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def _recompute_rewards_progress(
+        self, child: Child, progress: ModuleProgress
+    ) -> ModuleProgress:
+        """
+        Recompute rewards module progress and check unlock criteria.
+
+        Rules:
+        - Module passes when child completes >50% of tasks for >= 5 consecutive days
+        """
+        # Get all completions ordered by date descending
+        completions = (
+            DailyTaskCompletion.objects.filter(child=child)
+            .order_by("-date")
+            .values("date", "completion_rate")
+        )
+
+        if not completions:
+            progress.counters = progress.counters or {}
+            progress.counters["consecutive_days_above_50pct"] = 0
+            progress.save()
+            return progress
+
+        # Find longest streak of consecutive days with >50% completion
+        consecutive_days = 0
+        max_streak = 0
+        prev_date = None
+
+        for completion in completions:
+            current_date = completion["date"]
+            completion_rate = completion["completion_rate"]
+
+            # Check if this day has >50% completion
+            if completion_rate >= 50:
+                # Check if consecutive with previous day
+                is_consecutive = (
+                    prev_date is None or (prev_date - current_date).days == 1
+                )
+                if is_consecutive:
+                    consecutive_days += 1
+                    max_streak = max(max_streak, consecutive_days)
+                else:
+                    # Streak broken
+                    break
+            else:
+                # Day below 50%, streak ends
+                break
+
+            prev_date = current_date
+
+        # Update counters
+        counters = progress.counters or {}
+        counters["consecutive_days_above_50pct"] = max_streak
+        progress.counters = counters
+
+        # Check unlock rules: >= 5 consecutive days with >50% completion
+        if max_streak >= 5:
+            if progress.state != "passed":
+                progress.state = "passed"
+                progress.passed_at = timezone.now()
+                progress.save()
+                print(f"🎉 Module '{progress.module.title}' completed for {child}")
+                check_and_unlock_next_module(child, progress.module)
+        else:
+            # Reset to unlocked if was passed but no longer meets criteria
+            if progress.state == "passed":
+                progress.state = "unlocked"
+                progress.passed_at = None
+
+        progress.save()
+        return progress
+
+    # =============================================================================
+    # Time Management Module Actions
+    # =============================================================================
+
+    @action(detail=False, methods=["post"], url_path="time-management/choice")
+    def time_management_choice(self, request: Request) -> Response:
+        """
+        Record parent's choice for time management approach.
+
+        POST /modules/time-management/choice/
+        Body: {child_id, approach}  # 'routines', 'schedule', or 'both'
+        """
+        child_id = request.data.get("child_id")
+        approach = request.data.get("approach")
+
+        # Validate approach
+        valid_approaches = ["routines", "schedule", "both"]
+        if approach not in valid_approaches:
+            return Response(
+                {"error": f"approach must be one of {valid_approaches}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Get child
+        try:
+            child = Child.objects.get(id=child_id, parent=request.user)
+        except Child.DoesNotExist:
+            return Response(
+                {"error": "Child not found or access denied."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Create or update choice
+        choice, created = TimeManagementChoice.objects.update_or_create(
+            child=child, defaults={"approach": approach}
+        )
+
+        return Response(
+            TimeManagementChoiceSerializer(choice).data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+    @action(detail=False, methods=["post", "get"], url_path="time-management/routines")
+    def time_management_routines(self, request: Request) -> Response:
+        """
+        Create or list routines.
+
+        POST /modules/time-management/routines/
+        Body: {child, routine_type, title, steps[], target_time, is_custom}
+
+        GET /modules/time-management/routines/?child_id={id}
+        """
+        if request.method == "POST":
+            child_id = request.data.get("child")
+            try:
+                child = Child.objects.get(id=child_id, parent=request.user)
+            except Child.DoesNotExist:
+                return Response(
+                    {"error": "Child not found or access denied."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            serializer = RoutineSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            routine = serializer.save()
+
+            return Response(
+                RoutineSerializer(routine).data,
+                status=status.HTTP_201_CREATED,
+            )
+
+        else:  # GET
+            child_id = request.query_params.get("child_id")
+            if not child_id:
+                return Response(
+                    {"error": "child_id query parameter is required."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            try:
+                child = Child.objects.get(id=child_id, parent=request.user)
+            except Child.DoesNotExist:
+                return Response(
+                    {"error": "Child not found or access denied."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            routines = Routine.objects.filter(child=child, is_active=True).order_by(
+                "routine_type"
+            )
+            return Response(
+                {"results": RoutineSerializer(routines, many=True).data},
+                status=status.HTTP_200_OK,
+            )
+
+    @action(
+        detail=False,
+        methods=["post", "get"],
+        url_path="time-management/routine-completion",
+    )
+    def time_management_routine_completion(self, request: Request) -> Response:
+        """
+        Log or list routine completions.
+
+        POST /modules/time-management/routine-completion/
+        Body: {child, routine, routine_type, date, was_on_time, completion_time?, notes?}
+
+        GET /modules/time-management/routine-completion/?child_id={id}&range=7d
+        """
+        if request.method == "POST":
+            child_id = request.data.get("child")
+            try:
+                child = Child.objects.get(id=child_id, parent=request.user)
+            except Child.DoesNotExist:
+                return Response(
+                    {"error": "Child not found or access denied."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            # Validate routine belongs to child if provided
+            routine_id = request.data.get("routine")
+            if routine_id:
+                if not Routine.objects.filter(id=routine_id, child=child).exists():
+                    return Response(
+                        {"error": "Routine not found or access denied."},
+                        status=status.HTTP_404_NOT_FOUND,
+                    )
+
+            serializer = RoutineCompletionSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            completion = serializer.save()
+
+            # Recompute progress
+            module = Module.objects.get(key="time_management")
+            progress, _ = ModuleProgress.objects.get_or_create(
+                child=child,
+                module=module,
+                defaults={
+                    "state": "unlocked",
+                    "counters": {"on_time_days_count": 0},
+                },
+            )
+
+            progress = self._recompute_time_management_progress(child, progress)
+
+            return Response(
+                {
+                    "completion": RoutineCompletionSerializer(completion).data,
+                    "progress": ModuleProgressSerializer(progress).data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        else:  # GET
+            child_id = request.query_params.get("child_id")
+            if not child_id:
+                return Response(
+                    {"error": "child_id query parameter is required."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            try:
+                child = Child.objects.get(id=child_id, parent=request.user)
+            except Child.DoesNotExist:
+                return Response(
+                    {"error": "Child not found or access denied."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            # Parse range parameter
+            range_param = request.query_params.get("range", "7d")
+            try:
+                days = int(range_param.replace("d", ""))
+            except ValueError:
+                return Response(
+                    {"error": "Invalid range parameter. Use format like '7d'"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            start_date = timezone.now().date() - timedelta(days=days)
+
+            completions = RoutineCompletion.objects.filter(
+                child=child, date__gte=start_date
+            ).order_by("-date")
+
+            return Response(
+                {"results": RoutineCompletionSerializer(completions, many=True).data},
+                status=status.HTTP_200_OK,
+            )
+
+    @action(detail=False, methods=["post", "get"], url_path="time-management/schedule")
+    def time_management_schedule(self, request: Request) -> Response:
+        """
+        Create or get schedule.
+
+        POST /modules/time-management/schedule/
+        Body: {child, title?}
+
+        GET /modules/time-management/schedule/?child_id={id}
+        """
+        if request.method == "POST":
+            child_id = request.data.get("child")
+            try:
+                child = Child.objects.get(id=child_id, parent=request.user)
+            except Child.DoesNotExist:
+                return Response(
+                    {"error": "Child not found or access denied."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            # Deactivate existing schedules
+            Schedule.objects.filter(child=child).update(is_active=False)
+
+            # Create new schedule
+            title = request.data.get("title", "Emploi du temps")
+            schedule = Schedule.objects.create(child=child, title=title, is_active=True)
+
+            return Response(
+                ScheduleSerializer(schedule).data,
+                status=status.HTTP_201_CREATED,
+            )
+
+        else:  # GET
+            child_id = request.query_params.get("child_id")
+            if not child_id:
+                return Response(
+                    {"error": "child_id query parameter is required."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            try:
+                child = Child.objects.get(id=child_id, parent=request.user)
+            except Child.DoesNotExist:
+                return Response(
+                    {"error": "Child not found or access denied."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            # Get active schedule
+            try:
+                schedule = Schedule.objects.get(child=child, is_active=True)
+                return Response(
+                    ScheduleSerializer(schedule).data,
+                    status=status.HTTP_200_OK,
+                )
+            except Schedule.DoesNotExist:
+                return Response(
+                    {"error": "No active schedule found for this child."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+    @action(
+        detail=False,
+        methods=["post", "get"],
+        url_path="time-management/schedule-blocks",
+    )
+    def time_management_schedule_blocks(self, request: Request) -> Response:
+        """
+        Add or list schedule blocks.
+
+        POST /modules/time-management/schedule-blocks/
+        Body: {schedule, day_of_week, start_time, end_time,
+               activity_type, title, description?, subject?, color?}
+
+        GET /modules/time-management/schedule-blocks/?schedule_id={id}
+        """
+        if request.method == "POST":
+            schedule_id = request.data.get("schedule")
+            try:
+                schedule = Schedule.objects.get(
+                    id=schedule_id, child__parent=request.user
+                )
+            except Schedule.DoesNotExist:
+                return Response(
+                    {"error": "Schedule not found or access denied."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            serializer = ScheduleBlockSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            block = serializer.save()
+
+            return Response(
+                ScheduleBlockSerializer(block).data,
+                status=status.HTTP_201_CREATED,
+            )
+
+        else:  # GET
+            schedule_id = request.query_params.get("schedule_id")
+            if not schedule_id:
+                return Response(
+                    {"error": "schedule_id query parameter is required."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            try:
+                schedule = Schedule.objects.get(
+                    id=schedule_id, child__parent=request.user
+                )
+            except Schedule.DoesNotExist:
+                return Response(
+                    {"error": "Schedule not found or access denied."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            blocks = ScheduleBlock.objects.filter(schedule=schedule).order_by(
+                "day_of_week", "start_time"
+            )
+
+            return Response(
+                {"results": ScheduleBlockSerializer(blocks, many=True).data},
+                status=status.HTTP_200_OK,
+            )
+
+    @action(detail=False, methods=["get"], url_path="time-management/templates")
+    def time_management_templates(self, request: Request) -> Response:
+        """
+        Get predefined routine templates.
+
+        GET /modules/time-management/templates/
+        """
+        templates = {
+            "morning": [
+                {
+                    "title": "Routine du matin",
+                    "steps": [
+                        "Se réveiller",
+                        "Aller aux toilettes",
+                        "Se laver les mains",
+                        "Se brosser les dents",
+                        "S'habiller",
+                        "Prendre le petit-déjeuner",
+                        "Mettre ses chaussures",
+                        "Prendre son sac d'école",
+                    ],
+                    "target_time": "08:00",
+                }
+            ],
+            "evening": [
+                {
+                    "title": "Routine du soir",
+                    "steps": [
+                        "Dîner",
+                        "Temps calme",
+                        "Prendre une douche/un bain",
+                        "Mettre son pyjama",
+                        "Se brosser les dents",
+                        "Histoire du soir",
+                        "Aller au lit",
+                    ],
+                    "target_time": "20:30",
+                }
+            ],
+            "sunday": [
+                {
+                    "title": "Routine du dimanche soir",
+                    "steps": [
+                        "Préparer les vêtements pour la semaine",
+                        "Vérifier le sac d'école",
+                        "Préparer le matériel scolaire",
+                        "Vérifier les devoirs",
+                        "Mettre le réveil",
+                    ],
+                    "target_time": "19:00",
+                }
+            ],
+        }
+
+        return Response(templates, status=status.HTTP_200_OK)
+
+    def _recompute_time_management_progress(
+        self, child: Child, progress: ModuleProgress
+    ) -> ModuleProgress:
+        """
+        Recompute Time Management progress counters and check unlock rules.
+
+        Rules:
+        - Count days where child was on-time with routines in last 5 days
+        - PASS if: >= 3 out of 5 days on-time
+        """
+        # Get last 5 days of completions
+        cutoff_date = timezone.now().date() - timedelta(
+            days=4
+        )  # Last 5 days including today
+
+        # Get all completions in this range
+        completions = RoutineCompletion.objects.filter(
+            child=child, date__gte=cutoff_date
+        ).order_by("-date")
+
+        # Group by date and check if child was on-time for any routine that day
+        on_time_dates = set()
+        for completion in completions:
+            if completion.was_on_time:
+                on_time_dates.add(completion.date)
+
+        on_time_days_count = len(on_time_dates)
+
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.info(
+            f"Time management progress for {child}: "
+            f"{on_time_days_count} days on-time in last 5 days"
+        )
+
+        # Update counters
+        counters = progress.counters or {}
+        counters["on_time_days_count"] = on_time_days_count
+        progress.counters = counters
+
+        # Check unlock rules: >= 3 out of 5 days on-time
+        if on_time_days_count >= 3:
             if progress.state != "passed":
                 progress.state = "passed"
                 progress.passed_at = timezone.now()

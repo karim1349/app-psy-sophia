@@ -65,7 +65,9 @@ class TestAngerManagementAPI(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("counters", response.data)
-        self.assertEqual(response.data["counters"]["initial_frequency"], "weekly_multiple")
+        self.assertEqual(
+            response.data["counters"]["initial_frequency"], "weekly_multiple"
+        )
 
         # Verify progress was created
         progress = ModuleProgress.objects.get(child=self.child, module=self.module)

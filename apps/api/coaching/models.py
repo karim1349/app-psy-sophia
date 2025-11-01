@@ -464,7 +464,10 @@ class SpecialTimeSession(models.Model):
 
     def __str__(self) -> str:
         enjoyed = "✓" if self.child_enjoyed else "✗"
-        return f"Special Time for {self.child} on {self.datetime.date()} ({self.duration_min}min) {enjoyed}"
+        return (
+            f"Special Time for {self.child} on {self.datetime.date()} "
+            f"({self.duration_min}min) {enjoyed}"
+        )
 
 
 class EffectiveCommandObjective(models.Model):
@@ -797,6 +800,330 @@ class TimeOutLog(models.Model):
 
     def __str__(self) -> str:
         if not self.needed_timeout:
-            return f"Time-out log for {self.child.first_name or 'Child'} on {self.date} (not needed)"
+            return (
+                f"Time-out log for {self.child.first_name or 'Child'} "
+                f"on {self.date} (not needed)"
+            )
         success = "✓" if self.was_successful else "✗"
         return f"Time-out log for {self.child.first_name or 'Child'} on {self.date} ({success})"
+
+
+# =============================================================================
+# Rewards System (Point System) Models
+# =============================================================================
+
+
+class Task(models.Model):
+    """
+    A task that the child can complete to earn points.
+
+    Tasks are created by parents and can be:
+    - Simple daily task (1 point)
+    - Medium daily task (3 points)
+    - Complex task (5 points)
+    """
+
+    child = models.ForeignKey(Child, on_delete=models.CASCADE, related_name="tasks")
+    title = models.CharField(max_length=200)
+    points_reward = models.IntegerField(
+        help_text="Points earned when task is completed (1, 3, or 5)"
+    )
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["points_reward", "title"]
+        indexes = [
+            models.Index(fields=["child", "is_active"]),
+        ]
+
+    def __str__(self):
+        return f"{self.title} ({self.points_reward}pts) - {self.child.first_name or 'Child'}"
+
+
+class Privilege(models.Model):
+    """
+    A privilege (reward) that the child can redeem by spending points.
+
+    Privileges are created by parents and can be:
+    - Daily privilege (3 points)
+    - Important privilege (5 points)
+    - Very important occasional privilege (10 points)
+    """
+
+    child = models.ForeignKey(
+        Child, on_delete=models.CASCADE, related_name="privileges"
+    )
+    title = models.CharField(max_length=200)
+    points_cost = models.IntegerField(
+        help_text="Points required to redeem this privilege (3, 5, or 10)"
+    )
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["points_cost", "title"]
+        indexes = [
+            models.Index(fields=["child", "is_active"]),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.title} ({self.points_cost}pts) - {self.child.first_name or 'Child'}"
+        )
+
+
+class DailyTaskCompletion(models.Model):
+    """
+    Tracks which tasks were completed on a given day.
+
+    Stores:
+    - Date of completion
+    - List of completed task IDs
+    - Total points earned that day
+    - Completion rate (percentage)
+
+    Used to calculate:
+    - Current points balance
+    - Consecutive days with >50% completion (unlock criteria)
+    """
+
+    child = models.ForeignKey(
+        Child, on_delete=models.CASCADE, related_name="daily_completions"
+    )
+    date = models.DateField()
+    completed_task_ids = models.JSONField(
+        default=list, help_text="Array of task IDs completed on this day"
+    )
+    total_points_earned = models.IntegerField(default=0)
+    completion_rate = models.FloatField(
+        default=0.0, help_text="Percentage of tasks completed (0-100)"
+    )
+    notes = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [["child", "date"]]
+        ordering = ["-date"]
+        indexes = [
+            models.Index(fields=["child", "date"]),
+            models.Index(fields=["child", "-date"]),
+        ]
+
+    def __str__(self):
+        return (
+            f"Daily completion for {self.child.first_name or 'Child'} "
+            f"on {self.date} ({self.completion_rate:.0f}%)"
+        )
+
+
+class PrivilegeRedemption(models.Model):
+    """
+    Tracks when privileges are redeemed (points spent).
+
+    This creates a transaction history of points spent.
+    """
+
+    child = models.ForeignKey(
+        Child, on_delete=models.CASCADE, related_name="privilege_redemptions"
+    )
+    privilege = models.ForeignKey(
+        Privilege, on_delete=models.SET_NULL, null=True, related_name="redemptions"
+    )
+    privilege_title = models.CharField(
+        max_length=200,
+        help_text="Stored in case privilege is deleted",
+    )
+    points_spent = models.IntegerField()
+    redeemed_at = models.DateTimeField(auto_now_add=True)
+    notes = models.TextField(blank=True, default="")
+
+    class Meta:
+        ordering = ["-redeemed_at"]
+        indexes = [
+            models.Index(fields=["child", "-redeemed_at"]),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.privilege_title} redeemed by "
+            f"{self.child.first_name or 'Child'} ({self.points_spent}pts)"
+        )
+
+
+# =============================================================================
+# Time Management (La gestion du temps) Module Models
+# =============================================================================
+
+
+class TimeManagementChoice(models.Model):
+    """
+    Records parent's choice for time management approach.
+    One choice per child.
+    """
+
+    APPROACH_CHOICES = [
+        ("routines", "Routines"),
+        ("schedule", "Emploi du temps"),
+        ("both", "Les deux"),
+    ]
+
+    child = models.OneToOneField(
+        Child, on_delete=models.CASCADE, related_name="time_management_choice"
+    )
+    approach = models.CharField(max_length=20, choices=APPROACH_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.child.first_name or 'Child'} - {self.get_approach_display()}"
+
+
+class Routine(models.Model):
+    """
+    Represents a daily routine (morning, evening, Sunday evening).
+    Contains steps and target completion time.
+    """
+
+    ROUTINE_TYPES = [
+        ("morning", "Routine du matin"),
+        ("evening", "Routine du soir"),
+        ("sunday", "Routine du dimanche soir"),
+    ]
+
+    child = models.ForeignKey(Child, on_delete=models.CASCADE, related_name="routines")
+    routine_type = models.CharField(max_length=20, choices=ROUTINE_TYPES)
+    title = models.CharField(max_length=200)
+    steps = models.JSONField(
+        default=list, help_text="Array of step descriptions (strings)"
+    )
+    target_time = models.TimeField(help_text="Expected completion time (HH:MM)")
+    is_custom = models.BooleanField(
+        default=False, help_text="True if created by parent, False if from template"
+    )
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["routine_type"]
+        indexes = [
+            models.Index(fields=["child", "is_active"]),
+            models.Index(fields=["child", "routine_type"]),
+        ]
+
+    def __str__(self):
+        return f"{self.child.first_name or 'Child'} - {self.get_routine_type_display()}"
+
+
+class RoutineCompletion(models.Model):
+    """
+    Tracks daily completion of a routine.
+    One completion per child/routine_type/date.
+    """
+
+    child = models.ForeignKey(
+        Child, on_delete=models.CASCADE, related_name="routine_completions"
+    )
+    routine = models.ForeignKey(
+        Routine, on_delete=models.SET_NULL, null=True, related_name="completions"
+    )
+    routine_type = models.CharField(
+        max_length=20, help_text="Stored for history even if routine deleted"
+    )
+    date = models.DateField()
+    was_on_time = models.BooleanField(help_text="True if completed before target time")
+    completion_time = models.TimeField(null=True, blank=True)
+    notes = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("child", "routine_type", "date")
+        ordering = ["-date"]
+        indexes = [
+            models.Index(fields=["child", "-date"]),
+            models.Index(fields=["child", "was_on_time", "-date"]),
+        ]
+
+    def __str__(self):
+        status = "✓" if self.was_on_time else "✗"
+        return f"{status} {self.child.first_name or 'Child'} - {self.routine_type} on {self.date}"
+
+
+class Schedule(models.Model):
+    """
+    Weekly schedule container for a child.
+    Contains multiple schedule blocks.
+    """
+
+    child = models.ForeignKey(Child, on_delete=models.CASCADE, related_name="schedules")
+    title = models.CharField(max_length=200, default="Emploi du temps")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-is_active", "-created_at"]
+
+    def __str__(self):
+        return f"{self.child.first_name or 'Child'} - {self.title}"
+
+
+class ScheduleBlock(models.Model):
+    """
+    Individual time block in a weekly schedule.
+    Represents an activity on a specific day of week with start/end times.
+    """
+
+    ACTIVITY_TYPES = [
+        ("school", "École"),
+        ("travel", "Trajet"),
+        ("home_activity", "Activité à domicile"),
+        ("leisure", "Loisir"),
+        ("free_time", "Temps libre"),
+    ]
+
+    DAY_CHOICES = [
+        (0, "Lundi"),
+        (1, "Mardi"),
+        (2, "Mercredi"),
+        (3, "Jeudi"),
+        (4, "Vendredi"),
+        (5, "Samedi"),
+        (6, "Dimanche"),
+    ]
+
+    schedule = models.ForeignKey(
+        Schedule, on_delete=models.CASCADE, related_name="blocks"
+    )
+    day_of_week = models.IntegerField(choices=DAY_CHOICES, help_text="0=Monday")
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    activity_type = models.CharField(max_length=20, choices=ACTIVITY_TYPES)
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True, default="")
+    subject = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        help_text="Subject name for school blocks",
+    )
+    color = models.CharField(
+        max_length=7, default="#4F46E5", help_text="Hex color code for UI"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["day_of_week", "start_time"]
+        indexes = [
+            models.Index(fields=["schedule", "day_of_week", "start_time"]),
+        ]
+
+    def __str__(self):
+        day_name = dict(self.DAY_CHOICES)[self.day_of_week]
+        return f"{day_name} {self.start_time}-{self.end_time}: {self.title}"

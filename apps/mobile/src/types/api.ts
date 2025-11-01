@@ -288,3 +288,127 @@ export interface SetTimeOutGoalRequest {
   child_id: number;
   target_duration: 2 | 3 | 4 | 5; // minutes
 }
+
+// Time Management Module Types
+export type TimeManagementApproach = 'routines' | 'schedule' | 'both';
+export type RoutineType = 'morning' | 'evening' | 'sunday';
+export type ActivityType = 'school' | 'travel' | 'home_activity' | 'leisure' | 'free_time';
+export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 0 = Monday, 6 = Sunday
+
+export interface TimeManagementChoice {
+  id: number;
+  child: number;
+  approach: TimeManagementApproach;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Routine {
+  id: number;
+  child: number;
+  routine_type: RoutineType;
+  title: string;
+  steps: string[];
+  target_time: string; // HH:MM format
+  is_custom: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RoutineCompletion {
+  id: number;
+  child: number;
+  routine: number | null;
+  routine_type: RoutineType;
+  date: string; // ISO date
+  was_on_time: boolean;
+  completion_time: string | null; // HH:MM format
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Schedule {
+  id: number;
+  child: number;
+  title: string;
+  is_active: boolean;
+  blocks: ScheduleBlock[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ScheduleBlock {
+  id: number;
+  schedule: number;
+  day_of_week: DayOfWeek;
+  start_time: string; // HH:MM format
+  end_time: string; // HH:MM format
+  activity_type: ActivityType;
+  title: string;
+  description: string;
+  subject: string;
+  color: string; // Hex color code
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RoutineTemplate {
+  title: string;
+  steps: string[];
+  target_time: string;
+}
+
+export interface RoutineTemplates {
+  morning: RoutineTemplate[];
+  evening: RoutineTemplate[];
+  sunday: RoutineTemplate[];
+}
+
+// Request/Response types
+export interface SetTimeManagementChoiceRequest {
+  child_id: number;
+  approach: TimeManagementApproach;
+}
+
+export interface CreateRoutineRequest {
+  child: number;
+  routine_type: RoutineType;
+  title: string;
+  steps: string[];
+  target_time: string;
+  is_custom?: boolean;
+}
+
+export interface CreateRoutineCompletionRequest {
+  child: number;
+  routine?: number;
+  routine_type: RoutineType;
+  date: string;
+  was_on_time: boolean;
+  completion_time?: string;
+  notes?: string;
+}
+
+export interface CreateRoutineCompletionResponse {
+  completion: RoutineCompletion;
+  progress: ModuleProgress;
+}
+
+export interface CreateScheduleRequest {
+  child: number;
+  title?: string;
+}
+
+export interface CreateScheduleBlockRequest {
+  schedule: number;
+  day_of_week: DayOfWeek;
+  start_time: string;
+  end_time: string;
+  activity_type: ActivityType;
+  title: string;
+  description?: string;
+  subject?: string;
+  color?: string;
+}

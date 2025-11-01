@@ -7,29 +7,106 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('coaching', '0004_effectivecommandobjective_effectivecommandlog_and_more'),
+        ("coaching", "0004_effectivecommandobjective_effectivecommandlog_and_more"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='AngerCrisisLog',
+            name="AngerCrisisLog",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date', models.DateField(help_text='Date when the crisis occurred', verbose_name='date')),
-                ('time', models.TimeField(blank=True, help_text='Optional time when the crisis occurred', null=True, verbose_name='time')),
-                ('intervention_stage', models.CharField(choices=[('before', 'Before the crisis'), ('during', 'During the crisis'), ('after', 'After the crisis'), ('none', 'No intervention')], help_text='At which stage did the parent intervene', max_length=20, verbose_name='intervention stage')),
-                ('techniques_used', models.JSONField(default=list, help_text='List of technique keys that were used', verbose_name='techniques used')),
-                ('was_successful', models.BooleanField(help_text='Whether the intervention was successful', verbose_name='was successful')),
-                ('notes', models.TextField(blank=True, default='', help_text='Optional notes about this crisis', verbose_name='notes')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='created at')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='updated at')),
-                ('child', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='anger_crisis_logs', to='coaching.child', verbose_name='child')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "date",
+                    models.DateField(
+                        help_text="Date when the crisis occurred", verbose_name="date"
+                    ),
+                ),
+                (
+                    "time",
+                    models.TimeField(
+                        blank=True,
+                        help_text="Optional time when the crisis occurred",
+                        null=True,
+                        verbose_name="time",
+                    ),
+                ),
+                (
+                    "intervention_stage",
+                    models.CharField(
+                        choices=[
+                            ("before", "Before the crisis"),
+                            ("during", "During the crisis"),
+                            ("after", "After the crisis"),
+                            ("none", "No intervention"),
+                        ],
+                        help_text="At which stage did the parent intervene",
+                        max_length=20,
+                        verbose_name="intervention stage",
+                    ),
+                ),
+                (
+                    "techniques_used",
+                    models.JSONField(
+                        default=list,
+                        help_text="List of technique keys that were used",
+                        verbose_name="techniques used",
+                    ),
+                ),
+                (
+                    "was_successful",
+                    models.BooleanField(
+                        help_text="Whether the intervention was successful",
+                        verbose_name="was successful",
+                    ),
+                ),
+                (
+                    "notes",
+                    models.TextField(
+                        blank=True,
+                        default="",
+                        help_text="Optional notes about this crisis",
+                        verbose_name="notes",
+                    ),
+                ),
+                (
+                    "created_at",
+                    models.DateTimeField(auto_now_add=True, verbose_name="created at"),
+                ),
+                (
+                    "updated_at",
+                    models.DateTimeField(auto_now=True, verbose_name="updated at"),
+                ),
+                (
+                    "child",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="anger_crisis_logs",
+                        to="coaching.child",
+                        verbose_name="child",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'anger crisis log',
-                'verbose_name_plural': 'anger crisis logs',
-                'ordering': ['-date', '-created_at'],
-                'indexes': [models.Index(fields=['child', 'date'], name='coaching_an_child_i_23f48b_idx'), models.Index(fields=['child', 'was_successful'], name='coaching_an_child_i_77a357_idx')],
+                "verbose_name": "anger crisis log",
+                "verbose_name_plural": "anger crisis logs",
+                "ordering": ["-date", "-created_at"],
+                "indexes": [
+                    models.Index(
+                        fields=["child", "date"], name="coaching_an_child_i_23f48b_idx"
+                    ),
+                    models.Index(
+                        fields=["child", "was_successful"],
+                        name="coaching_an_child_i_77a357_idx",
+                    ),
+                ],
             },
         ),
     ]

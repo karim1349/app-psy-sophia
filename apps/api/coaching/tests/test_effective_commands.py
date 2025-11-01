@@ -189,7 +189,9 @@ class TestEffectiveCommandsModule:
 
         # Check progress
         response = self.client.get(f"/api/modules/?child_id={self.child.id}")
-        data = next((m for m in response.json() if m["key"] == "effective_commands"), None)
+        data = next(
+            (m for m in response.json() if m["key"] == "effective_commands"), None
+        )
 
         assert data is not None
         assert len(data["counters"]["objectives_with_5plus_days"]) == 3
@@ -225,7 +227,9 @@ class TestEffectiveCommandsModule:
 
         # Check progress
         response = self.client.get(f"/api/modules/?child_id={self.child.id}")
-        data = next((m for m in response.json() if m["key"] == "effective_commands"), None)
+        data = next(
+            (m for m in response.json() if m["key"] == "effective_commands"), None
+        )
 
         assert data is not None
         assert len(data["counters"]["objectives_with_5plus_days"]) == 2
@@ -267,7 +271,9 @@ class TestEffectiveCommandsModule:
 
         # Check progress
         response = self.client.get(f"/api/modules/?child_id={self.child.id}")
-        data = next((m for m in response.json() if m["key"] == "effective_commands"), None)
+        data = next(
+            (m for m in response.json() if m["key"] == "effective_commands"), None
+        )
 
         assert len(data["counters"]["objectives_with_5plus_days"]) == 1
 
@@ -307,7 +313,9 @@ class TestEffectiveCommandsModule:
 
         # Check progress
         response = self.client.get(f"/api/modules/?child_id={self.child.id}")
-        data = next((m for m in response.json() if m["key"] == "effective_commands"), None)
+        data = next(
+            (m for m in response.json() if m["key"] == "effective_commands"), None
+        )
 
         assert len(data["counters"]["objectives_with_5plus_days"]) == 0
 
@@ -400,7 +408,8 @@ class TestEffectiveCommandsModule:
 
         # Filter by objective
         response = self.client.get(
-            f"/api/modules/effective-commands/logs/?child_id={self.child.id}&objective_id={objective1.id}"
+            f"/api/modules/effective-commands/logs/"
+            f"?child_id={self.child.id}&objective_id={objective1.id}"
         )
         assert response.status_code == 200
         data = response.json()["results"]

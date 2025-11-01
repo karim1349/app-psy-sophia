@@ -14,13 +14,22 @@ from .models import (
     AngerCrisisLog,
     Child,
     DailyCheckin,
+    DailyTaskCompletion,
     EffectiveCommandLog,
     EffectiveCommandObjective,
     Module,
     ModuleProgress,
+    Privilege,
+    PrivilegeRedemption,
+    Routine,
+    RoutineCompletion,
+    Schedule,
+    ScheduleBlock,
     Screener,
     SpecialTimeSession,
     TargetBehavior,
+    Task,
+    TimeManagementChoice,
     TimeOutLog,
 )
 
@@ -46,8 +55,10 @@ class ChildSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data: Dict[str, Any]) -> Child:
         """Create child with parent set to the current user and initialize module progress."""
+        from typing import cast
+
         validated_data["parent"] = self.context["request"].user
-        child = super().create(validated_data)
+        child = cast(Child, super().create(validated_data))
 
         # Initialize module progress for the new child
         from .unlock_engine import initialize_module_progress
@@ -105,6 +116,8 @@ class ScreenerSerializer(serializers.ModelSerializer):
         - orange: 11-20
         - rouge: > 20
         """
+        from typing import cast
+
         answers = validated_data.get("answers", {})
 
         # Compute total score
@@ -121,7 +134,7 @@ class ScreenerSerializer(serializers.ModelSerializer):
         validated_data["total_score"] = total_score
         validated_data["zone"] = zone
 
-        return super().create(validated_data)
+        return cast(Screener, super().create(validated_data))
 
     def get_recommendations(self, obj: Screener) -> list[str]:
         """Get recommendations based on zone."""
@@ -188,7 +201,7 @@ class TargetBehaviorSerializer(serializers.ModelSerializer):
             ).count()
 
             # If updating, don't count the current instance
-            if self.instance:
+            if self.instance and isinstance(self.instance, TargetBehavior):
                 if self.instance.child == child and self.instance.active:
                     existing_count -= 1
 
@@ -221,7 +234,7 @@ class DailyCheckinSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
         # Remove unique_together validator since we handle upsert in create()
-        validators = []
+        validators: list = []
 
     def validate_behaviors(self, value: list) -> list:
         """Validate behaviors format."""
@@ -287,9 +300,11 @@ class DashboardSerializer(serializers.Serializer):
 
         Example payload: {child_id: 1, range_days: 7}
         """
+        from typing import cast
+
         from .models import SpecialTimeSession
 
-        child_id = instance.get("child_id")
+        child_id = cast(int, instance.get("child_id"))
         range_days = instance.get("range_days", 7)
 
         # Get child
@@ -305,8 +320,10 @@ class DashboardSerializer(serializers.Serializer):
         ).order_by("date")
 
         # Get all Special Time sessions in range
-        start_datetime = datetime.combine(start_date, datetime.min.time())
-        end_datetime = datetime.combine(today, datetime.max.time())
+        from django.utils import timezone as tz
+
+        start_datetime = tz.make_aware(datetime.combine(start_date, datetime.min.time()))
+        end_datetime = tz.make_aware(datetime.combine(today, datetime.max.time()))
         sessions = SpecialTimeSession.objects.filter(
             child=child,
             datetime__gte=start_datetime,
@@ -314,11 +331,11 @@ class DashboardSerializer(serializers.Serializer):
         )
 
         # Build data structures
-        days = []
-        routine_success = []
-        mood = []
-        special_time_count = []
-        enjoy_rate = []
+        days: list[str] = []
+        routine_success: list[float | None] = []
+        mood: list[int | None] = []
+        special_time_count: list[int] = []
+        enjoy_rate: list[float | None] = []
 
         for i in range(range_days):
             current_date = start_date + timedelta(days=i)
@@ -458,10 +475,12 @@ class SpecialTimeSessionSerializer(serializers.ModelSerializer):
         """
         Create session and set datetime to now if not provided.
         """
+        from typing import cast
+
         if "datetime" not in validated_data or validated_data["datetime"] is None:
             validated_data["datetime"] = timezone.now()
 
-        return super().create(validated_data)
+        return cast(SpecialTimeSession, super().create(validated_data))
 
 
 class ModuleWithProgressSerializer(serializers.Serializer):
@@ -676,5 +695,326 @@ class TimeOutLogSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     "failure_reason is required when was_successful is False"
                 )
+
+        return attrs
+
+
+# =============================================================================
+# Rewards System Serializers
+# =============================================================================
+
+
+class TaskSerializer(serializers.ModelSerializer):
+    """Serializer for Task model."""
+
+    class Meta:
+        model = Task
+        fields = [
+            "id",
+            "child",
+            "title",
+            "points_reward",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate_points_reward(self, value):
+        """Ensure points_reward is 1, 3, or 5."""
+        if value not in [1, 3, 5]:
+            raise serializers.ValidationError("points_reward must be 1, 3, or 5")
+        return value
+
+
+class PrivilegeSerializer(serializers.ModelSerializer):
+    """Serializer for Privilege model."""
+
+    class Meta:
+        model = Privilege
+        fields = [
+            "id",
+            "child",
+            "title",
+            "points_cost",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate_points_cost(self, value):
+        """Ensure points_cost is 3, 5, or 10."""
+        if value not in [3, 5, 10]:
+            raise serializers.ValidationError("points_cost must be 3, 5, or 10")
+        return value
+
+
+class DailyTaskCompletionSerializer(serializers.ModelSerializer):
+    """Serializer for DailyTaskCompletion model."""
+
+    class Meta:
+        model = DailyTaskCompletion
+        fields = [
+            "id",
+            "child",
+            "date",
+            "completed_task_ids",
+            "total_points_earned",
+            "completion_rate",
+            "notes",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate_completed_task_ids(self, value):
+        """Ensure all task IDs are valid integers."""
+        if not isinstance(value, list):
+            raise serializers.ValidationError("completed_task_ids must be a list")
+
+        # Check all items are integers
+        for item in value:
+            if not isinstance(item, int):
+                raise serializers.ValidationError("All task IDs must be integers")
+
+        return value
+
+
+class PrivilegeRedemptionSerializer(serializers.ModelSerializer):
+    """Serializer for PrivilegeRedemption model."""
+
+    class Meta:
+        model = PrivilegeRedemption
+        fields = [
+            "id",
+            "child",
+            "privilege",
+            "privilege_title",
+            "points_spent",
+            "redeemed_at",
+            "notes",
+        ]
+        read_only_fields = ["id", "redeemed_at"]
+
+
+# =============================================================================
+# Time Management Serializers
+# =============================================================================
+
+
+class TimeManagementChoiceSerializer(serializers.ModelSerializer):
+    """
+    Serializer for TimeManagementChoice model.
+
+    Tracks parent's choice of time management approach.
+    """
+
+    class Meta:
+        model = TimeManagementChoice
+        fields = [
+            "id",
+            "child",
+            "approach",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate_approach(self, value):
+        """Validate approach is one of the allowed choices."""
+        valid_approaches = ["routines", "schedule", "both"]
+        if value not in valid_approaches:
+            raise serializers.ValidationError(
+                f"approach must be one of {valid_approaches}"
+            )
+        return value
+
+
+class RoutineSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Routine model.
+
+    Represents a daily routine (morning, evening, Sunday evening).
+    """
+
+    class Meta:
+        model = Routine
+        fields = [
+            "id",
+            "child",
+            "routine_type",
+            "title",
+            "steps",
+            "target_time",
+            "is_custom",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate_routine_type(self, value):
+        """Validate routine_type is one of the allowed choices."""
+        valid_types = ["morning", "evening", "sunday"]
+        if value not in valid_types:
+            raise serializers.ValidationError(
+                f"routine_type must be one of {valid_types}"
+            )
+        return value
+
+    def validate_steps(self, value):
+        """Validate steps is a list of strings."""
+        if not isinstance(value, list):
+            raise serializers.ValidationError("steps must be a list")
+
+        for step in value:
+            if not isinstance(step, str):
+                raise serializers.ValidationError("All steps must be strings")
+
+        if len(value) < 1:
+            raise serializers.ValidationError("Routine must have at least one step")
+
+        if len(value) > 20:
+            raise serializers.ValidationError("Routine cannot have more than 20 steps")
+
+        return value
+
+
+class RoutineCompletionSerializer(serializers.ModelSerializer):
+    """
+    Serializer for RoutineCompletion model.
+
+    Tracks daily completion of a routine.
+    """
+
+    class Meta:
+        model = RoutineCompletion
+        fields = [
+            "id",
+            "child",
+            "routine",
+            "routine_type",
+            "date",
+            "was_on_time",
+            "completion_time",
+            "notes",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate(self, attrs):
+        """
+        Validate routine completion data.
+
+        Rules:
+        - Routine must belong to the same child
+        - Cannot have duplicate completion for same child/routine_type/date
+        """
+        routine = attrs.get("routine")
+        child = attrs.get("child")
+
+        # Validate routine belongs to child
+        if routine and routine.child != child:
+            raise serializers.ValidationError("Routine must belong to the same child")
+
+        # Set routine_type from routine if not provided
+        if routine and "routine_type" not in attrs:
+            attrs["routine_type"] = routine.routine_type
+
+        return attrs
+
+
+class ScheduleSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Schedule model.
+
+    Weekly schedule container for a child.
+    """
+
+    blocks = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Schedule
+        fields = [
+            "id",
+            "child",
+            "title",
+            "is_active",
+            "blocks",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def get_blocks(self, obj):
+        """Get all blocks for this schedule."""
+        blocks = obj.blocks.all()
+        return ScheduleBlockSerializer(blocks, many=True).data
+
+
+class ScheduleBlockSerializer(serializers.ModelSerializer):
+    """
+    Serializer for ScheduleBlock model.
+
+    Individual time block in a weekly schedule.
+    """
+
+    class Meta:
+        model = ScheduleBlock
+        fields = [
+            "id",
+            "schedule",
+            "day_of_week",
+            "start_time",
+            "end_time",
+            "activity_type",
+            "title",
+            "description",
+            "subject",
+            "color",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate_day_of_week(self, value):
+        """Validate day_of_week is 0-6."""
+        if value < 0 or value > 6:
+            raise serializers.ValidationError("day_of_week must be between 0 and 6")
+        return value
+
+    def validate_activity_type(self, value):
+        """Validate activity_type is one of the allowed choices."""
+        valid_types = ["school", "travel", "home_activity", "leisure", "free_time"]
+        if value not in valid_types:
+            raise serializers.ValidationError(
+                f"activity_type must be one of {valid_types}"
+            )
+        return value
+
+    def validate_color(self, value):
+        """Validate color is a valid hex color code."""
+        import re
+
+        if not re.match(r"^#[0-9A-Fa-f]{6}$", value):
+            raise serializers.ValidationError(
+                "color must be a valid hex color code (e.g., #4F46E5)"
+            )
+        return value
+
+    def validate(self, attrs):
+        """
+        Validate schedule block data.
+
+        Rules:
+        - end_time must be after start_time
+        """
+        start_time = attrs.get("start_time")
+        end_time = attrs.get("end_time")
+
+        if start_time and end_time and end_time <= start_time:
+            raise serializers.ValidationError("end_time must be after start_time")
 
         return attrs

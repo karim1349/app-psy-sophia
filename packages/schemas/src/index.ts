@@ -23,3 +23,21 @@ export {
 export {
   mockUsers,
 } from './mock-data';
+
+export type {
+  Task,
+  Privilege,
+  DailyTaskCompletion,
+  PrivilegeRedemption,
+  PointsBalance,
+  RewardsSetupRequest,
+  RewardsSetupResponse,
+  DailyCompletionRequest,
+  DailyCompletionResponse,
+  RedeemPrivilegeRequest,
+  RedeemPrivilegeResponse,
+  ModuleProgress,
+  TaskWithStatus,
+  PrivilegeWithAffordability,
+  DailyCompletionSummary,
+} from './rewards';

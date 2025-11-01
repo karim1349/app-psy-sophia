@@ -107,12 +107,52 @@ class Command(BaseCommand):
             timeout.is_active = True
             timeout.completion_rules = {"successful_timeouts": 1}
             timeout.save()
+            self.stdout.write(self.style.WARNING(f"⚠️  Updated module: {timeout.title}"))
+        else:
+            self.stdout.write(self.style.SUCCESS(f"✅ Created module: {timeout.title}"))
+
+        # Create Rewards module
+        rewards, created = Module.objects.get_or_create(
+            key="rewards",
+            defaults={
+                "title": "Le système de point",
+                "order_index": 5,
+                "is_active": True,
+                "completion_rules": {"consecutive_days_50pct": 5},
+            },
+        )
+
+        if not created:
+            # Update existing module
+            rewards.is_active = True
+            rewards.completion_rules = {"consecutive_days_50pct": 5}
+            rewards.save()
+            self.stdout.write(self.style.WARNING(f"⚠️  Updated module: {rewards.title}"))
+        else:
+            self.stdout.write(self.style.SUCCESS(f"✅ Created module: {rewards.title}"))
+
+        # Create Time Management module
+        time_management, created = Module.objects.get_or_create(
+            key="time_management",
+            defaults={
+                "title": "La gestion du temps",
+                "order_index": 6,
+                "is_active": True,
+                "completion_rules": {"on_time_days_out_of_five": 3},
+            },
+        )
+
+        if not created:
+            # Update existing module
+            time_management.is_active = True
+            time_management.completion_rules = {"on_time_days_out_of_five": 3}
+            time_management.save()
             self.stdout.write(
-                self.style.WARNING(f"⚠️  Updated module: {timeout.title}")
+                self.style.WARNING(f"⚠️  Updated module: {time_management.title}")
             )
         else:
             self.stdout.write(
-                self.style.SUCCESS(f"✅ Created module: {timeout.title}")
+                self.style.SUCCESS(f"✅ Created module: {time_management.title}")
             )
 
         self.stdout.write(self.style.SUCCESS("\n✅ Module seeding complete!"))

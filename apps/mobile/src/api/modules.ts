@@ -10,6 +10,11 @@ import type {
   CreateLogRequest,
   CreateLogResponse,
   CreateObjectivesRequest,
+  CreateRoutineCompletionRequest,
+  CreateRoutineCompletionResponse,
+  CreateRoutineRequest,
+  CreateScheduleBlockRequest,
+  CreateScheduleRequest,
   CreateSessionRequest,
   CreateSessionResponse,
   CreateTimeOutLogRequest,
@@ -18,9 +23,16 @@ import type {
   EffectiveCommandObjective,
   ModuleProgress,
   ModuleWithProgress,
+  Routine,
+  RoutineCompletion,
+  RoutineTemplates,
+  Schedule,
+  ScheduleBlock,
   SetAngerFrequencyRequest,
+  SetTimeManagementChoiceRequest,
   SetTimeOutGoalRequest,
   SpecialTimeSession,
+  TimeManagementChoice,
   TimeOutLog,
 } from '../types/api';
 
@@ -234,4 +246,176 @@ export async function getTimeOutLogs(
   return apiFetch<{ results: TimeOutLog[] }>(
     `/api/modules/timeout/logs/?child_id=${childId}&range=${range}`
   );
+}
+
+// ========================================
+// Rewards System API
+// ========================================
+
+/**
+ * Setup rewards system with tasks and privileges
+ */
+export async function setupRewards(data: {
+  child_id: number;
+  tasks: Array<{ title: string; points_reward: 1 | 3 | 5 }>;
+  privileges: Array<{ title: string; points_cost: 3 | 5 | 10 }>;
+}): Promise<any> {
+  return apiFetch('/api/modules/rewards/setup/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * List all active tasks for a child
+ */
+export async function listRewardsTasks(childId: number): Promise<{ tasks: any[] }> {
+  return apiFetch<{ tasks: any[] }>(`/api/modules/rewards/tasks/?child_id=${childId}`);
+}
+
+/**
+ * List all active privileges for a child
+ */
+export async function listRewardsPrivileges(childId: number): Promise<{ privileges: any[] }> {
+  return apiFetch<{ privileges: any[] }>(`/api/modules/rewards/privileges/?child_id=${childId}`);
+}
+
+/**
+ * Log daily task completions
+ */
+export async function logDailyCompletion(data: {
+  child_id: number;
+  date: string;
+  completed_task_ids: number[];
+  notes?: string;
+}): Promise<any> {
+  return apiFetch('/api/modules/rewards/daily-completion/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Redeem a privilege (spend points)
+ */
+export async function redeemPrivilege(data: {
+  child_id: number;
+  privilege_id: number;
+  notes?: string;
+}): Promise<any> {
+  return apiFetch('/api/modules/rewards/redeem/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Get current points balance for a child
+ */
+export async function getRewardsBalance(childId: number): Promise<{
+  balance: number;
+  total_earned: number;
+  total_spent: number;
+}> {
+  return apiFetch(`/api/modules/rewards/balance/?child_id=${childId}`);
+}
+
+// ========================================
+// Time Management API
+// ========================================
+
+/**
+ * Set time management approach for a child
+ */
+export async function setTimeManagementChoice(data: SetTimeManagementChoiceRequest): Promise<TimeManagementChoice> {
+  return apiFetch<TimeManagementChoice>('/api/modules/time-management/choice/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Create a routine for a child
+ */
+export async function createRoutine(data: CreateRoutineRequest): Promise<Routine> {
+  return apiFetch<Routine>('/api/modules/time-management/routines/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Get routines for a child
+ */
+export async function getRoutines(childId: number): Promise<{ results: Routine[] }> {
+  return apiFetch<{ results: Routine[] }>(
+    `/api/modules/time-management/routines/?child_id=${childId}`
+  );
+}
+
+/**
+ * Log a routine completion
+ */
+export async function createRoutineCompletion(
+  data: CreateRoutineCompletionRequest
+): Promise<CreateRoutineCompletionResponse> {
+  return apiFetch<CreateRoutineCompletionResponse>('/api/modules/time-management/routine-completion/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Get routine completions for a child
+ */
+export async function getRoutineCompletions(
+  childId: number,
+  range: string = '7d'
+): Promise<{ results: RoutineCompletion[] }> {
+  return apiFetch<{ results: RoutineCompletion[] }>(
+    `/api/modules/time-management/routine-completion/?child_id=${childId}&range=${range}`
+  );
+}
+
+/**
+ * Create a schedule for a child
+ */
+export async function createSchedule(data: CreateScheduleRequest): Promise<Schedule> {
+  return apiFetch<Schedule>('/api/modules/time-management/schedule/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Get active schedule for a child
+ */
+export async function getSchedule(childId: number): Promise<Schedule> {
+  return apiFetch<Schedule>(`/api/modules/time-management/schedule/?child_id=${childId}`);
+}
+
+/**
+ * Create a schedule block
+ */
+export async function createScheduleBlock(data: CreateScheduleBlockRequest): Promise<ScheduleBlock> {
+  return apiFetch<ScheduleBlock>('/api/modules/time-management/schedule-blocks/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Get schedule blocks for a schedule
+ */
+export async function getScheduleBlocks(scheduleId: number): Promise<{ results: ScheduleBlock[] }> {
+  return apiFetch<{ results: ScheduleBlock[] }>(
+    `/api/modules/time-management/schedule-blocks/?schedule_id=${scheduleId}`
+  );
+}
+
+/**
+ * Get routine templates
+ */
+export async function getRoutineTemplates(): Promise<RoutineTemplates> {
+  return apiFetch<RoutineTemplates>('/api/modules/time-management/templates/');
 }

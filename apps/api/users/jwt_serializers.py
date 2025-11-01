@@ -12,11 +12,11 @@ class CustomRefreshToken(RefreshToken):
     @classmethod
     def for_user(cls, user):
         token = super().for_user(user)
-        
+
         # Add custom claims to the access token
-        token.access_token['is_guest'] = user.is_guest
-        token.access_token['is_active'] = user.is_active
-        
+        token.access_token["is_guest"] = user.is_guest
+        token.access_token["is_active"] = user.is_active
+
         return token
 
 
@@ -26,9 +26,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-        
+
         # Add custom claims
-        token['is_guest'] = user.is_guest
-        token['is_active'] = user.is_active
-        
+        token["is_guest"] = user.is_guest
+        token["is_active"] = user.is_active
+
         return token

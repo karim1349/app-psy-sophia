@@ -104,6 +104,16 @@ export default function AgeScreen() {
             loading={createChildMutation.isPending}
             size="large"
           />
+
+          <TouchableOpacity
+            style={styles.loginLink}
+            onPress={() => router.push('/(public)/login')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.loginLinkText}>
+              J'ai déjà un compte
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </SafeAreaView>
@@ -174,5 +184,15 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingTop: 24,
+    gap: 16,
+  },
+  loginLink: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  loginLinkText: {
+    fontSize: 16,
+    color: '#5B4BCC',
+    fontWeight: '600',
   },
 });

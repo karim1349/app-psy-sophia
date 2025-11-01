@@ -28,11 +28,23 @@ export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
 
+  // Initial bootstrap
   useEffect(() => {
     async function bootstrap() {
       try {
-        // Ensure guest session exists
+        // Ensure guest session exists (or clear expired full account token)
         await ensureGuestSession();
+
+        // Check if user is authenticated
+        const { isAuthenticated } = await import('../src/api/auth');
+        const hasAuth = await isAuthenticated();
+
+        if (!hasAuth) {
+          // No valid session - redirect to login or onboarding
+          console.log('❌ No valid session, redirecting to login');
+          router.replace('/(public)/login');
+          return;
+        }
 
         // Check if user is a guest or full account
         const isGuest = await isGuestUser();
@@ -70,6 +82,28 @@ export default function RootLayout() {
 
     bootstrap();
   }, []);
+
+  // Continuous route protection
+  useEffect(() => {
+    if (!isReady) return;
+
+    async function protectRoutes() {
+      const inPublic = segments[0] === '(public)';
+      const inAuthed = segments[0] === '(authed)';
+      const inTabs = segments[0] === '(tabs)';
+
+      // Check if onboarding is done
+      const onboardingDone = await appStorage.getOnboardingDone();
+
+      // If trying to access authenticated routes without completing onboarding
+      if ((inAuthed || inTabs) && !onboardingDone) {
+        console.log('🚫 Unauthorized access to authenticated route, redirecting to onboarding');
+        router.replace('/(public)/onboarding/age');
+      }
+    }
+
+    protectRoutes();
+  }, [segments, isReady]);
 
   if (!isReady) {
     return (

@@ -232,7 +232,9 @@ class TestTimeOutAPI(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         # Should still be only one log
-        self.assertEqual(TimeOutLog.objects.filter(child=self.child, date=today).count(), 1)
+        self.assertEqual(
+            TimeOutLog.objects.filter(child=self.child, date=today).count(), 1
+        )
         log = TimeOutLog.objects.get(child=self.child, date=today)
         self.assertTrue(log.needed_timeout)
         self.assertTrue(log.was_successful)
@@ -263,13 +265,9 @@ class TestTimeOutAPI(APITestCase):
         today = date.today()
         old_date = today - timedelta(days=60)
         # Create old log
-        TimeOutLog.objects.create(
-            child=self.child, date=old_date, needed_timeout=False
-        )
+        TimeOutLog.objects.create(child=self.child, date=old_date, needed_timeout=False)
         # Create recent log
-        TimeOutLog.objects.create(
-            child=self.child, date=today, needed_timeout=False
-        )
+        TimeOutLog.objects.create(child=self.child, date=today, needed_timeout=False)
 
         response = self.client.get(
             f"/api/modules/timeout/logs/?child_id={self.child.id}&range=30d"

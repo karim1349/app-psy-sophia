@@ -342,8 +342,13 @@ export default function HomeScreen() {
                       router.push('/(authed)/home/anger-management');
                     } else if (module.key === 'timeout') {
                       router.push('/(authed)/home/timeout');
+                    } else if (module.key === 'rewards') {
+                      router.push('/(authed)/home/rewards');
+                    } else if (module.key === 'time_management') {
+                      router.push('/(authed)/home/time-management');
+                    } else if (module.key === 'homework') {
+                      router.push('/(authed)/home/homework');
                     }
-                    // Other modules will be implemented later
                   }}
                 >
                   <View style={styles.moduleListInfo}>

@@ -8,69 +8,201 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('coaching', '0003_module_completion_rules_alter_moduleprogress_state'),
+        ("coaching", "0003_module_completion_rules_alter_moduleprogress_state"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='EffectiveCommandObjective',
+            name="EffectiveCommandObjective",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('label', models.CharField(help_text="Description of the command (e.g., 'Aller se brosser les dents')", max_length=100, verbose_name='label')),
-                ('is_active', models.BooleanField(default=True, help_text='Whether this objective is currently being tracked', verbose_name='is active')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='created at')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='updated at')),
-                ('child', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='effective_command_objectives', to='coaching.child', verbose_name='child')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "label",
+                    models.CharField(
+                        help_text="Description of the command (e.g., 'Aller se brosser les dents')",
+                        max_length=100,
+                        verbose_name="label",
+                    ),
+                ),
+                (
+                    "is_active",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Whether this objective is currently being tracked",
+                        verbose_name="is active",
+                    ),
+                ),
+                (
+                    "created_at",
+                    models.DateTimeField(auto_now_add=True, verbose_name="created at"),
+                ),
+                (
+                    "updated_at",
+                    models.DateTimeField(auto_now=True, verbose_name="updated at"),
+                ),
+                (
+                    "child",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="effective_command_objectives",
+                        to="coaching.child",
+                        verbose_name="child",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'effective command objective',
-                'verbose_name_plural': 'effective command objectives',
-                'ordering': ['-created_at'],
+                "verbose_name": "effective command objective",
+                "verbose_name_plural": "effective command objectives",
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='EffectiveCommandLog',
+            name="EffectiveCommandLog",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date', models.DateField(help_text='Date of this log entry', verbose_name='date')),
-                ('gave_effective_command', models.BooleanField(help_text='Whether the parent gave an effective command', verbose_name='gave effective command')),
-                ('child_completed', models.CharField(blank=True, choices=[('first_try', 'Yes, first try'), ('not_directly', 'Yes but not directly'), ('not_completed', "No, they didn't do it")], help_text='How the child responded (if gave_effective_command is True)', max_length=20, null=True, verbose_name='child completed')),
-                ('repetitions_count', models.IntegerField(blank=True, help_text="Number of times the command was repeated (for 'not_directly')", null=True, validators=[django.core.validators.MinValueValidator(1)], verbose_name='repetitions count')),
-                ('failure_reason', models.CharField(blank=True, choices=[('distractions', 'There were distractions around'), ('no_contact', 'Contact (visual and touch) was not made'), ('no_repeat', "I didn't ask the child to repeat the command"), ('unsure_command', "I wasn't sure of my command"), ('too_complex', 'The command was too complex')], help_text="Reason the child didn't complete (for 'not_completed')", max_length=20, null=True, verbose_name='failure reason')),
-                ('notes', models.TextField(blank=True, help_text='Optional notes about this log entry', verbose_name='notes')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='created at')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='updated at')),
-                ('child', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='effective_command_logs', to='coaching.child', verbose_name='child')),
-                ('objective', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='logs', to='coaching.effectivecommandobjective', verbose_name='objective')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "date",
+                    models.DateField(
+                        help_text="Date of this log entry", verbose_name="date"
+                    ),
+                ),
+                (
+                    "gave_effective_command",
+                    models.BooleanField(
+                        help_text="Whether the parent gave an effective command",
+                        verbose_name="gave effective command",
+                    ),
+                ),
+                (
+                    "child_completed",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("first_try", "Yes, first try"),
+                            ("not_directly", "Yes but not directly"),
+                            ("not_completed", "No, they didn't do it"),
+                        ],
+                        help_text="How the child responded (if gave_effective_command is True)",
+                        max_length=20,
+                        null=True,
+                        verbose_name="child completed",
+                    ),
+                ),
+                (
+                    "repetitions_count",
+                    models.IntegerField(
+                        blank=True,
+                        help_text="Number of times the command was repeated (for 'not_directly')",
+                        null=True,
+                        validators=[django.core.validators.MinValueValidator(1)],
+                        verbose_name="repetitions count",
+                    ),
+                ),
+                (
+                    "failure_reason",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("distractions", "There were distractions around"),
+                            ("no_contact", "Contact (visual and touch) was not made"),
+                            (
+                                "no_repeat",
+                                "I didn't ask the child to repeat the command",
+                            ),
+                            ("unsure_command", "I wasn't sure of my command"),
+                            ("too_complex", "The command was too complex"),
+                        ],
+                        help_text="Reason the child didn't complete (for 'not_completed')",
+                        max_length=20,
+                        null=True,
+                        verbose_name="failure reason",
+                    ),
+                ),
+                (
+                    "notes",
+                    models.TextField(
+                        blank=True,
+                        help_text="Optional notes about this log entry",
+                        verbose_name="notes",
+                    ),
+                ),
+                (
+                    "created_at",
+                    models.DateTimeField(auto_now_add=True, verbose_name="created at"),
+                ),
+                (
+                    "updated_at",
+                    models.DateTimeField(auto_now=True, verbose_name="updated at"),
+                ),
+                (
+                    "child",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="effective_command_logs",
+                        to="coaching.child",
+                        verbose_name="child",
+                    ),
+                ),
+                (
+                    "objective",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="logs",
+                        to="coaching.effectivecommandobjective",
+                        verbose_name="objective",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'effective command log',
-                'verbose_name_plural': 'effective command logs',
-                'ordering': ['-date'],
+                "verbose_name": "effective command log",
+                "verbose_name_plural": "effective command logs",
+                "ordering": ["-date"],
             },
         ),
         migrations.AddIndex(
-            model_name='effectivecommandobjective',
-            index=models.Index(fields=['child'], name='coaching_ef_child_i_4b1ec2_idx'),
+            model_name="effectivecommandobjective",
+            index=models.Index(fields=["child"], name="coaching_ef_child_i_4b1ec2_idx"),
         ),
         migrations.AddIndex(
-            model_name='effectivecommandobjective',
-            index=models.Index(fields=['is_active'], name='coaching_ef_is_acti_9c4440_idx'),
+            model_name="effectivecommandobjective",
+            index=models.Index(
+                fields=["is_active"], name="coaching_ef_is_acti_9c4440_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='effectivecommandlog',
-            index=models.Index(fields=['child', 'date'], name='coaching_ef_child_i_dbac7a_idx'),
+            model_name="effectivecommandlog",
+            index=models.Index(
+                fields=["child", "date"], name="coaching_ef_child_i_dbac7a_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='effectivecommandlog',
-            index=models.Index(fields=['objective', 'date'], name='coaching_ef_objecti_318cb7_idx'),
+            model_name="effectivecommandlog",
+            index=models.Index(
+                fields=["objective", "date"], name="coaching_ef_objecti_318cb7_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='effectivecommandlog',
-            index=models.Index(fields=['date'], name='coaching_ef_date_0a3060_idx'),
+            model_name="effectivecommandlog",
+            index=models.Index(fields=["date"], name="coaching_ef_date_0a3060_idx"),
         ),
         migrations.AlterUniqueTogether(
-            name='effectivecommandlog',
-            unique_together={('child', 'objective', 'date')},
+            name="effectivecommandlog",
+            unique_together={("child", "objective", "date")},
         ),
     ]

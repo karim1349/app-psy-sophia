@@ -4,11 +4,15 @@ Custom permissions for coaching app.
 Ensures users can only access their own children and related data.
 """
 
+from typing import TYPE_CHECKING
+
 from rest_framework import permissions
 from rest_framework.request import Request
-from rest_framework.views import View
 
 from .models import Child, DailyCheckin, Screener, TargetBehavior
+
+if TYPE_CHECKING:
+    from rest_framework.views import APIView
 
 
 class IsChildOwner(permissions.BasePermission):
@@ -19,7 +23,9 @@ class IsChildOwner(permissions.BasePermission):
     For detail actions, check that the child belongs to the user.
     """
 
-    def has_object_permission(self, request: Request, view: View, obj: Child) -> bool:
+    def has_object_permission(
+        self, request: Request, view: "APIView", obj: Child
+    ) -> bool:
         """Check if user owns the child."""
         return obj.parent == request.user
 
@@ -34,7 +40,7 @@ class IsChildRelatedOwner(permissions.BasePermission):
     def has_object_permission(
         self,
         request: Request,
-        view: View,
+        view: "APIView",
         obj: Screener | TargetBehavior | DailyCheckin,
     ) -> bool:
         """Check if user owns the child related to this object."""

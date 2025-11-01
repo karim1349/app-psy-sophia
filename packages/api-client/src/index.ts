@@ -14,3 +14,4 @@ export {
   type RefreshResponse,
   type MessageResponse,
 } from './types';
+export { createRewardsApi, type RewardsApi } from './rewards';

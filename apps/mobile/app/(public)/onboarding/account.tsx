@@ -43,9 +43,9 @@ export default function AccountScreen() {
     router.replace('/(authed)/home');
   };
 
-  const handleSkip = async () => {
-    await appStorage.setOnboardingDone(true);
-    router.replace('/(authed)/home');
+  const handleLoginRedirect = () => {
+    // User wants to login instead, redirect to login screen
+    router.push('/(public)/login');
   };
 
   return (
@@ -55,14 +55,14 @@ export default function AccountScreen() {
           <Image source={require('../../../assets/images/logo.png')} style={styles.logo} />
           <Text style={styles.title}>{t('auth.register.title')}</Text>
           <Text style={styles.subtitle}>
-            {t('auth.register.subtitle')}
+            Créez votre compte pour sauvegarder vos données
           </Text>
         </View>
 
         <GuestConversionForm
           onSuccess={handleConversionSuccess}
-          onCancel={handleSkip}
-          showSkipButton={true}
+          onCancel={handleLoginRedirect}
+          showSkipButton={false}
           showLoginPrompt={true}
           showInfoBox={true}
         />

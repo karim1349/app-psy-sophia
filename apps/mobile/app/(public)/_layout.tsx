@@ -10,6 +10,8 @@ export default function PublicLayout() {
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: '#F9FAFB' },
+        gestureEnabled: false, // Disable swipe-back gesture
+        headerBackVisible: false, // Hide back button
       }}
     />
   );
