@@ -2,33 +2,146 @@
  * Home screen with dashboard, routines, and chart
  */
 
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
+import {
+  BookOpen,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  Command,
+  Gift,
+  Hourglass,
+  Lock,
+  Shield,
+} from 'lucide-react-native';
 import React from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Switch,
-  Dimensions,
   ActivityIndicator,
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Button } from '../../../src/components/Button';
-import { getDashboard, getTargetBehaviors, upsertCheckin, getTodayCheckin } from '../../../src/api/onboarding';
+import { useTabBarHeight } from '../../../hooks/use-tab-bar-height';
 import { getModules } from '../../../src/api/modules';
+import {
+  getDashboard,
+  getTargetBehaviors,
+  getTodayCheckin,
+  upsertCheckin,
+} from '../../../src/api/onboarding';
+import { Button } from '../../../src/components/Button';
 import { appStorage } from '../../../src/lib/storage';
 
 const { width } = Dimensions.get('window');
 
+// Icon mapping for each module type
+const getModuleIcon = (key: string) => {
+  switch (key) {
+    case 'special_time':
+      return Clock;
+    case 'effective_commands':
+      return Command;
+    case 'anger_management':
+      return Shield;
+    case 'timeout':
+      return Hourglass;
+    case 'rewards':
+      return Gift;
+    case 'time_management':
+      return Calendar;
+    case 'homework':
+      return BookOpen;
+    default:
+      return BookOpen;
+  }
+};
+
+// Color scheme for each module type - Enhanced with vibrant colors
+const getModuleColor = (key: string, state: string) => {
+  const colors: Record<
+    string,
+    { background: string; icon: string; text: string; accent: string }
+  > = {
+    special_time: {
+      // Warm purple gradient
+      background: '#F3E8FF',
+      icon: '#A855F7',
+      text: '#7C3AED',
+      accent: '#C084FC',
+    },
+    effective_commands: {
+      // Vibrant blue
+      background: '#EFF6FF',
+      icon: '#2563EB',
+      text: '#1E40AF',
+      accent: '#60A5FA',
+    },
+    anger_management: {
+      // Soft coral/orange
+      background: '#FFF1F2',
+      icon: '#F43F5E',
+      text: '#BE185D',
+      accent: '#FB7185',
+    },
+    timeout: {
+      // Warm amber
+      background: '#FFFBEB',
+      icon: '#F59E0B',
+      text: '#D97706',
+      accent: '#FBBF24',
+    },
+    rewards: {
+      // Fresh mint green
+      background: '#ECFDF5',
+      icon: '#10B981',
+      text: '#059669',
+      accent: '#34D399',
+    },
+    time_management: {
+      // Deep indigo
+      background: '#EEF2FF',
+      icon: '#6366F1',
+      text: '#4F46E5',
+      accent: '#818CF8',
+    },
+    homework: {
+      // Vibrant pink
+      background: '#FDF2F8',
+      icon: '#EC4899',
+      text: '#DB2777',
+      accent: '#F472B6',
+    },
+  };
+
+  const moduleColors = colors[key] || colors.special_time;
+
+  // If locked, apply reduced opacity to colors while maintaining the color scheme
+  if (state === 'locked') {
+    return {
+      background: moduleColors.background + 'CC', // ~80% opacity
+      icon: moduleColors.icon + '80', // Reduced opacity icon (50% opacity)
+      text: moduleColors.text + '99', // Reduced opacity text (~60% opacity)
+      accent: moduleColors.accent + '80', // Reduced opacity accent (50% opacity)
+    };
+  }
+
+  return moduleColors;
+};
+
 export default function HomeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const tabBarHeight = useTabBarHeight();
   const [childId, setChildId] = React.useState<number | null>(null);
   const [isLoadingChild, setIsLoadingChild] = React.useState(true);
-  const [todayBehaviors, setTodayBehaviors] = React.useState<Record<number, boolean>>({});
+  const [todayBehaviors, setTodayBehaviors] = React.useState<
+    Record<number, boolean>
+  >({});
 
   React.useEffect(() => {
     async function loadChildId() {
@@ -57,17 +170,26 @@ export default function HomeScreen() {
           const childrenResponse = await getChildren();
           const userChildren = childrenResponse.results;
 
-          console.log('👤 User has', userChildren.length, 'children:', userChildren.map(c => c.id));
+          console.log(
+            '👤 User has',
+            userChildren.length,
+            'children:',
+            userChildren.map((c) => c.id)
+          );
 
-          const childExists = userChildren.some(c => c.id === id);
+          const childExists = userChildren.some((c) => c.id === id);
 
           if (childExists) {
             console.log('✅ Child ID', id, 'belongs to current user');
-            console.log('✅ Will call: /api/children/' + id + '/dashboard/?range=7');
+            console.log(
+              '✅ Will call: /api/children/' + id + '/dashboard/?range=7'
+            );
             setChildId(id);
           } else {
             console.error('❌ Child ID', id, 'does NOT belong to current user');
-            console.log('🔄 Clearing stored child ID and restarting onboarding');
+            console.log(
+              '🔄 Clearing stored child ID and restarting onboarding'
+            );
             await appStorage.clearAppData();
             router.replace('/(public)/onboarding/age');
           }
@@ -113,7 +235,7 @@ export default function HomeScreen() {
   const { data: todayCheckin } = useQuery({
     queryKey: ['todayCheckin', childId],
     queryFn: () => {
-      console.log('📅 Fetching today\'s check-in for child ID:', childId);
+      console.log("📅 Fetching today's check-in for child ID:", childId);
       return getTodayCheckin(childId!);
     },
     enabled: !!childId,
@@ -148,10 +270,10 @@ export default function HomeScreen() {
       }));
 
       // Build behaviors array with current state
-      const allBehaviors = behaviorsData?.results.filter(b => b.active) || [];
+      const allBehaviors = behaviorsData?.results.filter((b) => b.active) || [];
       const currentBehaviors = allBehaviors.map((b) => ({
         behavior_id: b.id,
-        done: b.id === behaviorId ? done : (todayBehaviors[b.id] || false),
+        done: b.id === behaviorId ? done : todayBehaviors[b.id] || false,
       }));
 
       console.log('✅ Updating behavior:', behaviorId, 'done:', done);
@@ -175,7 +297,8 @@ export default function HomeScreen() {
     },
   });
 
-  const behaviors = behaviorsData?.results.filter((b) => b.active).slice(0, 3) || [];
+  const behaviors =
+    behaviorsData?.results.filter((b) => b.active).slice(0, 3) || [];
 
   // Prepare chart data
   const chartData =
@@ -204,7 +327,11 @@ export default function HomeScreen() {
 
   // Handle dashboard errors
   React.useEffect(() => {
-    if (dashboardError && 'status' in dashboardError && (dashboardError as any).status === 404) {
+    if (
+      dashboardError &&
+      'status' in dashboardError &&
+      (dashboardError as any).status === 404
+    ) {
       console.error('❌ Dashboard API error:', dashboardError);
       appStorage.clearAppData();
       router.replace('/(public)/onboarding/age');
@@ -229,7 +356,7 @@ export default function HomeScreen() {
           <Text style={styles.errorIcon}>⚠️</Text>
           <Text style={styles.errorTitle}>Configuration requise</Text>
           <Text style={styles.errorText}>
-            Veuillez compléter le processus d'inscription pour continuer.
+            Veuillez compléter le processus d&apos;inscription pour continuer.
           </Text>
           <Button
             title="Commencer"
@@ -243,7 +370,10 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.content}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={{ paddingBottom: tabBarHeight + 24 }}
+      >
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.greeting}>Bonjour ! 👋</Text>
@@ -252,20 +382,6 @@ export default function HomeScreen() {
               <Text style={styles.childBadgeText}>Mon enfant</Text>
             </TouchableOpacity>
           </View>
-        </View>
-
-        {/* Next Best Action */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>📌 Action du jour</Text>
-          <Text style={styles.cardText}>
-            Planifiez votre Moment Spécial aujourd'hui
-          </Text>
-          <Button
-            title="En savoir plus"
-            variant="outline"
-            size="small"
-            onPress={() => router.push('/(authed)/home/special-time')}
-          />
         </View>
 
         {/* Current Module: Special Time */}
@@ -278,7 +394,9 @@ export default function HomeScreen() {
             >
               <View style={styles.moduleHeader}>
                 <View style={styles.moduleInfo}>
-                  <Text style={styles.moduleTitle}>{specialTimeModule.title}</Text>
+                  <Text style={styles.moduleTitle}>
+                    {specialTimeModule.title}
+                  </Text>
                   {specialTimeModule.state === 'passed' && (
                     <Text style={styles.moduleBadge}>✓ Complété</Text>
                   )}
@@ -297,7 +415,9 @@ export default function HomeScreen() {
                   </Text>
                 </View>
                 <View style={styles.moduleStat}>
-                  <Text style={styles.moduleStatLabel}>Appréciées (6 dernières)</Text>
+                  <Text style={styles.moduleStatLabel}>
+                    Appréciées (6 dernières)
+                  </Text>
                   <Text style={styles.moduleStatValue}>
                     {specialTimeModule.counters.liked_last6}/4
                   </Text>
@@ -317,67 +437,108 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>📚 Tous les modules</Text>
           {modules && modules.length > 0 ? (
-            modules.map((module, index) => {
-              const isLocked = module.state === 'locked';
-              const previousModule = index > 0 ? modules[index - 1] : null;
+            <View style={styles.modulesGrid}>
+              {modules.map((module, index) => {
+                const isLocked = module.state === 'locked';
+                const previousModule = index > 0 ? modules[index - 1] : null;
+                const IconComponent = getModuleIcon(module.key);
+                const colors = getModuleColor(module.key, module.state);
 
-              return (
-                <TouchableOpacity
-                  key={module.id}
-                  style={[
-                    styles.moduleListCard,
-                    isLocked && styles.moduleListCardLocked
-                  ]}
-                  onPress={() => {
-                    if (isLocked) {
-                      // Module is locked, do nothing
-                      return;
-                    }
+                const handlePress = () => {
+                  if (isLocked) {
+                    return;
+                  }
 
-                    if (module.key === 'special_time') {
-                      router.push('/(authed)/home/special-time');
-                    } else if (module.key === 'effective_commands') {
-                      router.push('/(authed)/home/effective-commands');
-                    } else if (module.key === 'anger_management') {
-                      router.push('/(authed)/home/anger-management');
-                    } else if (module.key === 'timeout') {
-                      router.push('/(authed)/home/timeout');
-                    } else if (module.key === 'rewards') {
-                      router.push('/(authed)/home/rewards');
-                    } else if (module.key === 'time_management') {
-                      router.push('/(authed)/home/time-management');
-                    } else if (module.key === 'homework') {
-                      router.push('/(authed)/home/homework');
-                    }
-                  }}
-                >
-                  <View style={styles.moduleListInfo}>
-                    <Text style={[
-                      styles.moduleListTitle,
-                      isLocked && styles.moduleListTitleLocked
-                    ]}>
-                      {module.title}
-                    </Text>
-                    <Text style={styles.moduleListState}>
-                      {module.state === 'locked' && '🔒 Verrouillé'}
-                      {module.state === 'unlocked' && '🔓 Disponible'}
-                      {module.state === 'passed' && '✅ Complété'}
-                    </Text>
-                    {isLocked && previousModule && (
-                      <Text style={styles.unlockHint}>
-                        Complétez "{previousModule.title}" d'abord
-                      </Text>
-                    )}
-                  </View>
-                  <Text style={[
-                    styles.moduleListArrow,
-                    isLocked && styles.moduleListArrowLocked
-                  ]}>
-                    →
-                  </Text>
-                </TouchableOpacity>
-              );
-            })
+                  if (module.key === 'special_time') {
+                    router.push('/(authed)/home/special-time');
+                  } else if (module.key === 'effective_commands') {
+                    router.push('/(authed)/home/effective-commands');
+                  } else if (module.key === 'anger_management') {
+                    router.push('/(authed)/home/anger-management');
+                  } else if (module.key === 'timeout') {
+                    router.push('/(authed)/home/timeout');
+                  } else if (module.key === 'rewards') {
+                    router.push('/(authed)/home/rewards');
+                  } else if (module.key === 'time_management') {
+                    router.push('/(authed)/home/time-management');
+                  } else if (module.key === 'homework') {
+                    router.push('/(authed)/home/homework');
+                  }
+                };
+
+                return (
+                  <TouchableOpacity
+                    key={module.id}
+                    style={[
+                      styles.moduleGridCard,
+                      { backgroundColor: colors.background },
+                      isLocked && styles.moduleGridCardLocked,
+                    ]}
+                    onPress={handlePress}
+                    activeOpacity={isLocked ? 1 : 0.7}
+                  >
+                    <View style={styles.moduleGridCardContent}>
+                      {/* Status Badge - Only show for locked or passed modules */}
+                      {(module.state === 'locked' ||
+                        module.state === 'passed') && (
+                        <View style={styles.moduleStatusBadge}>
+                          {module.state === 'locked' && (
+                            <Lock size={14} color="#9CA3AF" />
+                          )}
+                          {module.state === 'passed' && (
+                            <CheckCircle2 size={14} color="#10B981" />
+                          )}
+                        </View>
+                      )}
+
+                      {/* Main Content Area */}
+                      <View style={styles.moduleCardMainContent}>
+                        {/* Icon */}
+                        <View
+                          style={[
+                            styles.moduleIconContainer,
+                            { backgroundColor: colors.accent + '40' },
+                            isLocked && styles.moduleIconContainerLocked,
+                          ]}
+                        >
+                          <IconComponent size={32} color={colors.icon} />
+                        </View>
+
+                        {/* Title */}
+                        <Text
+                          style={[
+                            styles.moduleGridCardTitle,
+                            { color: colors.text },
+                            isLocked && styles.moduleGridCardTitleLocked,
+                          ]}
+                          numberOfLines={2}
+                        >
+                          {module.title}
+                        </Text>
+
+                        {/* State Label */}
+                        <Text
+                          style={[
+                            styles.moduleGridCardState,
+                            { color: colors.text + 'CC' },
+                            isLocked && styles.moduleGridCardStateLocked,
+                          ]}
+                          numberOfLines={2}
+                        >
+                          {module.state === 'locked' && previousModule
+                            ? `Complétez "${previousModule.title}" d'abord`
+                            : module.state === 'locked'
+                              ? 'Verrouillé'
+                              : module.state === 'unlocked'
+                                ? 'Disponible'
+                                : 'Complété'}
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           ) : (
             <Text style={styles.emptyText}>Aucun module disponible</Text>
           )}
@@ -642,46 +803,87 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1F2937',
   },
-  moduleListCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 8,
+  modulesGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
-  moduleListInfo: {
-    flex: 1,
-    gap: 4,
+  moduleGridCard: {
+    width: (width - 48 - 12) / 2,
+    aspectRatio: 1,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  moduleListTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  moduleListState: {
-    fontSize: 14,
-    color: '#6B7280',
-  },
-  moduleListArrow: {
-    fontSize: 18,
-    color: '#9CA3AF',
-  },
-  moduleListCardLocked: {
+  moduleGridCardLocked: {
     opacity: 0.6,
-    backgroundColor: '#F3F4F6',
   },
-  moduleListTitleLocked: {
-    color: '#9CA3AF',
+  moduleGridCardContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    position: 'relative',
   },
-  moduleListArrowLocked: {
-    color: '#D1D5DB',
+  moduleCardMainContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
   },
-  unlockHint: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    fontStyle: 'italic',
-    marginTop: 2,
+  moduleStatusBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  moduleIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  moduleIconContainerLocked: {
+    opacity: 0.7,
+  },
+  moduleGridCardTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 6,
+    lineHeight: 20,
+  },
+  moduleGridCardTitleLocked: {
+    opacity: 0.7,
+  },
+  moduleGridCardState: {
+    fontSize: 11,
+    fontWeight: '500',
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  moduleGridCardStateLocked: {
+    opacity: 0.7,
+    textTransform: 'none',
+    fontSize: 10,
+    lineHeight: 14,
   },
 });

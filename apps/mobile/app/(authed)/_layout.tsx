@@ -3,11 +3,8 @@
  */
 
 import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AuthedLayout() {
-  const insets = useSafeAreaInsets();
-
   return (
     <NativeTabs>
       <NativeTabs.Trigger name="home">

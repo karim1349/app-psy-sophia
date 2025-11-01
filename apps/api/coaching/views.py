@@ -373,13 +373,17 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
 
         # Get or create progress for each module
         results = []
-        for module in modules:
+        for i, module in enumerate(modules):
             logger.info(f"  Processing module: {module.key}")
+
+            # First module is unlocked, rest are locked
+            default_state = "unlocked" if i == 0 else "locked"
+
             progress, created = ModuleProgress.objects.get_or_create(
                 child=child,
                 module=module,
                 defaults={
-                    "state": "active",
+                    "state": default_state,
                     "counters": {
                         "sessions_21d": 0,
                         "liked_last6": 0,
@@ -387,6 +391,9 @@ class ModuleViewSet(viewsets.ReadOnlyModelViewSet):
                     },
                 },
             )
+
+            if created:
+                logger.info(f"  ✅ Created progress with state: {default_state}")
 
             # Recompute counters for specific modules
             if module.key == "special_time":

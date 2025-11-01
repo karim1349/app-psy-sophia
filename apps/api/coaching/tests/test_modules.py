@@ -49,7 +49,7 @@ class TestSpecialTimeUnlockRules:
 
         assert response.status_code == 200
         data = response.json()[0]
-        assert data["state"] == "active"
+        assert data["state"] == "unlocked"
         assert data["counters"]["sessions_21d"] == 0
         assert data["counters"]["liked_last6"] == 0
         assert data["counters"]["goal_per_week"] == 5
@@ -335,3 +335,80 @@ class TestSpecialTimeUnlockRules:
         now = timezone.now()
         time_diff = abs((now - session_datetime).total_seconds())
         assert time_diff < 5  # Should be within 5 seconds of now
+
+
+@pytest.mark.django_db
+class TestModuleLocking:
+    """Test module locking mechanism."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username="parent", email="parent@test.com", password="testpass123"
+        )
+        self.client.force_authenticate(user=self.user)
+
+        self.child = Child.objects.create(
+            parent=self.user, schooling_stage="6-13", diagnosed_adhd="unknown"
+        )
+
+        # Create 3 modules in sequence
+        self.module1 = Module.objects.create(
+            key="special_time",
+            title="Moment Spécial",
+            order_index=1,
+            is_active=True,
+        )
+        self.module2 = Module.objects.create(
+            key="effective_commands",
+            title="Ordres Efficaces",
+            order_index=2,
+            is_active=True,
+        )
+        self.module3 = Module.objects.create(
+            key="anger_management",
+            title="Gestion de la colère",
+            order_index=3,
+            is_active=True,
+        )
+
+    def test_first_module_unlocked_rest_locked(self):
+        """Test that first module is unlocked, rest are locked."""
+        response = self.client.get(f"/api/modules/?child_id={self.child.id}")
+
+        assert response.status_code == 200
+        data = response.json()
+
+        assert len(data) == 3
+        assert data[0]["key"] == "special_time"
+        assert data[0]["state"] == "unlocked"
+        assert data[1]["key"] == "effective_commands"
+        assert data[1]["state"] == "locked"
+        assert data[2]["key"] == "anger_management"
+        assert data[2]["state"] == "locked"
+
+    def test_unlocking_second_module(self):
+        """Test that completing first module unlocks second."""
+        # First, get modules to initialize progress
+        self.client.get(f"/api/modules/?child_id={self.child.id}")
+
+        # Log 6 sessions to complete Special Time module
+        # (Need 6 sessions with at least 4 enjoyed to pass)
+        now = timezone.now()
+        for i in range(6):
+            SpecialTimeSession.objects.create(
+                child=self.child,
+                datetime=now - timedelta(days=i),
+                duration_min=15,
+                activity=f"Activity {i}",
+                child_enjoyed=i < 4,  # First 4 enjoyed, last 2 not
+            )
+
+        # Now check if module is passed and second module is unlocked
+        response = self.client.get(f"/api/modules/?child_id={self.child.id}")
+        data = response.json()
+
+        assert data[0]["state"] == "passed"
+        assert data[1]["state"] == "unlocked"
+        assert data[2]["state"] == "locked"

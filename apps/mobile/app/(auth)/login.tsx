@@ -40,7 +40,7 @@ export default function LoginScreen() {
   const onSubmit = (data: LoginInput) => {
     login.mutate(data, {
       onSuccess: () => {
-        router.replace('/(tabs)');
+        router.replace('/(authed)/home');
       },
     });
   };

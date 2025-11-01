@@ -49,7 +49,7 @@ export default function VerifyEmailScreen() {
   const onSubmit = (data: VerifyEmailInput) => {
     verifyEmail.mutate(data, {
       onSuccess: () => {
-        router.replace('/(tabs)');
+        router.replace('/(authed)/home');
       },
     });
   };
